@@ -57,12 +57,12 @@ test.describe("class guard", () => {
       });
       window.tour.drive();
     });
-    await expect(page.locator("#one")).toHaveClass("driver-no-interaction driver-active-element");
+    await expect(page.locator("#one")).toHaveClass("vt-target-blocked vt-target");
     await record(page, "#one", ["click"]);
     await record(page, "#two", ["click"]);
 
     expect(await classesAfterRewrite(page, "#one", "selected")).toBe(
-      "driver-active-element driver-no-interaction selected"
+      "selected vt-target vt-target-blocked"
     );
     await page.locator("#one").click({ force: true });
     await settle(page);
@@ -72,10 +72,10 @@ test.describe("class guard", () => {
     await expect(title(page)).toHaveText("Two");
     await settle(page);
     expect(await classesAfterRewrite(page, "#one", "picked")).toBe("picked");
-    expect(await classesAfterRewrite(page, "#two", "app")).toBe("app driver-active-element");
+    expect(await classesAfterRewrite(page, "#two", "app")).toBe("app vt-target");
     await settle(page);
     await expect(page.locator("#one")).toHaveClass("picked");
-    await expect(page.locator("#two")).toHaveClass("app driver-active-element");
+    await expect(page.locator("#two")).toHaveClass("app vt-target");
 
     expect(await topElementAt(page, ...(await centerOf(page, "#two")))).toBe("two");
     expect(await topElementAt(page, ...(await centerOf(page, "#one")))).toBe("overlay");
@@ -102,7 +102,7 @@ test.describe("class guard", () => {
         });
         window.tour.drive();
       }, form);
-      await expect(page.locator("#side")).toHaveClass("menu driver-allowed-element");
+      await expect(page.locator("#side")).toHaveClass("menu vt-extra");
       await settle(page);
 
       const seen = await page.evaluate(async () => {
@@ -114,7 +114,7 @@ test.describe("class guard", () => {
 
         return [afterMicrotask, onNextFrame];
       });
-      expect(seen).toEqual(["menu open driver-allowed-element", "menu open driver-allowed-element"]);
+      expect(seen).toEqual(["menu open vt-extra", "menu open vt-extra"]);
 
       await record(page, "#side-btn", ["click"]);
       expect(await topElementAt(page, ...(await centerOf(page, "#side-btn")))).toBe("side-btn");
@@ -151,7 +151,7 @@ test("a re-rendered element is picked up again by the step's selector", async ({
     document.querySelector("#temp")!.remove();
     document.querySelector("#slot")!.appendChild(replacement);
   });
-  await expect(page.locator("#temp")).toHaveClass("driver-active-element");
+  await expect(page.locator("#temp")).toHaveAttribute("data-vt-target");
   await settle(page);
 
   expect(await activeIndex(page)).toBe(0);
@@ -180,10 +180,10 @@ test.describe("allowedElements", () => {
     expect(await log(page)).toEqual(["click@#side-btn"]);
     const side = await box(page.locator("#side-btn"));
     await expect.poll(() => topElementAt(page, side.x + 3, side.y + 3)).toBe("side-btn");
-    await expect(page.locator("#side")).toHaveClass(/driver-allowed-element/);
+    await expect(page.locator("#side")).toHaveAttribute("data-vt-extra");
 
     await page.evaluate(() => window.tour.destroy());
-    await expect(page.locator("#side")).not.toHaveClass(/driver-allowed-element/);
+    await expect(page.locator("#side")).not.toHaveAttribute("data-vt-extra");
   });
 });
 
@@ -197,14 +197,14 @@ test.describe("class guard with allowed elements", () => {
       });
       window.tour.drive();
     });
-    await expect(page.locator("#one")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#one")).toHaveAttribute("data-vt-target");
     await page.evaluate(() => {
       document.querySelector("#one")!.className = "app-class";
       document.querySelector("#side")!.className = "app-side";
     });
 
-    await expect(page.locator("#one")).toHaveClass("app-class driver-active-element");
-    await expect(page.locator("#side")).toHaveClass("app-side driver-allowed-element");
+    await expect(page.locator("#one")).toHaveClass("app-class vt-target");
+    await expect(page.locator("#side")).toHaveClass("app-side vt-extra");
     await record(page, "#side-btn", ["click"]);
     await page.locator("#side-btn").click();
     await page.locator("#one").click();
@@ -254,11 +254,11 @@ test.describe("a highlighted element inside an allowed element", () => {
     test(`is marked and leaves no hole around the menu${inDialog ? " (in a dialog)" : ""}`, async ({ page }) => {
       await startInMenu(page, inDialog);
 
-      await expect(item(page)).toHaveClass(/driver-active-element-raised/);
+      await expect(item(page)).toHaveAttribute("data-vt-raised");
       await expect(item(page)).toHaveCSS("outline-style", "solid");
       await expect(item(page)).toHaveCSS("outline-width", "2px");
       expect(await item(page).evaluate(element => getComputedStyle(element).boxShadow)).toContain("inset");
-      await expect(page.locator("[data-item=profile]")).not.toHaveClass(/driver-active-element-raised/);
+      await expect(page.locator("[data-item=profile]")).not.toHaveAttribute("data-vt-raised");
 
       const menu = await box(page.locator("#menu"));
       const settings = await box(item(page));
@@ -276,10 +276,10 @@ test.describe("a highlighted element inside an allowed element", () => {
 
       await page.evaluate(() => window.tour.moveNext());
       await expect(title(page)).toHaveText("After");
-      await expect(item(page)).not.toHaveClass(/driver-active-element/);
+      await expect(item(page)).not.toHaveAttribute("data-vt-target");
 
       await page.evaluate(() => window.tour.movePrevious());
-      await expect(item(page)).toHaveClass(/driver-active-element-raised/);
+      await expect(item(page)).toHaveAttribute("data-vt-raised");
       await page.evaluate(() => window.tour.destroy());
       await expect(item(page)).toHaveAttribute("class", "");
       await expect(page.locator("#menu")).toHaveAttribute("class", "");
@@ -292,15 +292,15 @@ test.describe("a highlighted element inside an allowed element", () => {
     await startInMenu(page);
 
     expect(await classesAfterRewrite(page, "[data-item=settings]", "app-item")).toBe(
-      "app-item driver-active-element driver-active-element-raised"
+      "app-item vt-target vt-target-raised"
     );
 
     await page.evaluate(() => {
       const menu = document.querySelector("#menu")!;
       menu.id = "menu-renamed";
     });
-    await expect(item(page)).not.toHaveClass(/driver-active-element-raised/);
-    await expect(item(page)).toHaveClass(/driver-active-element/);
+    await expect(item(page)).not.toHaveAttribute("data-vt-raised");
+    await expect(item(page)).toHaveAttribute("data-vt-target");
   });
 
   test("an element that is not inside an allowed element gets no mark and keeps its padding", async ({ page }) => {
@@ -315,7 +315,7 @@ test.describe("a highlighted element inside an allowed element", () => {
     await expect(title(page)).toHaveText("One");
     await settle(page);
 
-    await expect(page.locator("#one")).not.toHaveClass(/driver-active-element-raised/);
+    await expect(page.locator("#one")).not.toHaveAttribute("data-vt-raised");
     const one = await box(page.locator("#one"));
     expect(await topElementAt(page, one.x - 5, one.y + one.height / 2)).not.toBe("overlay");
   });

@@ -3,7 +3,6 @@ import { skipWhenEdgeMissing, activeIndex, box, nextButton, openFixture, overlay
 
 test.beforeEach(skipWhenEdgeMissing);
 
-const LOCK_CLASS = /driver-active-element-parent-no-scroll/;
 
 const scrollTop = (page: Page, selector: string) => page.evaluate(s => document.querySelector(s)!.scrollTop, selector);
 
@@ -85,24 +84,24 @@ test.describe("scroll lock", () => {
       await page.mouse.wheel(0, 60);
     };
 
-    await expect(page.locator("#list")).toHaveClass(LOCK_CLASS);
+    await expect(page.locator("#list")).toHaveAttribute("data-vt-lock-scroll");
     await expect(page.locator("#list")).toHaveCSS("overflow-y", "hidden");
     await wheelOverItem();
     await settle(page);
     expect(await scrollTop(page, "#list")).toBe(0);
 
     await page.evaluate(() => (window as unknown as { makeList: (id: string) => void }).makeList("list-again"));
-    await expect(page.locator("#list-again")).toHaveClass(/driver-active-element-parent( |$)/);
-    await expect(page.locator("#list-again")).toHaveClass(LOCK_CLASS);
+    await expect(page.locator("#list-again")).toHaveClass(/vt-target-parent( |$)/);
+    await expect(page.locator("#list-again")).toHaveAttribute("data-vt-lock-scroll");
     await expect(page.locator("#list-again")).toHaveCSS("overflow-y", "hidden");
-    await expect(page.locator("#item")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#item")).toHaveAttribute("data-vt-target");
     await settle(page);
     await wheelOverItem();
     await settle(page);
     expect(await scrollTop(page, "#list-again")).toBe(0);
 
     await page.evaluate(() => window.tour.destroy());
-    await expect(page.locator("#list-again")).not.toHaveClass(LOCK_CLASS);
+    await expect(page.locator("#list-again")).not.toHaveAttribute("data-vt-lock-scroll");
     await expect(page.locator("#list-again")).toHaveCSS("overflow-y", "auto");
     await expect
       .poll(async () => {
@@ -155,7 +154,7 @@ test.describe("accessibility", () => {
     await expect(page.locator("#one")).toHaveAttribute("aria-haspopup", "dialog");
     await expect(page.locator("#one")).toHaveAttribute("aria-expanded", "true");
     await expect(page.locator("#one")).toHaveAttribute("aria-controls", id!);
-    await expect(page.locator(".driver-live-region")).toHaveAttribute("aria-live", "polite");
+    await expect(page.locator(".vt-live-region")).toHaveAttribute("aria-live", "polite");
 
     await nextButton(page).click();
     const actionDialog = page.getByRole("dialog", { name: "Act" });

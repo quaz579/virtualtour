@@ -119,12 +119,12 @@ test.describe("scroll containers", () => {
       window.tour = window.__engine.createEngine({ animate: false, steps: [{ element: "#first" }, { element: "#last" }] });
       window.tour.drive();
     });
-    await expect(scroller(page)).toHaveClass(/driver-active-element-parent-no-scroll/);
+    await expect(scroller(page)).toHaveAttribute("data-vt-lock-scroll");
     await expect(scroller(page)).toHaveCSS("overflow", "hidden");
     expect(await scrollerTop(page)).toBe(0);
 
     await page.evaluate(() => window.tour.moveNext());
-    await expect(page.locator("#last")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#last")).toHaveAttribute("data-vt-target");
     expect(await isShownInScroller(page, "#last")).toBe(true);
     expect(await scrollerTop(page)).toBeGreaterThan(0);
   });
@@ -155,7 +155,7 @@ test.describe("allowScroll", () => {
 
   test("lets the page scroll under the overlay by default", async ({ page }) => {
     await start(page, "tour");
-    await expect(page.locator("body")).not.toHaveClass(/driver-no-scroll/);
+    await expect(page.locator("body")).not.toHaveClass(/vt-no-scroll/);
 
     await expect.poll(() => scrollYAfterWheel(page)).toBeGreaterThan(0);
   });
@@ -163,14 +163,14 @@ test.describe("allowScroll", () => {
   for (const kind of ["highlight", "tour"] as const) {
     test(`false locks page scrolling for a ${kind} until it is destroyed`, async ({ page }) => {
       await start(page, kind, false);
-      await expect(page.locator("body")).toHaveClass(/driver-no-scroll/);
+      await expect(page.locator("body")).toHaveClass(/vt-no-scroll/);
 
       await page.mouse.wheel(0, 300);
       await settle(page);
       expect(await scrollY(page)).toBe(0);
 
       await page.evaluate(() => window.tour.destroy());
-      await expect(page.locator("body")).not.toHaveClass(/driver-no-scroll/);
+      await expect(page.locator("body")).not.toHaveClass(/vt-no-scroll/);
       await expect.poll(() => scrollYAfterWheel(page)).toBeGreaterThan(0);
     });
   }

@@ -3,17 +3,17 @@ import { skipWhenEdgeMissing } from "./harness";
 
 test.beforeEach(skipWhenEdgeMissing);
 
-const title = (page: Page) => page.locator(".driver-popover-title");
-const description = (page: Page) => page.locator(".driver-popover-description");
-const popover = (page: Page) => page.locator(".driver-popover");
+const title = (page: Page) => page.locator(".vt-popover-title");
+const description = (page: Page) => page.locator(".vt-popover-description");
+const popover = (page: Page) => page.locator(".vt-popover");
 
 async function expectNudgeWithoutFade(page: Page) {
-  await page.waitForFunction(() => document.querySelector(".driver-popover")?.getAnimations().length === 0);
+  await page.waitForFunction(() => document.querySelector(".vt-popover")?.getAnimations().length === 0);
   await page.evaluate(() => {
     const state = window as unknown as { minOpacity: number };
     state.minOpacity = 1;
     const sample = () => {
-      const wrapper = document.querySelector(".driver-popover");
+      const wrapper = document.querySelector(".vt-popover");
       if (wrapper) {
         state.minOpacity = Math.min(state.minOpacity, parseFloat(getComputedStyle(wrapper).opacity));
       }
@@ -23,10 +23,10 @@ async function expectNudgeWithoutFade(page: Page) {
   });
 
   await page.locator("#demo-file").click();
-  await expect(popover(page)).toHaveClass(/driver-popover-nudge/);
-  await expect(popover(page)).not.toHaveClass(/driver-popover-nudge/, { timeout: 2000 });
+  await expect(popover(page)).toHaveClass(/vt-popover-nudge/);
+  await expect(popover(page)).not.toHaveClass(/vt-popover-nudge/, { timeout: 2000 });
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await page.waitForFunction(() => document.querySelector(".driver-popover")?.getAnimations().length === 0);
+  await page.waitForFunction(() => document.querySelector(".vt-popover")?.getAnimations().length === 0);
 
   const minOpacity = await page.evaluate(() => (window as unknown as { minOpacity: number }).minOpacity);
   expect(minOpacity).toBe(1);
@@ -50,7 +50,7 @@ test.describe("guided rename", () => {
     await expect(title(page)).toHaveText("Renamed");
     await expect(page.locator(".demo-file-name")).toHaveText("notes.pdf");
 
-    await page.locator(".driver-popover-next-btn").click();
+    await page.locator(".vt-popover-next-btn").click();
     await expect(popover(page)).toHaveCount(0);
   });
 
@@ -111,7 +111,7 @@ test.describe("guided rename", () => {
   test("announces the corrective text to screen readers", async ({ page }) => {
     await page.locator("#demo-file").click();
 
-    await expect(page.locator(".driver-live-region")).toContainText("Right-click the file");
+    await expect(page.locator(".vt-live-region")).toContainText("Right-click the file");
   });
 });
 
@@ -144,9 +144,9 @@ test.describe("waiting and retry", () => {
     await expect(title(page)).toHaveText("Load");
 
     await page.locator("#card-2").click();
-    await expect(popover(page)).toHaveClass(/driver-popover-waiting/);
+    await expect(popover(page)).toHaveClass(/vt-popover-waiting/);
     await expect(description(page)).toContainText("Still loading", { timeout: 4000 });
-    await expect(popover(page)).not.toHaveClass(/driver-popover-waiting/);
+    await expect(popover(page)).not.toHaveClass(/vt-popover-waiting/);
 
     await page.locator("#card-2").click();
     await expect(title(page)).toHaveText("Loaded", { timeout: 4000 });

@@ -7,7 +7,7 @@ useDriverHarness();
 
 beforeAll(() => {
   const style = document.createElement("style");
-  style.textContent = readFileSync(resolve(process.cwd(), "src/engine/styles/popover.css"), "utf8");
+  style.textContent = readFileSync(resolve(process.cwd(), "src/styles/base.css"), "utf8");
   document.head.appendChild(style);
 });
 
@@ -24,7 +24,7 @@ function addCustomFooterButton(opts: { keepDefaultStyle: boolean }): {
   button.id = "custom-footer-btn";
   button.innerText = "Custom";
   if (opts.keepDefaultStyle) {
-    button.classList.add("driver-popover-footer-btn");
+    button.classList.add("vt-popover-footer-btn");
   }
   button.addEventListener("click", onClick);
 
@@ -46,8 +46,8 @@ describe("footer button styling", () => {
     d.drive();
 
     const next = navButton("next")!;
-    expect(next.classList.contains("driver-popover-footer-btn")).toBe(true);
-    expect(navButton("prev")!.classList.contains("driver-popover-footer-btn")).toBe(true);
+    expect(next.classList.contains("vt-popover-footer-btn")).toBe(true);
+    expect(navButton("prev")!.classList.contains("vt-popover-footer-btn")).toBe(true);
 
     const styles = getComputedStyle(next);
     expect(styles.padding).toBe("3px 7px");

@@ -4,7 +4,7 @@ import { skipWhenEdgeMissing, activeIndex, box, log, nextButton, openFixture, ov
 test.beforeEach(skipWhenEdgeMissing);
 
 const bodyDuration = (page: Page) =>
-  page.evaluate(() => document.body.style.getPropertyValue("--driver-animation-duration"));
+  page.evaluate(() => document.body.style.getPropertyValue("--vt-animation-duration"));
 
 const start = (page: Page, duration?: number) =>
   page.evaluate(duration => {
@@ -59,7 +59,7 @@ test.describe("animated stage transition", () => {
     expect(await activeIndex(page)).toBe(0);
 
     await page.evaluate(() => {
-      const path = document.querySelector(".driver-overlay path")!;
+      const path = document.querySelector(".vt-overlay path")!;
       const frames: number[] = [];
       Object.assign(window, { frames });
       new MutationObserver(() => {
@@ -113,5 +113,5 @@ test("an animated tour moves the cutout and shows the next popover", async ({ pa
 
   const target = await box(page.locator("#two"));
   await expect.poll(() => topElementAt(page, target.x + 5, target.y + 5)).toBe("two");
-  expect(await page.evaluate(() => document.body.classList.contains("driver-fade"))).toBe(true);
+  expect(await page.evaluate(() => document.body.classList.contains("vt-fade"))).toBe(true);
 });

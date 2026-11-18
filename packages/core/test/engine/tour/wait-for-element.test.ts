@@ -22,17 +22,17 @@ describe("waitForElement", () => {
     d.moveNext();
 
     expect(popoverEl()?.style.display).toBe("block");
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(true);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
     expect(popoverEl()?.getAttribute("aria-busy")).toBe("true");
     expect(d.getActiveIndex()).toBe(0);
     expect(popoverTitle()).toBe("Step 1");
-    expect(document.getElementById("intro")?.classList.contains("driver-active-element")).toBe(true);
+    expect(document.getElementById("intro")?.hasAttribute("data-vt-target")).toBe(true);
 
     appendElement("late");
     await tick();
 
     expect(popoverEl()?.style.display).toBe("block");
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(false);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(false);
     expect(popoverTitle()).toBe("Step 2");
     expect(d.getActiveIndex()).toBe(1);
     expect(d.getActiveElement()?.id).toBe("late");
@@ -45,7 +45,7 @@ describe("waitForElement", () => {
     });
     d.drive();
     expect(popoverTitle()).toBe("Step 1");
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(true);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
 
     appendElement("late");
     await tick();
@@ -54,7 +54,7 @@ describe("waitForElement", () => {
     expect(popoverTitle()).toBe("Step 1");
   });
 
-  it("applies the driver-level waitForElement to every step", async () => {
+  it("applies the engine-level waitForElement to every step", async () => {
     const d = createDriver({
       animate: false,
       waitForElement: 500,
@@ -83,15 +83,15 @@ describe("waitForElement", () => {
     d.drive();
     d.moveNext();
     expect(popoverTitle()).toBe("Step 1");
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(true);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
 
     await tick(80);
 
     expect(d.getActiveIndex()).toBe(1);
     expect(popoverEl()?.style.display).toBe("block");
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(false);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(false);
     expect(popoverTitle()).toBe("Step 2");
-    expect(d.getActiveElement()?.id).toBe("driver-dummy-element");
+    expect(d.getActiveElement()?.id).toBe("vt-dummy-element");
   });
 
   it("skips the step when the wait times out and skipMissingElement is set", async () => {

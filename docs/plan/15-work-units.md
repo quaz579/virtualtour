@@ -148,8 +148,8 @@ after WU-12, seven units (WU-13 … WU-19) run together.
   (largest M0 unit; it cannot be split without leaving the suite red between PRs).
 - **Touches:** `src/engine/core/namespace.ts` (new), `types.ts`, `core/context.ts`, every
   engine file listed in F-03, `engine/styles/engine.css` (from `driver.css`), `src/styles/base.css`,
-  all of `test/engine/**` and `e2e/engine/**` (string rename), `test/engine/namespace.test.ts`,
-  `e2e/namespace.spec.ts`, `docs/guide/styling.md` placeholder, fork-point fixture.
+  all of `test/engine/**` and `packages/core/e2e/engine/**` (string rename), `test/engine/namespace.test.ts`,
+  `packages/core/e2e/namespace.spec.ts`, `docs/guide/styling.md` placeholder, fork-point fixture.
 - **Acceptance:** F-03 acceptance; `grep -r "driver-" packages/core/src` empty; whole ported suite green.
 - **Verify:** `! grep -r "driver-" packages/core/src && npm test && npm run e2e`
 

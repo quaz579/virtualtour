@@ -28,6 +28,6 @@ test("fixture page exposes the engine and shows a popover", async ({ page }) => 
       .drive();
   });
 
-  await expect(page.locator(".driver-popover")).toBeVisible();
-  await expect(page.locator(".driver-popover-title")).toHaveText("One");
+  await expect(page.locator(".vt-popover")).toBeVisible();
+  await expect(page.locator(".vt-popover-title")).toHaveText("One");
 });

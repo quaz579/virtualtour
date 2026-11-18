@@ -14,7 +14,7 @@ import {
 
 useDriverHarness();
 
-const isWaiting = () => !!popoverEl()?.classList.contains("driver-popover-waiting");
+const isWaiting = () => !!popoverEl()?.classList.contains("vt-popover-waiting");
 
 describe("waiting state", () => {
   const waitingTour = () =>
@@ -344,7 +344,7 @@ describe("onElementMissing: removed", () => {
 
     expect(onElementMissing).not.toHaveBeenCalled();
     expect(d.getActiveElement()).toBe(replacement);
-    expect(replacement.classList.contains("driver-active-element")).toBe(true);
+    expect(replacement.hasAttribute("data-vt-target")).toBe(true);
   });
 
   it("waits out the grace period before firing", async () => {
@@ -470,7 +470,7 @@ describe("onElementMissing: removed", () => {
     await tick(260);
 
     expect(navButton("next")?.disabled).toBe(true);
-    expect(document.querySelector(".driver-popover")?.classList.contains("driver-popover-waiting")).toBe(true);
+    expect(document.querySelector(".vt-popover")?.classList.contains("vt-popover-waiting")).toBe(true);
   });
 
   it("reports again after the same node is reinserted and removed", async () => {
@@ -518,7 +518,7 @@ describe("onElementMissing: removed", () => {
     await nextFrame();
 
     expect(navButton("next")?.disabled).toBe(false);
-    expect(document.querySelector(".driver-popover")?.classList.contains("driver-popover-waiting")).toBe(false);
+    expect(document.querySelector(".vt-popover")?.classList.contains("vt-popover-waiting")).toBe(false);
   });
 
   it("does not report removed while Next is waiting for the destination", async () => {
@@ -585,7 +585,7 @@ describe("replaced elements", () => {
     await nextFrame();
     await nextFrame();
 
-    expect(original.classList.contains("driver-active-element")).toBe(false);
+    expect(original.hasAttribute("data-vt-target")).toBe(false);
   });
 
   it("renders a delayed popover against the rebound element", async () => {

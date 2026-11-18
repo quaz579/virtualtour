@@ -18,8 +18,8 @@ describe("unit-dom harness", () => {
       steps: [{ element: "#one", popover: { title: "One", description: "First" } }],
     });
     engine.drive();
-    expect(document.querySelector(".driver-popover-title")?.textContent).toBe("One");
+    expect(document.querySelector(".vt-popover-title")?.textContent).toBe("One");
     engine.destroy();
-    expect(document.querySelector(".driver-popover")).toBeNull();
+    expect(document.querySelector(".vt-popover")).toBeNull();
   });
 });

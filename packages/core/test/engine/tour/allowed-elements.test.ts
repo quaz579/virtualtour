@@ -3,7 +3,7 @@ import { append, createDriver, nextFrame, SAMPLE_STEPS, useDriverHarness } from 
 
 useDriverHarness();
 
-const ALLOWED = "driver-allowed-element";
+const ALLOWED = "vt-extra";
 const $ = (selector: string) => document.querySelector(selector);
 const isAllowed = (selector: string) => !!$(selector)?.classList.contains(ALLOWED);
 

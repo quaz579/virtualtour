@@ -1,6 +1,6 @@
-const DRIVER_CLICK_EVENTS = ["pointerdown", "mousedown", "pointerup", "mouseup", "click"] as const;
+const CLICK_EVENTS = ["pointerdown", "mousedown", "pointerup", "mouseup", "click"] as const;
 
-const driverClickHandlers = new WeakMap<Element, (e: MouseEvent | PointerEvent) => void>();
+const clickHandlers = new WeakMap<Element, (e: MouseEvent | PointerEvent) => void>();
 
 export function onDriverClick(
   element: Element,
@@ -28,22 +28,22 @@ export function onDriverClick(
 
   const useCapture = true;
 
-  for (const type of DRIVER_CLICK_EVENTS) {
+  for (const type of CLICK_EVENTS) {
     document.addEventListener(type, handler, useCapture);
   }
 
-  driverClickHandlers.set(element, handler);
+  clickHandlers.set(element, handler);
 }
 
 export function destroyDriverClick(element: Element) {
-  const handler = driverClickHandlers.get(element);
+  const handler = clickHandlers.get(element);
   if (!handler) {
     return;
   }
 
-  for (const type of DRIVER_CLICK_EVENTS) {
+  for (const type of CLICK_EVENTS) {
     document.removeEventListener(type, handler, true);
   }
 
-  driverClickHandlers.delete(element);
+  clickHandlers.delete(element);
 }

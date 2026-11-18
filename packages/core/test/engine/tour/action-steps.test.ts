@@ -49,7 +49,7 @@ describe("onElementMissing presets", () => {
     await removeMenu(menu);
 
     expect(d.getActiveIndex()).toBe(2);
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(false);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(false);
   });
 
   it('"stay" is the same as leaving it out', async () => {
@@ -122,12 +122,12 @@ describe("onElementMissing presets", () => {
 
     await removeMenu(menu);
     expect(d.getActiveIndex()).toBe(2);
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(true);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
 
     document.body.appendChild(menu);
     await tick(150);
     expect(d.getActiveIndex()).toBe(2);
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(false);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(false);
   });
 
   it("go back once the grace period is over", async () => {
@@ -171,11 +171,11 @@ describe("onElementMissing presets", () => {
 
       d.advance();
       await tick(0);
-      expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(true);
+      expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
 
       await tick(80);
       expect(d.getActiveIndex()).toBe(0);
-      expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(false);
+      expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(false);
 
       const menu = append("menu", "div");
       menu.innerHTML = `<p id="menu-info">Info</p>`;
@@ -196,7 +196,7 @@ describe("onElementMissing presets", () => {
     await nextFrame();
 
     expect(d.getActiveIndex()).toBe(1);
-    expect(d.getActiveElement()?.id).toBe("driver-dummy-element");
+    expect(d.getActiveElement()?.id).toBe("vt-dummy-element");
   });
 
   it("presets fall back as usual when the very first element never shows up", async () => {
@@ -210,8 +210,8 @@ describe("onElementMissing presets", () => {
     await nextFrame();
 
     expect(d.getActiveIndex()).toBe(0);
-    expect(popoverEl()?.classList.contains("driver-popover-waiting")).toBe(false);
-    expect(d.getActiveElement()?.id).toBe("driver-dummy-element");
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(false);
+    expect(d.getActiveElement()?.id).toBe("vt-dummy-element");
   });
 });
 

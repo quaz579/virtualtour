@@ -314,7 +314,7 @@ describe("navigation from inside hooks", () => {
     expect(d.isActive()).toBe(false);
     expect(d.getState()).toEqual({});
     expect(popoverEl()).toBeNull();
-    expect(document.querySelector(".driver-overlay")).toBeNull();
+    expect(document.querySelector(".vt-overlay")).toBeNull();
   });
 
   it("moveNext() inside onDestroyStarted keeps the tour going", async () => {

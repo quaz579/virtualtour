@@ -239,7 +239,7 @@ test.describe("presses on live targets", () => {
     expect((await takeEvents(page)).filter(event => event.prevented)).toEqual([]);
 
     await clearLog(page);
-    await page.locator(".driver-popover-description").click();
+    await page.locator(".vt-popover-description").click();
     expect((await log(page)).filter(entry => entry.endsWith(" mousedown"))).toEqual(onPage(["mousedown"]));
 
     await clearLog(page);

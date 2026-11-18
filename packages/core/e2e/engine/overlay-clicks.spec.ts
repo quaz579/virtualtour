@@ -3,7 +3,7 @@ import { skipWhenEdgeMissing, box, clearLog, log, openFixture, overlay, popover,
 
 test.beforeEach(skipWhenEdgeMissing);
 
-const NUDGED = /driver-popover-nudge/;
+const NUDGED = /vt-popover-nudge/;
 
 type Behavior = "close" | "nextStep" | "none" | "function";
 

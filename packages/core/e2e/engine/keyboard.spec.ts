@@ -230,7 +230,7 @@ test.describe("keyboard on a plain tour", () => {
     await page.keyboard.press("ArrowRight");
     await expect(title(page)).toHaveText("Field");
     await settle(page);
-    await page.locator(".driver-popover-next-btn").focus();
+    await page.locator(".vt-popover-next-btn").focus();
     await page.keyboard.press("ArrowLeft");
     await expect(title(page)).toHaveText("One");
     await settle(page);

@@ -10,7 +10,7 @@ type OverlayConfig = {
   stageRadius?: number;
 };
 
-const path = (page: Page) => page.locator(".driver-overlay path");
+const path = (page: Page) => page.locator(".vt-overlay path");
 
 const cutout = (page: Page) =>
   path(page).evaluate(element => {
@@ -168,7 +168,7 @@ test.describe("cutout", () => {
     await expect(popover(page)).toHaveCount(1);
     expect(await page.evaluate(() => window.tour.isActive())).toBe(true);
 
-    await page.addStyleTag({ content: ".driver-active .driver-overlay { pointer-events: auto; }" });
+    await page.addStyleTag({ content: "[data-vt-active] [data-vt-overlay] { pointer-events: auto; }" });
     expect(await topElementAt(page, element.x - 12, element.y + element.height / 2)).toBe("overlay");
     await page.mouse.click(element.x - 12, element.y + element.height / 2);
     await settle(page);
@@ -237,7 +237,7 @@ test.describe("allowed elements", () => {
   });
 
   const isDimmed = (page: Page, x: number, y: number) =>
-    page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest(".driver-overlay"), { x, y });
+    page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest(".vt-overlay"), { x, y });
 
   async function driveOverlapping(page: Page, html: string, allowedElements: string) {
     await page.evaluate(

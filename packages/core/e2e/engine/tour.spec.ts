@@ -51,7 +51,7 @@ test.describe("basic tour", () => {
 
     await expect.poll(() => topElementAt(page, target.x + 5, target.y + target.height / 2)).toBe("intro");
     expect(await topElementAt(page, viewport.width - 5, viewport.height - 5)).toBe("overlay");
-    await expect(page.locator(".driver-popover-progress-text")).toHaveText("1 of 3");
+    await expect(page.locator(".vt-popover-progress-text")).toHaveText("1 of 3");
     await expect(prevButton(page)).toBeDisabled();
   });
 
@@ -62,8 +62,8 @@ test.describe("basic tour", () => {
     const target = await box(page.locator("#two"));
     const pop = await box(popover(page));
     expect(pop.x).toBeGreaterThanOrEqual(target.x + target.width);
-    await expect(page.locator("#two")).toHaveClass(/driver-active-element/);
-    await expect(page.locator("#intro")).not.toHaveClass(/driver-active-element/);
+    await expect(page.locator("#two")).toHaveAttribute("data-vt-target");
+    await expect(page.locator("#intro")).not.toHaveAttribute("data-vt-target");
 
     await prevButton(page).click();
     await expect(title(page)).toHaveText("Intro");
@@ -89,7 +89,7 @@ test.describe("basic tour", () => {
     await expect(popover(page)).toHaveCount(0);
     await expect(overlay(page)).toHaveCount(0);
     expect(await page.evaluate(() => document.body.className)).toBe("");
-    expect(await page.evaluate(() => document.querySelectorAll("[class*=driver-]").length)).toBe(0);
+    expect(await page.evaluate(() => document.querySelectorAll("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]").length)).toBe(0);
   });
 
   test("scrolls an off-screen step into view", async ({ page }) => {
@@ -115,7 +115,7 @@ test.describe("public methods", () => {
     await expect(title(page)).toHaveText("Solo");
     await expect(description(page)).toHaveText("Just this");
     await expect(nextButton(page)).toBeHidden();
-    await expect(page.locator(".driver-popover-footer")).toBeHidden();
+    await expect(page.locator(".vt-popover-footer")).toBeHidden();
     await expect(overlay(page)).toHaveCount(1);
 
     const target = await box(page.locator("#two"));
@@ -157,7 +157,7 @@ test.describe("public methods", () => {
     await page.evaluate(() => window.tour.destroy());
     await expect(popover(page)).toHaveCount(0);
     await expect(overlay(page)).toHaveCount(0);
-    expect(await page.evaluate(() => document.querySelectorAll("[class*=driver-]").length)).toBe(0);
+    expect(await page.evaluate(() => document.querySelectorAll("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]").length)).toBe(0);
   });
 
   test("moveNext() from inside onHighlighted lands on the next step", async ({ page }) => {
@@ -202,7 +202,7 @@ test.describe("public methods", () => {
 
       await expect(popover(page)).toHaveCount(0);
       await expect(overlay(page)).toHaveCount(0);
-      expect(await page.evaluate(() => document.querySelectorAll("[class*=driver-]").length)).toBe(0);
+      expect(await page.evaluate(() => document.querySelectorAll("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]").length)).toBe(0);
     }
   });
 });
@@ -222,7 +222,7 @@ test("moveTo on a driver that is not running starts the tour, and destroy leaves
   await expect(title(page)).toHaveText("Second");
   await expect(overlay(page)).toHaveCount(1);
   expect(
-    await page.evaluate(() => [window.tour.isActive(), document.body.classList.contains("driver-active")])
+    await page.evaluate(() => [window.tour.isActive(), document.body.hasAttribute("data-vt-active")])
   ).toEqual([true, true]);
   await page.keyboard.press("ArrowLeft");
   await expect(title(page)).toHaveText("First");
@@ -231,7 +231,7 @@ test("moveTo on a driver that is not running starts the tour, and destroy leaves
   await expect(popover(page)).toHaveCount(0);
   await expect(overlay(page)).toHaveCount(0);
   expect(
-    await page.evaluate(() => [document.body.className, document.querySelectorAll("[class*=driver-]").length])
+    await page.evaluate(() => [document.body.className, document.querySelectorAll("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]").length])
   ).toEqual(["", 0]);
   await page.locator("#three").click();
 });
@@ -251,7 +251,7 @@ test("setSteps on a running tour ends it and leaves nothing on the page", async 
   await expect(popover(page)).toHaveCount(0);
   await expect(overlay(page)).toHaveCount(0);
   expect(
-    await page.evaluate(() => [window.tour.isActive(), document.querySelectorAll("[class*=driver-]").length])
+    await page.evaluate(() => [window.tour.isActive(), document.querySelectorAll("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]").length])
   ).toEqual([false, 0]);
   expect(await log(page)).toEqual([]);
   await page.locator("#three").click();
@@ -263,7 +263,7 @@ test("setSteps on a running tour ends it and leaves nothing on the page", async 
 test("plain CSS can hide popover parts without !important", async ({ page }) => {
   await page.evaluate(() => {
     const style = document.createElement("style");
-    style.textContent = ".driver-popover-progress-text, .driver-popover-prev-btn:disabled { display: none; }";
+    style.textContent = ".vt-popover-progress-text, .vt-popover-prev-btn:disabled { display: none; }";
     document.head.appendChild(style);
 
     window.tour = window.__engine.createEngine({
@@ -278,7 +278,7 @@ test("plain CSS can hide popover parts without !important", async ({ page }) => 
   });
   await expect(title(page)).toHaveText("One");
 
-  await expect(page.locator(".driver-popover-progress-text")).toBeHidden();
-  await expect(page.locator(".driver-popover-prev-btn")).toBeHidden();
-  await expect(page.locator(".driver-popover-next-btn")).toBeVisible();
+  await expect(page.locator(".vt-popover-progress-text")).toBeHidden();
+  await expect(page.locator(".vt-popover-prev-btn")).toBeHidden();
+  await expect(page.locator(".vt-popover-next-btn")).toBeVisible();
 });

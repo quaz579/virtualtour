@@ -13,6 +13,7 @@ import { PositionOptions, repositionPopover } from "../popover/position";
 import { isDummyElement, resolveElement } from "../core/utils";
 import { isFocusWithinStep } from "./allowed";
 import { announce } from "../popover/live-region";
+import { fixedNames } from "../core/namespace";
 import { stepOption } from "../core/options";
 import { clearWait, isDone, isWaiting, setWait } from "./lifecycle";
 
@@ -170,6 +171,7 @@ function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): P
     offset: stagePadding + (ctx.getConfig("popoverOffset") || 0),
     padding: stagePadding,
     centered: isDummyElement(element),
+    sideAttribute: ctx.names.sideAttr,
   };
 }
 
@@ -254,10 +256,21 @@ export function renderStepPopover(ctx: Context, element: Element, step: DriveSte
     keepFocus,
   });
 
+  syncStepAttribute(ctx, popover);
   showStepPopoverState(ctx);
 
   if (keepFocus) {
     announce(ctx, popoverText(popover).filter(Boolean).join(". "));
+  }
+}
+
+function syncStepAttribute(ctx: Context, popover: PopoverDOM) {
+  const { wrapper } = popover;
+  const index = ctx.getState("activeIndex");
+  if (index === undefined) {
+    wrapper.removeAttribute(ctx.names.stepAttr);
+  } else {
+    wrapper.setAttribute(ctx.names.stepAttr, String(index));
   }
 }
 
@@ -298,7 +311,7 @@ function showPopoverWaiting(ctx: Context) {
     return;
   }
 
-  popover.wrapper.classList.add("driver-popover-waiting");
+  popover.wrapper.classList.add(fixedNames.popover.waiting);
   popover.wrapper.setAttribute("aria-busy", "true");
   toggleButton(popover.nextButton, true);
   toggleButton(popover.previousButton, true);
@@ -319,7 +332,7 @@ export function clearStepPopoverWaiting(ctx: Context, element: Element | undefin
     return;
   }
 
-  popover.wrapper.classList.remove("driver-popover-waiting");
+  popover.wrapper.classList.remove(fixedNames.popover.waiting);
   popover.wrapper.removeAttribute("aria-busy");
   if (element && step) {
     updateStepPopover(ctx, element, step);

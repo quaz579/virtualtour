@@ -4,7 +4,7 @@ import { createDriver, navButton, nextFrame, popoverEl, SAMPLE_STEPS, useDriverH
 useDriverHarness();
 
 const tick = (ms = 10) => new Promise(resolve => setTimeout(resolve, ms));
-const isPopoverNudged = () => !!popoverEl()?.classList.contains("driver-popover-nudge");
+const isPopoverNudged = () => !!popoverEl()?.classList.contains("vt-popover-nudge");
 
 async function start(config: Parameters<typeof createDriver>[0] = {}) {
   const d = createDriver({ animate: false, steps: SAMPLE_STEPS, ...config });
@@ -15,7 +15,7 @@ async function start(config: Parameters<typeof createDriver>[0] = {}) {
 
 describe("nudge", () => {
   afterEach(() => {
-    document.documentElement.style.removeProperty("--driver-nudge-duration");
+    document.documentElement.style.removeProperty("--vt-nudge-duration");
   });
 
   it("shakes the popover", async () => {
@@ -31,7 +31,7 @@ describe("nudge", () => {
 
     d.nudge({ description: "Not quite" });
 
-    expect(popoverEl()?.querySelector(".driver-popover-description")?.textContent).toBe("Not quite");
+    expect(popoverEl()?.querySelector(".vt-popover-description")?.textContent).toBe("Not quite");
     expect(isPopoverNudged()).toBe(true);
   });
 
@@ -41,7 +41,7 @@ describe("nudge", () => {
 
     d.nudge();
 
-    expect(popoverEl()?.querySelector(".driver-popover-description")?.textContent).toBe("Not quite");
+    expect(popoverEl()?.querySelector(".vt-popover-description")?.textContent).toBe("Not quite");
   });
 
   it("never touches the highlighted element itself", async () => {
@@ -56,7 +56,7 @@ describe("nudge", () => {
   });
 
   it("clears itself after the duration when no animation runs", async () => {
-    document.documentElement.style.setProperty("--driver-nudge-duration", "40ms");
+    document.documentElement.style.setProperty("--vt-nudge-duration", "40ms");
     const d = await start();
 
     d.nudge();
@@ -93,9 +93,9 @@ describe("nudge", () => {
   });
 
   describe("with a message", () => {
-    const feedback = () => popoverEl()?.querySelector<HTMLElement>(".driver-popover-feedback");
-    const liveRegion = () => document.querySelector(".driver-live-region")?.textContent;
-    const description = () => popoverEl()?.querySelector(".driver-popover-description")?.textContent;
+    const feedback = () => popoverEl()?.querySelector<HTMLElement>(".vt-popover-feedback");
+    const liveRegion = () => document.querySelector(".vt-live-region")?.textContent;
+    const description = () => popoverEl()?.querySelector(".vt-popover-description")?.textContent;
 
     const actionSteps = [
       { ...SAMPLE_STEPS[0], popover: { title: "Act", description: "Why", instruction: "Do it." } },
@@ -111,7 +111,7 @@ describe("nudge", () => {
       expect(feedback()?.style.display).toBe("");
       expect(isPopoverNudged()).toBe(true);
       expect(description()).toBe("Why");
-      expect(popoverEl()?.querySelector(".driver-popover-instruction-text")?.textContent).toBe("Do it.");
+      expect(popoverEl()?.querySelector(".vt-popover-instruction-text")?.textContent).toBe("Do it.");
       expect(d.getActiveStep()?.popover?.instruction).toBe("Do it.");
     });
 
@@ -121,9 +121,9 @@ describe("nudge", () => {
 
       const classes = Array.from(popoverEl()!.children).map(child => child.className.split(" ")[0]);
       expect(classes.slice(-3)).toEqual([
-        "driver-popover-instruction",
-        "driver-popover-feedback",
-        "driver-popover-footer",
+        "vt-popover-instruction",
+        "vt-popover-feedback",
+        "vt-popover-footer",
       ]);
     });
 
@@ -163,7 +163,7 @@ describe("nudge", () => {
       d.nudge("Still here");
       d.updatePopover({ description: "Changed" });
       d.updatePopover();
-      popoverEl()?.classList.remove("driver-popover-nudge");
+      popoverEl()?.classList.remove("vt-popover-nudge");
       navButton("next")?.click();
 
       expect(isPopoverNudged()).toBe(true);

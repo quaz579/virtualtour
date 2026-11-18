@@ -1,3 +1,4 @@
+import { names, type Names } from "./namespace";
 import type { Config, DestroyReason, Driver, DriveStep, HookOpts, PopoverPatch, State } from "../types";
 
 export type {
@@ -61,6 +62,7 @@ function createConfigStore() {
       showButtons: ["next", "previous", "close"],
       disableButtons: [],
       overlayColor: "#000",
+      namespace: "vt",
       ...config,
     };
   }
@@ -135,6 +137,8 @@ export type TourActions = {
 export type Context = {
   tour: TourActions;
 
+  names: Names;
+
   getConfig: GetConfig;
   setConfig: (config?: Config) => void;
 
@@ -142,7 +146,7 @@ export type Context = {
   setState: SetState;
   resetState: () => void;
 
-  setDriver: (driver: Driver) => void;
+  setDriver: (value: Driver) => void;
 
   getHookOpts: (stateOverride?: State, reason?: DestroyReason) => HookOpts;
 
@@ -151,24 +155,28 @@ export type Context = {
 };
 
 export function createContext(options: Config = {}): Omit<Context, "tour"> {
+  const resolvedNames = names(options.namespace);
   const config = createConfigStore();
-  config.configure(options);
+  const configure = (next: Config = {}) => config.configure({ ...next, namespace: resolvedNames.namespace });
+  configure(options);
 
   const state = createStateStore();
 
-  let driver: Driver;
+  let engine: Driver;
   const consumedEvents = new WeakSet<Event>();
 
   return {
+    names: resolvedNames,
+
     getConfig: config.getConfig,
-    setConfig: config.configure,
+    setConfig: configure,
 
     getState: state.getState,
     setState: state.setState,
     resetState: state.resetState,
 
     setDriver: (value: Driver) => {
-      driver = value;
+      engine = value;
     },
 
     getHookOpts: (stateOverride?: State, reason?: DestroyReason) => {
@@ -177,7 +185,7 @@ export function createContext(options: Config = {}): Omit<Context, "tour"> {
       return {
         config: config.getConfig(),
         state: activeState,
-        driver,
+        driver: engine,
         index: activeState.activeIndex,
         ...(reason ? { reason } : {}),
       };

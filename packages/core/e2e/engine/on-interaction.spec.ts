@@ -111,7 +111,7 @@ test.describe("onInteraction", () => {
   test("stays quiet for keys and the popover, prefers a step's own hook, and stops on destroy", async ({ page }) => {
     await page.locator("#hover").focus();
     await page.keyboard.type("a");
-    await page.locator(".driver-popover-description").click();
+    await page.locator(".vt-popover-description").click();
     await nextButton(page).click();
     await expect(title(page)).toHaveText("Two");
     expect(await log(page)).toEqual([]);

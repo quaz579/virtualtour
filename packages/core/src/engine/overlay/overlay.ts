@@ -8,6 +8,7 @@ import {
   removeFromLayer,
 } from "../core/utils";
 import { destroyDriverClick, onDriverClick } from "../core/click";
+import { EXTRA_SELECTOR } from "../core/namespace";
 import { Context } from "../core/context";
 import {
   createStageSvg,
@@ -106,7 +107,7 @@ function allowedCutouts(overlaySvg: SVGSVGElement, cutout: StageCutout): string 
     return "";
   }
 
-  const allowedRects = Array.from(dialog.querySelectorAll(".driver-allowed-element")).map(allowed =>
+  const allowedRects = Array.from(dialog.querySelectorAll(EXTRA_SELECTOR)).map(allowed =>
     allowed.getBoundingClientRect()
   );
 
@@ -154,13 +155,14 @@ function stageOptions(ctx: Context) {
 
 function createOverlaySvg(ctx: Context, stage: StageDefinition): SVGSVGElement {
   const svg = createStageSvg(
-    "driver-overlay driver-overlay-animated",
+    [ctx.names.overlay, ctx.names.overlayAnimated].join(" "),
     generateStageSvgPathString(stage, stageOptions(ctx)),
     ctx.getConfig("overlayColor") || "rgb(0,0,0)",
     `${ctx.getConfig("overlayOpacity")}`
   );
 
   svg.setAttribute("version", "1.1");
+  svg.setAttribute(ctx.names.attr.overlay, "");
   svg.style.cssText +=
     "clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;z-index:10000;position:fixed;top:0;left:0;width:100%;height:100%";
   (svg.firstElementChild as SVGPathElement).style.cursor = "auto";

@@ -3,9 +3,9 @@ import { append, createDriver, navButton, nextFrame, SAMPLE_STEPS, useDriverHarn
 
 useDriverHarness();
 
-const NO_INTERACTION_CLASS = "driver-no-interaction";
+const NO_INTERACTION_CLASS = "vt-target-blocked";
 
-const PARENT_CLASS = "driver-active-element-parent";
+const PARENT_CLASS = "vt-target-parent";
 
 const NESTED_HTML = `
   <div id="container-a"><button id="child-a" type="button">A</button></div>
@@ -63,7 +63,7 @@ describe("active element parent marker", () => {
 
     const dropdown = document.getElementById("dropdown");
     expect(dropdown?.classList.contains(PARENT_CLASS)).toBe(true);
-    expect(dropdown?.classList.contains("driver-active-element-parent-no-scroll")).toBe(false);
+    expect(dropdown?.hasAttribute("data-vt-lock-scroll")).toBe(false);
   });
 });
 
@@ -89,6 +89,49 @@ describe("disableActiveInteraction", () => {
 
     navButton("next")?.click();
     expect(document.querySelector("#card-1")?.classList.contains(NO_INTERACTION_CLASS)).toBe(false);
+  });
+});
+
+describe("marker guard", () => {
+  useDriverHarness();
+
+  it("restores a stripped data-vt-target attribute while the step is on the element", async () => {
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS });
+    d.drive();
+    const intro = document.querySelector("#intro")!;
+
+    intro.removeAttribute("data-vt-target");
+    await nextFrame();
+
+    expect(intro.hasAttribute("data-vt-target")).toBe(true);
+    expect(intro.classList.contains("vt-target")).toBe(true);
+  });
+
+  it("restores a stripped data-vt-blocked attribute", async () => {
+    const d = createDriver({ animate: false, disableActiveInteraction: true, steps: SAMPLE_STEPS });
+    d.drive();
+    const intro = document.querySelector("#intro")!;
+
+    intro.removeAttribute("data-vt-blocked");
+    await nextFrame();
+
+    expect(intro.hasAttribute("data-vt-blocked")).toBe(true);
+    expect(intro.classList.contains("vt-target-blocked")).toBe(true);
+  });
+
+  it("restores a stripped data-vt-raised attribute", async () => {
+    const d = createDriver({
+      animate: false,
+      steps: [{ element: "#card-1", allowedElements: "#card-1", popover: { title: "One" } }],
+    });
+    d.drive();
+    const card = document.querySelector("#card-1")!;
+    expect(card.hasAttribute("data-vt-raised")).toBe(true);
+
+    card.removeAttribute("data-vt-raised");
+    await nextFrame();
+
+    expect(card.hasAttribute("data-vt-raised")).toBe(true);
   });
 });
 
@@ -157,7 +200,7 @@ describe("aria attributes on the highlighted element", () => {
     d.drive();
 
     const button = document.getElementById("plain");
-    expect(button?.getAttribute("aria-controls")).toBe("driver-popover-content");
+    expect(button?.getAttribute("aria-controls")).toBe("vt-popover-content");
     expect(button?.getAttribute("aria-expanded")).toBe("true");
     expect(button?.getAttribute("aria-haspopup")).toBe("dialog");
   });
@@ -213,7 +256,7 @@ describe("aria attributes on the highlighted element", () => {
 
     navButton("prev")?.click();
 
-    expect(first?.getAttribute("aria-controls")).toBe("driver-popover-content");
+    expect(first?.getAttribute("aria-controls")).toBe("vt-popover-content");
     expect(second?.getAttribute("aria-haspopup")).toBe("menu");
     expect(second?.hasAttribute("aria-expanded")).toBe(false);
   });
@@ -275,7 +318,7 @@ describe("aria attributes on the dummy element", () => {
     const d = createDriver({ animate: false, steps: [{ popover: { title: "Centered" } }] });
     d.drive();
 
-    const dummy = document.getElementById("driver-dummy-element");
+    const dummy = document.getElementById("vt-dummy-element");
     expect(dummy).not.toBeNull();
     expect(dummy?.hasAttribute("aria-controls")).toBe(false);
     expect(dummy?.hasAttribute("aria-expanded")).toBe(false);
@@ -283,12 +326,12 @@ describe("aria attributes on the dummy element", () => {
   });
 });
 
-const DRIVER_ATTRIBUTES = ["aria-haspopup", "aria-expanded", "aria-controls"];
+const ARIA_ATTRIBUTES = ["aria-haspopup", "aria-expanded", "aria-controls"];
 
 function leftovers(element: Element): string[] {
   return [
-    ...DRIVER_ATTRIBUTES.filter(name => element.hasAttribute(name)),
-    ...Array.from(element.classList).filter(name => name.startsWith("driver-")),
+    ...ARIA_ATTRIBUTES.filter(name => element.hasAttribute(name)),
+    ...Array.from(element.classList).filter(name => name.startsWith("vt-")),
   ];
 }
 
@@ -328,7 +371,7 @@ describe("elements removed while highlighted", () => {
 
     expect(leftovers(target)).toEqual([]);
     expect(leftovers(wrapper)).toEqual([]);
-    expect(document.querySelectorAll(".driver-active-element")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-target")).toHaveLength(1);
   });
 
   it("stop being guarded once the tour is over", async () => {

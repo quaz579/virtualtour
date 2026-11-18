@@ -17,7 +17,7 @@ import {
 
 test.beforeEach(skipWhenEdgeMissing);
 
-const WAITING = /driver-popover-waiting/;
+const WAITING = /vt-popover-waiting/;
 
 const addToSlot = (page: Page, html: string) =>
   page.evaluate(html => {
@@ -89,7 +89,7 @@ test.describe("while the tour waits for an element", () => {
 
     await page.keyboard.press("ArrowRight");
     await expect(title(page)).toHaveText("Two");
-    await expect(page.locator("#intro")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#intro")).toHaveAttribute("data-vt-target");
   });
 });
 
@@ -105,7 +105,7 @@ test.describe("focus after a tour that started by waiting", () => {
     });
     await expect(popover(page)).toHaveClass(WAITING);
     await addToSlot(page, `<div id="late">Late</div>`);
-    await expect(page.locator("#late")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#late")).toHaveAttribute("data-vt-target");
     await expect(popover(page)).not.toHaveClass(WAITING);
     await settle(page);
     await expect(page.locator("#three")).not.toBeFocused();
@@ -203,7 +203,7 @@ test.describe("an element that comes back", () => {
       });
       window.tour.drive();
     });
-    await expect(page.locator("#temp")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#temp")).toHaveAttribute("data-vt-target");
     await settle(page);
     const before = await box(page.locator("#temp"));
     await expect.poll(() => topElementAt(page, before.x + 4, before.y + 4)).toBe("temp");
@@ -222,7 +222,7 @@ test.describe("an element that comes back", () => {
       document.querySelector("#slot")!.appendChild(home);
     });
     await expect(popover(page)).not.toHaveClass(WAITING);
-    await expect(page.locator("#temp")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#temp")).toHaveAttribute("data-vt-target");
 
     const after = await box(page.locator("#temp"));
     expect(after.y - before.y).toBeGreaterThan(60);
@@ -271,7 +271,7 @@ test.describe("an element that comes back", () => {
 
     await openDialog(true);
     await expect(page.locator(".app-dialog p")).toHaveText("Second");
-    await expect(page.locator("#in-dialog")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#in-dialog")).toHaveAttribute("data-vt-target");
     await settle(page);
 
     const target = await box(page.locator("#in-dialog"));
@@ -279,7 +279,7 @@ test.describe("an element that comes back", () => {
     const pop = await box(popover(page));
     expect(pop.y).toBeGreaterThanOrEqual(target.y + target.height);
     expect(pop.y - (target.y + target.height)).toBeLessThan(40);
-    const hit = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest(".driver-popover"), {
+    const hit = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest(".vt-popover"), {
       x: pop.x + pop.width / 2,
       y: pop.y + pop.height / 2,
     });
@@ -315,11 +315,11 @@ test.describe("missing and late elements", () => {
     });
 
     await page.locator("#one").click();
-    await expect(popover(page)).toHaveClass(/driver-popover-waiting/);
+    await expect(popover(page)).toHaveClass(/vt-popover-waiting/);
     await expect(title(page)).toHaveText("Open");
     await expect(title(page)).toHaveText("Late");
-    await expect(popover(page)).not.toHaveClass(/driver-popover-waiting/);
-    await expect(page.locator("#late")).toHaveClass(/driver-active-element/);
+    await expect(popover(page)).not.toHaveClass(/vt-popover-waiting/);
+    await expect(page.locator("#late")).toHaveAttribute("data-vt-target");
   });
 
   test("waitForElement shows a waiting popover on the first step", async ({ page }) => {
@@ -334,9 +334,9 @@ test.describe("missing and late elements", () => {
       }, 300);
     });
 
-    await expect(popover(page)).toHaveClass(/driver-popover-waiting/);
-    await expect(page.locator("#late")).toHaveClass(/driver-active-element/);
-    await expect(popover(page)).not.toHaveClass(/driver-popover-waiting/);
+    await expect(popover(page)).toHaveClass(/vt-popover-waiting/);
+    await expect(page.locator("#late")).toHaveAttribute("data-vt-target");
+    await expect(popover(page)).not.toHaveClass(/vt-popover-waiting/);
   });
 
   test("onElementMissing hears about a removed element", async ({ page }) => {
@@ -379,7 +379,7 @@ test.describe("missing and late elements", () => {
       document.querySelector("#slot")!.innerHTML =
         `<p style="margin-top:80px"><button id="temp" type="button">Temp again</button></p>`;
     });
-    await expect(page.locator("#temp")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#temp")).toHaveAttribute("data-vt-target");
     await settle(page);
 
     const target = await box(page.locator("#temp"));

@@ -9,13 +9,13 @@ declare global {
   }
 }
 
-export const popover = (page: Page) => page.locator(".driver-popover");
-export const title = (page: Page) => page.locator(".driver-popover-title");
-export const description = (page: Page) => page.locator(".driver-popover-description");
-export const overlay = (page: Page) => page.locator(".driver-overlay");
-export const nextButton = (page: Page) => page.locator(".driver-popover-next-btn");
-export const prevButton = (page: Page) => page.locator(".driver-popover-prev-btn");
-export const closeButton = (page: Page) => page.locator(".driver-popover-close-btn");
+export const popover = (page: Page) => page.locator(".vt-popover");
+export const title = (page: Page) => page.locator(".vt-popover-title");
+export const description = (page: Page) => page.locator(".vt-popover-description");
+export const overlay = (page: Page) => page.locator(".vt-overlay");
+export const nextButton = (page: Page) => page.locator(".vt-popover-next-btn");
+export const prevButton = (page: Page) => page.locator(".vt-popover-prev-btn");
+export const closeButton = (page: Page) => page.locator(".vt-popover-close-btn");
 
 export async function openFixture(page: Page) {
   await page.goto("/e2e.html");
@@ -57,7 +57,7 @@ export const topElementAt = (page: Page, x: number, y: number) =>
         return "none";
       }
 
-      return element.id || (element.closest(".driver-overlay") ? "overlay" : element.tagName.toLowerCase());
+      return element.id || (element.closest(".vt-overlay") ? "overlay" : element.tagName.toLowerCase());
     },
     { x, y }
   );

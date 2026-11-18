@@ -40,7 +40,7 @@ import {
   updateStepPopover,
 } from "./tour/step";
 import { isDummyElement, resolveElement } from "./core/utils";
-import "./styles/driver.css";
+import "./styles/engine.css";
 
 let teardownActive: (() => void) | undefined;
 
@@ -384,11 +384,17 @@ export function createEngine(options: Config = {}): Driver {
     teardownActive = teardown;
 
     ctx.setState("isInitialized", true);
-    document.body.classList.add("driver-active", ctx.getConfig("animate") ? "driver-fade" : "driver-simple");
+    const { names } = ctx;
+    const isAnimated = !!ctx.getConfig("animate");
+    document.body.classList.add(names.active, isAnimated ? names.fade : names.simple);
+    document.body.setAttribute(names.attr.active, "");
+    document.body.setAttribute(names.attr.dim, "");
+    document.body.toggleAttribute(names.attr.fade, isAnimated);
     if (!ctx.getConfig("allowScroll")) {
-      document.body.classList.add("driver-no-scroll");
+      document.body.classList.add(names.noScroll);
+      document.body.setAttribute(names.attr.lockScroll, "");
     }
-    document.body.style.setProperty("--driver-animation-duration", `${ctx.getConfig("duration") || 400}ms`);
+    document.body.style.setProperty(names.animationDurationVar, `${ctx.getConfig("duration") || 400}ms`);
 
     initEvents(ctx);
     mountLiveRegion(ctx);
@@ -465,8 +471,13 @@ export function createEngine(options: Config = {}): Driver {
       teardownActive = undefined;
     }
 
-    document.body.classList.remove("driver-active", "driver-fade", "driver-simple", "driver-no-scroll");
-    document.body.style.removeProperty("--driver-animation-duration");
+    const { names } = ctx;
+    document.body.classList.remove(names.active, names.fade, names.simple, names.noScroll);
+    document.body.removeAttribute(names.attr.active);
+    document.body.removeAttribute(names.attr.dim);
+    document.body.removeAttribute(names.attr.fade);
+    document.body.removeAttribute(names.attr.lockScroll);
+    document.body.style.removeProperty(names.animationDurationVar);
 
     cancelElementWait(ctx);
     endActivation(ctx);

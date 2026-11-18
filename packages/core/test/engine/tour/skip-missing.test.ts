@@ -112,7 +112,7 @@ describe("skipMissingElement", () => {
     d.drive(1);
 
     expect(navButton("next")?.textContent).toBe("Done");
-    expect(navButton("next")?.classList.contains("driver-popover-done-btn")).toBe(true);
+    expect(navButton("next")?.classList.contains("vt-popover-done-btn")).toBe(true);
     expect(d.isLastStep()).toBe(true);
     expect(d.hasNextStep()).toBe(false);
     expect(d.getNextStep()).toBeUndefined();

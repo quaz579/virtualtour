@@ -3,7 +3,7 @@ import { refreshActiveHighlight } from "../tour/highlight";
 import { getFocusableElements } from "../core/utils";
 import { initGate } from "./gate";
 import { handledKeys, isFocusInPlay, isKeyCarriedOverFromEarlierStep, isKeyInPlay, keyId } from "./keys";
-import { ALLOWED_CLASS } from "../tour/allowed";
+import { EXTRA_SELECTOR } from "../core/namespace";
 
 export function requireRefresh(ctx: Context) {
   const resizeTimeout = ctx.getState("__resizeTimeout");
@@ -45,7 +45,7 @@ function trapFocus(ctx: Context, e: KeyboardEvent) {
       getFocusableElements([
         ...(popoverEl ? [popoverEl] : []),
         ...(activeElement ? [activeElement] : []),
-        ...Array.from(document.querySelectorAll(`.${ALLOWED_CLASS}`)),
+        ...Array.from(document.querySelectorAll(EXTRA_SELECTOR)),
       ])
     ),
   ];
