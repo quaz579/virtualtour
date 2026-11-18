@@ -69,7 +69,7 @@ export type {
 export type { StageDefinition } from "./overlay/stage";
 export type { PopoverDOM, Side, Alignment, AllowedButtons } from "./popover/popover";
 
-export function driver(options: Config = {}): Driver {
+export function createEngine(options: Config = {}): Driver {
   const ctx: Context = Object.assign(createContext(options), {
     tour: {
       drive,
@@ -285,7 +285,7 @@ export function driver(options: Config = {}): Driver {
     warnedSteps.add(definition);
 
     const name = index === undefined ? "The highlight" : `Step ${index + 1}`;
-    console.warn(`[driver.js] ${name} can't complete: disableActiveInteraction blocks its advanceOn events.`);
+    console.warn(`[virtualtour] ${name} can't complete: disableActiveInteraction blocks its advanceOn events.`);
   }
 
   function armActivation(activation: Activation) {
