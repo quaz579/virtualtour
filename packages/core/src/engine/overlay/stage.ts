@@ -44,7 +44,7 @@ export function createStageSvg(className: string, path: string, fill: string, op
 export type StageCutout = StageDefinition & { radii: StageCornerRadius };
 
 function clampRadius(value: number | undefined, width: number, height: number): number {
-  const limited = Math.min(value ?? 0, width / 2, height / 2);
+  const limited = Math.min(Number(value) || 0, width / 2, height / 2);
   return Math.floor(Math.max(limited, 0));
 }
 
