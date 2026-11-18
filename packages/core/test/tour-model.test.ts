@@ -43,6 +43,11 @@ describe("createTour", () => {
     expect(ids(tour)).toEqual(["step-1", "step-2"]);
   });
 
+  it("skips a generated id that a later explicit id will take", () => {
+    const tour = createTour({ steps: [{}, { id: "step-1" }, {}] });
+    expect(ids(tour)).toEqual(["step-2", "step-1", "step-3"]);
+  });
+
   it("rejects duplicate step ids", () => {
     expect(() => createTour({ steps: [{ id: "a" }, { id: "a" }] })).toThrow(TourNavigationError);
   });

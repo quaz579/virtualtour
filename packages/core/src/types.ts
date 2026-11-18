@@ -85,7 +85,7 @@ export interface TourLike {
   readonly id: string;
 }
 
-/** Minimal shape of a step as seen by the compiler and button handlers. */
+/** Minimal shape of a step as seen by the compiler. */
 export interface TourStepLike {
   readonly id: string;
   readonly config: Readonly<StepConfig>;
@@ -228,10 +228,10 @@ export interface TourConfig {
   /** `true` shows "1 of 3"; a function receives the 1-based index and the step count. */
   counter?: boolean | ((index: number, total: number) => string);
   labels?: { next?: string; back?: string; done?: string; close?: string };
-  /** Hook that cleans HTML before it reaches the page. */
   progress?: ProgressConfig;
   /** Replaces the built-in dialog presenter. */
   presenter?: PresenterFactory;
+  /** Hook that cleans HTML before it reaches the page. */
   sanitize?: (html: string) => string;
   animate?: boolean;
 }

@@ -48,7 +48,9 @@ export class Tour {
       presenter: null,
     };
     internals.set(this, state);
-    for (const def of normalized.steps) state.steps.push(this.createStep(def));
+    const reserved = new Set<string>();
+    for (const def of normalized.steps) if (def.id !== undefined) reserved.add(def.id);
+    for (const def of normalized.steps) state.steps.push(this.createStep(def, reserved));
   }
 
   /** The steps in order. Created eagerly, so no DOM is needed. */
@@ -153,13 +155,14 @@ export class Tour {
     internalsOf(this).emitter.off(e, fn);
   }
 
-  private createStep(def: StepConfig): TourStep {
+  private createStep(def: StepConfig, reserved?: ReadonlySet<string>): TourStep {
     const state = internalsOf(this);
     const taken = (id: string): boolean => state.steps.some((s) => s.id === id);
+    const unavailable = (id: string): boolean => taken(id) || (reserved?.has(id) ?? false);
     let id = def.id;
     if (id === undefined) {
       do id = `step-${state.nextStepNumber++}`;
-      while (taken(id));
+      while (unavailable(id));
     } else if (taken(id)) {
       throw new TourNavigationError(`[virtualtour] Duplicate step id "${id}" in tour "${this.id}".`);
     }

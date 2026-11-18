@@ -8,7 +8,7 @@ const edgeCandidates = [
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
 ];
 const edgeMissing = !edgeCandidates.some((path) => existsSync(path));
-const port = Number(process.env["VT_E2E_PORT"] ?? 4173);
+const port = Number(process.env["VT_E2E_PORT"] || 4173);
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error(`VT_E2E_PORT must be a port number, got "${process.env["VT_E2E_PORT"]}"`);
 }
