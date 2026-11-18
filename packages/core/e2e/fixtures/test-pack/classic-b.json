@@ -1,0 +1,200 @@
+{
+  "frameWidth": 32,
+  "frameHeight": 32,
+  "animations": {
+    "RestPose": {
+      "frames": [
+        {
+          "duration": 500,
+          "position": [
+            0,
+            0
+          ]
+        }
+      ],
+      "loop": true
+    },
+    "Wave": {
+      "frames": [
+        {
+          "duration": 90,
+          "position": [
+            32,
+            0
+          ]
+        },
+        {
+          "duration": 90,
+          "position": [
+            64,
+            0
+          ]
+        },
+        {
+          "duration": 90,
+          "position": [
+            96,
+            0
+          ]
+        }
+      ],
+      "loop": false
+    },
+    "Thinking": {
+      "frames": [
+        {
+          "duration": 120,
+          "position": [
+            0,
+            32
+          ]
+        },
+        {
+          "duration": 120,
+          "position": [
+            32,
+            32
+          ]
+        }
+      ],
+      "loop": true
+    },
+    "IdleBlink": {
+      "frames": [
+        {
+          "duration": 80,
+          "position": [
+            64,
+            32
+          ]
+        }
+      ]
+    },
+    "IdleWobble": {
+      "frames": [
+        {
+          "duration": 80,
+          "position": [
+            96,
+            32
+          ]
+        }
+      ]
+    },
+    "IdleLook": {
+      "frames": [
+        {
+          "duration": 80,
+          "position": [
+            0,
+            64
+          ]
+        }
+      ]
+    },
+    "GestureLeft": {
+      "frames": [
+        {
+          "duration": 80,
+          "position": [
+            32,
+            64
+          ]
+        }
+      ]
+    },
+    "GestureRight": {
+      "frames": [
+        {
+          "duration": 80,
+          "position": [
+            64,
+            64
+          ]
+        }
+      ]
+    },
+    "GestureUp": {
+      "frames": [
+        {
+          "duration": 80,
+          "position": [
+            96,
+            64
+          ]
+        }
+      ]
+    },
+    "GestureDown": {
+      "frames": [
+        {
+          "duration": 80,
+          "position": [
+            0,
+            96
+          ]
+        }
+      ]
+    },
+    "Explain": {
+      "frames": [
+        {
+          "duration": 80,
+          "position": [
+            32,
+            96
+          ]
+        }
+      ]
+    },
+    "Congratulate": {
+      "frames": [
+        {
+          "duration": 200,
+          "position": [
+            64,
+            96
+          ]
+        }
+      ],
+      "loop": true
+    },
+    "Alert": {
+      "frames": [
+        {
+          "duration": 150,
+          "position": [
+            96,
+            96
+          ]
+        }
+      ]
+    },
+    "GoodBye": {
+      "frames": [
+        {
+          "duration": 90,
+          "position": [
+            96,
+            0
+          ]
+        },
+        {
+          "duration": 90,
+          "position": [
+            64,
+            0
+          ]
+        },
+        {
+          "duration": 90,
+          "position": [
+            32,
+            0
+          ]
+        }
+      ],
+      "loop": false
+    }
+  }
+}
