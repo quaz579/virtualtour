@@ -8,6 +8,10 @@ const edgeCandidates = [
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
 ];
 const edgeMissing = !edgeCandidates.some((path) => existsSync(path));
+const port = Number(process.env["VT_E2E_PORT"] ?? 4173);
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error(`VT_E2E_PORT must be a port number, got "${process.env["VT_E2E_PORT"]}"`);
+}
 
 export default defineConfig({
   testDir: "./e2e",
@@ -16,14 +20,14 @@ export default defineConfig({
   retries: process.env["CI"] ? 1 : 0,
   reporter: [["list"]],
   use: {
-    baseURL: "http://localhost:4173",
+    baseURL: `http://localhost:${port}`,
     viewport: { width: 1280, height: 800 },
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev --workspace virtualtour-demo",
+    command: `npm run dev --workspace virtualtour-demo -- --port ${port}`,
     cwd: "../..",
-    url: "http://localhost:4173/e2e.html",
+    url: `http://localhost:${port}/e2e.html`,
     reuseExistingServer: false,
     timeout: 60_000,
   },
