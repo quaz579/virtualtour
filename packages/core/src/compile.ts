@@ -235,7 +235,8 @@ export function compileTour(c: NormalizedTourConfig, steps: readonly TourStepLik
 
 /**
  * Compiles one step with its function-valued title, label, instruction and body evaluated.
- * Tour-level fields (the progress text) are not included. Pass the tour's `dimOptions.radius` as
+ * `step.config` must already include the tour's step defaults (see `resolveStepConfig`). Tour-level fields
+ * (the progress text) are not included. Pass the tour's `dimOptions.radius` as
  * `dimRadius` so partial corner radii fall back exactly as in {@link compileTour}.
  */
 export function compileStepForShow(step: TourStepLike, dimRadius: number | CornerRadius = DEFAULT_DIM.radius): EngineStep {

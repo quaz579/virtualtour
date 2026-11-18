@@ -110,6 +110,15 @@ describe("Emitter", () => {
     expect(b).not.toHaveBeenCalled();
   });
 
+  it("off(undefined, fn) is a no-op", () => {
+    const e = new Emitter<Events>();
+    const fn = vi.fn();
+    e.on("b", fn);
+    e.off(undefined, fn);
+    e.emit("b", "x");
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it("binds ctx as this", () => {
     const e = new Emitter<Events>();
     const ctx = { name: "ctx" };

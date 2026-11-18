@@ -22,6 +22,7 @@ export class Emitter<Events extends object> {
   /** Removes every handler, every handler of one event, or every registration of one handler for one event. */
   off<E extends keyof Events>(e?: E, fn?: (payload: Events[E]) => void): void {
     if (e === undefined) {
+      if (fn !== undefined) return;
       for (const list of this.listeners.values()) for (const l of list) l.active = false;
       this.listeners.clear();
       return;
