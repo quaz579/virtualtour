@@ -183,6 +183,24 @@ test.describe("scroll following", () => {
     expect(await scrollerTop(page)).toBe(100);
   });
 
+  test("follows a wheel over the target as it moves the scroller", async ({ page, browserName }) => {
+    test.skip(browserName === "webkit", "WebKit does not route wheel to a scroller under the dim overlay");
+    await start(page);
+    const initial = await popoverOffset(page);
+
+    for (let step = 0; step < 5; step += 1) {
+      await page.locator("#middle").hover();
+      const before = await scrollerTop(page);
+      await page.mouse.wheel(0, 20);
+      await expect.poll(() => scrollerTop(page)).toBeGreaterThan(before);
+      await settle(page);
+
+      const offset = await popoverOffset(page);
+      expect(Math.abs(offset.dx - initial.dx)).toBeLessThanOrEqual(1);
+      expect(Math.abs(offset.dy - initial.dy)).toBeLessThanOrEqual(1);
+    }
+  });
+
   test("lockScrollParent: true keeps the scroller from moving", async ({ page }) => {
     await start(page, true);
     await expect(scroller(page)).toHaveAttribute("data-vt-lock-scroll");
