@@ -638,3 +638,46 @@ describe("review round 1", () => {
   });
 });
 
+describe("review round 2", () => {
+  it("a chosen step dropped while it prepares hands the move to the next step", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const tour = make([{ id: "a" }, { id: "b", prepare: () => gate }, { id: "c" }]);
+    await tour.start();
+    const moving = tour.forward();
+    await tick(10);
+    tour.dropStep("b");
+    release();
+    await moving;
+    expect(tour.currentStep?.id).toBe("c");
+  });
+
+  it("a chosen step dropped while it prepares ends the tour when nothing follows", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const tour = make([{ id: "a" }, { id: "b", prepare: () => gate }]);
+    await tour.start();
+    const log = record(tour);
+    const moving = tour.forward();
+    await tick(10);
+    tour.dropStep("b");
+    release();
+    await moving;
+    expect(log).toContain("tour:finished");
+  });
+
+  it("a step dropped while backward navigation prepares it hands the move to the previous step", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const tour = make([{ id: "a" }, { id: "b", prepare: () => gate }, { id: "c" }]);
+    await tour.start();
+    await tour.goTo("c");
+    const moving = tour.backward();
+    await tick(10);
+    tour.dropStep("b");
+    release();
+    await moving;
+    expect(tour.currentStep?.id).toBe("a");
+  });
+});
+

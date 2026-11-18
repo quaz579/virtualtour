@@ -96,7 +96,8 @@ describe("autoAdvance on a tour (AD-1, AD-2)", () => {
     await tour.start();
     click("#save");
     click("#save");
-    await tick(30);
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("b"));
+    await tick(60);
     expect(tour.currentStep?.id).toBe("b");
   });
 
@@ -241,6 +242,41 @@ describe("auto-advance listener lifecycle", () => {
     click("#save");
     await tick(30);
     expect(order).toEqual(["page", "will-show"]);
+  });
+
+  it("dropping another step keeps the shown step's listener", async () => {
+    const tour = make([
+      { id: "a" },
+      { id: "b", autoAdvance: { event: "click", selector: "#save" } },
+      { id: "c" },
+      { id: "d" },
+    ]);
+    await tour.start();
+    await tour.forward();
+    tour.dropStep("d");
+    click("#save");
+    await tick(30);
+    expect(tour.currentStep?.id).toBe("c");
+  });
+
+  it("a deferred advance is cancelled when the step is left first", async () => {
+    const tour = make([{ id: "a", autoAdvance: { event: "click", selector: "#save" } }, { id: "b" }, { id: "c" }]);
+    await tour.start();
+    click("#save");
+    await tour.goTo("c");
+    await tick(30);
+    expect(tour.currentStep?.id).toBe("c");
+  });
+
+  it("matches through the original target of an event that crossed a shadow boundary", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: "open" });
+    root.innerHTML = '<button id="inner" type="button">x</button>';
+    const onAdvance = vi.fn();
+    listenForAdvance("#inner", "click", onAdvance);
+    root.querySelector<HTMLElement>("#inner")?.dispatchEvent(new Event("click", { bubbles: true, composed: true }));
+    expect(onAdvance).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -11,7 +11,8 @@ export function listenForAdvance(selector: string, events: string | readonly str
   };
   function handler(event: Event): void {
     if (fired) return;
-    const target = event.target;
+    const origin = event.composedPath()[0];
+    const target = origin instanceof Element ? origin : event.target;
     if (!(target instanceof Element)) return;
     let matched: Element | null = null;
     try {

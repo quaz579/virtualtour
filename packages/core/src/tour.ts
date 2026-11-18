@@ -41,7 +41,7 @@ interface TourInternals {
   pendingExit: Promise<boolean> | null;
   previousStep: TourStep | null;
   mounted: { popover: PopoverDOM; step: TourStep } | null;
-  detachAdvance: (() => void) | null;
+  advance: { step: TourStep; detach: () => void; timer: ReturnType<typeof setTimeout> | null } | null;
   waits: Map<TourStep, AbortController>;
 }
 
@@ -80,7 +80,7 @@ export class Tour {
       pendingExit: null,
       previousStep: null,
       mounted: null,
-      detachAdvance: null,
+      advance: null,
       waits: new Map(),
     };
     internals.set(this, state);
@@ -300,10 +300,12 @@ function settle(state: TourInternals): void {
   waiter?.();
 }
 
-function detachAdvance(state: TourInternals): void {
-  const detach = state.detachAdvance;
-  state.detachAdvance = null;
-  detach?.();
+function detachAdvance(state: TourInternals, only?: TourStep): void {
+  const advance = state.advance;
+  if (!advance || (only !== undefined && advance.step !== only)) return;
+  state.advance = null;
+  if (advance.timer !== null) clearTimeout(advance.timer);
+  advance.detach();
 }
 
 function stepOf(tour: Tour, driveStep: DriveStep | undefined): TourStep | undefined {
@@ -313,7 +315,7 @@ function stepOf(tour: Tour, driveStep: DriveStep | undefined): TourStep | undefi
 
 function leaveStep(tour: Tour, step: TourStep): void {
   const state = internalsOf(tour);
-  detachAdvance(state);
+  detachAdvance(state, step);
   if (!step.isShown()) return;
   guarded("presenter.beforeLeave", () => state.presenter?.beforeLeave(step));
   emitStep(step, "will-hide", { step });
@@ -473,13 +475,15 @@ function attachAdvance(tour: Tour, step: TourStep): void {
   detachAdvance(state);
   const auto = step.config.autoAdvance;
   if (auto?.selector === undefined) return;
-  const detach = listenForAdvance(auto.selector, auto.event, () => {
-    if (state.detachAdvance === detach) state.detachAdvance = null;
-    setTimeout(() => {
+  const advance: NonNullable<TourInternals["advance"]> = { step, detach: () => {}, timer: null };
+  advance.detach = listenForAdvance(auto.selector, auto.event, () => {
+    advance.timer = setTimeout(() => {
+      if (state.advance === advance) state.advance = null;
+      advance.timer = null;
       if (state.running && !state.ending && state.steps[state.currentIndex] === step) reportFailure(tour.forward());
     }, 0);
   });
-  state.detachAdvance = detach;
+  state.advance = advance;
 }
 
 function isLive(state: TourInternals, runId: number): boolean {
@@ -574,8 +578,27 @@ function advanceFrom(
     if (!isLive(state, runId)) return { kind: "stay" } as NavigationOutcome;
     if (outcome.kind !== "show") return outcome;
     const step = snapshot[outcome.index] as TourStep;
-    return chain(presentStep(tour, step, found.get(step) ?? null), () => ({ kind: "show", index: state.steps.indexOf(step) }) as NavigationOutcome);
+    return chain(presentStep(tour, step, found.get(step) ?? null), (): NavigationOutcome | Promise<NavigationOutcome> => {
+      if (!isLive(state, runId)) return { kind: "stay" };
+      if (state.steps.includes(step)) return { kind: "show", index: state.steps.indexOf(step) };
+      return advanceFrom(tour, resumePoint(state, snapshot, outcome.index, direction), direction);
+    });
   });
+}
+
+function resumePoint(state: TourInternals, snapshot: readonly TourStep[], droppedAt: number, direction: "forward" | "backward"): number {
+  if (direction === "forward") {
+    for (let i = droppedAt - 1; i >= 0; i -= 1) {
+      const at = state.steps.indexOf(snapshot[i] as TourStep);
+      if (at >= 0) return at;
+    }
+    return -1;
+  }
+  for (let i = droppedAt + 1; i < snapshot.length; i += 1) {
+    const at = state.steps.indexOf(snapshot[i] as TourStep);
+    if (at >= 0) return at;
+  }
+  return state.steps.length;
 }
 
 function concludeNavigation(tour: Tour, runId: number, outcome: NavigationOutcome): void {
