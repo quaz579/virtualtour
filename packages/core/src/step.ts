@@ -124,7 +124,7 @@ export function markShown(step: TourStep, element: HTMLElement, target: Element 
   const state = stateOf(step);
   state.element = element;
   state.resolvedTarget = target;
-  state.resolved = true;
+  state.resolved = false;
   state.shown = true;
   state.disposed = false;
 }

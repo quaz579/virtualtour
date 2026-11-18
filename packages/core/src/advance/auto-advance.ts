@@ -11,14 +11,18 @@ export function listenForAdvance(selector: string, events: string | readonly str
   };
   function handler(event: Event): void {
     if (fired) return;
-    const origin = event.composedPath()[0];
-    const target = origin instanceof Element ? origin : event.target;
-    if (!(target instanceof Element)) return;
-    let matched: Element | null = null;
-    try {
-      matched = target.closest(selector);
-    } catch {
-      matched = null;
+    const path = event.composedPath();
+    let matched = false;
+    for (const node of path) {
+      if (!(node instanceof Element)) continue;
+      try {
+        if (node.matches(selector)) {
+          matched = true;
+          break;
+        }
+      } catch {
+        return;
+      }
     }
     if (!matched) return;
     fired = true;

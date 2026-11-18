@@ -144,6 +144,22 @@ describe("waitForTarget", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("caps the timeout at the largest delay setTimeout accepts", async () => {
+    const delays: number[] = [];
+    const real = globalThis.setTimeout;
+    const spy = vi.spyOn(globalThis, "setTimeout").mockImplementation(((fn: () => void, ms?: number) => {
+      delays.push(ms ?? 0);
+      return real(fn, 0);
+    }) as typeof setTimeout);
+    const controller = new AbortController();
+    const pending = waitForTarget("#never", Infinity, controller.signal);
+    controller.abort();
+    await pending;
+    spy.mockRestore();
+    expect(delays).toContain(2 ** 31 - 1);
+    expect(delays.every((d) => d <= 2 ** 31 - 1)).toBe(true);
+  });
+
   it("disconnects the observer when it settles", async () => {
     const disconnect = vi.fn();
     class CountingObserver {

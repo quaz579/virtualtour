@@ -135,13 +135,11 @@ describe("autoAdvance on a tour (AD-1, AD-2)", () => {
     const tour = make([{ id: "a", autoAdvance: { event: "click", selector: "#save" } }, { id: "b" }]);
     await tour.start();
     click("#save");
-    await tick(30);
-    expect(tour.currentStep?.id).toBe("b");
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("b"));
     await tour.backward();
     expect(tour.currentStep?.id).toBe("a");
     click("#save");
-    await tick(30);
-    expect(tour.currentStep?.id).toBe("b");
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("b"));
   });
 
   it("the last step's selector advance finishes the tour", async () => {
@@ -150,8 +148,7 @@ describe("autoAdvance on a tour (AD-1, AD-2)", () => {
     tour.on("finished", finished);
     await tour.start();
     click("#save");
-    await tick(30);
-    expect(finished).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(finished).toHaveBeenCalledTimes(1));
   });
 
   it("tours.current.forward() from page code advances the tour", async () => {
@@ -182,8 +179,7 @@ describe("autoAdvance on a tour (AD-1, AD-2)", () => {
     await tour.start();
     const field = document.querySelector<HTMLInputElement>("#field") as HTMLInputElement;
     field.dispatchEvent(new Event("input", { bubbles: true }));
-    await tick(50);
-    expect(tour.currentStep?.id).toBe("b");
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("b"));
   });
 });
 
@@ -240,8 +236,7 @@ describe("auto-advance listener lifecycle", () => {
     document.querySelector("#save")?.addEventListener("click", () => order.push("page"));
     await tour.start();
     click("#save");
-    await tick(30);
-    expect(order).toEqual(["page", "will-show"]);
+    await vi.waitFor(() => expect(order).toEqual(["page", "will-show"]));
   });
 
   it("dropping another step keeps the shown step's listener", async () => {
@@ -255,8 +250,7 @@ describe("auto-advance listener lifecycle", () => {
     await tour.forward();
     tour.dropStep("d");
     click("#save");
-    await tick(30);
-    expect(tour.currentStep?.id).toBe("c");
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("c"));
   });
 
   it("a deferred advance is cancelled when the step is left first", async () => {
@@ -275,6 +269,17 @@ describe("auto-advance listener lifecycle", () => {
     root.innerHTML = '<button id="inner" type="button">x</button>';
     const onAdvance = vi.fn();
     listenForAdvance("#inner", "click", onAdvance);
+    root.querySelector<HTMLElement>("#inner")?.dispatchEvent(new Event("click", { bubbles: true, composed: true }));
+    expect(onAdvance).toHaveBeenCalledTimes(1);
+  });
+
+  it("matches a selector that targets the shadow host of the clicked element", async () => {
+    const host = document.createElement("my-btn");
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: "open" });
+    root.innerHTML = '<button id="inner" type="button">x</button>';
+    const onAdvance = vi.fn();
+    listenForAdvance("my-btn", "click", onAdvance);
     root.querySelector<HTMLElement>("#inner")?.dispatchEvent(new Event("click", { bubbles: true, composed: true }));
     expect(onAdvance).toHaveBeenCalledTimes(1);
   });

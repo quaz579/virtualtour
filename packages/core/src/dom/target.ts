@@ -1,6 +1,7 @@
 import type { TargetRef } from "../types";
 
 const POLL_MS = 250;
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
 function lookup(value: string | Element | null | undefined): Element | null {
   if (typeof document === "undefined" || value === null || value === undefined) return null;
@@ -63,7 +64,7 @@ export function waitForTarget(ref: TargetRef | undefined, ms: number, signal?: A
     });
     observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
     poll = setInterval(check, POLL_MS);
-    timer = setTimeout(() => settle(resolveTarget(ref)), ms);
+    timer = setTimeout(() => settle(resolveTarget(ref)), Math.min(ms, MAX_TIMEOUT_MS));
     signal?.addEventListener("abort", onAbort, { once: true });
   });
 }

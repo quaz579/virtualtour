@@ -3,6 +3,7 @@ import { createTour, tours } from "../src/index";
 import type { Tour } from "../src/index";
 import { setCurrentTour } from "../src/registry";
 import type { StepConfig, TourConfig } from "../src/types";
+import { engineOf } from "../src/tour";
 import { tick } from "./engine/utils";
 
 const created: Tour[] = [];
@@ -678,6 +679,19 @@ describe("review round 2", () => {
     release();
     await moving;
     expect(tour.currentStep?.id).toBe("a");
+  });
+});
+
+describe("review round 3", () => {
+  it("a shown step's engine element follows a target that was re-rendered", async () => {
+    const tour = make([{ id: "a" }, { id: "b", target: "#b" }]);
+    await tour.start();
+    await tour.forward();
+    const fresh = document.createElement("div");
+    fresh.id = "b";
+    document.querySelector("#b")?.replaceWith(fresh);
+    const entry = engineOf(tour)?.getConfig().steps?.[1];
+    expect((entry?.element as () => Element)()).toBe(fresh);
   });
 });
 
