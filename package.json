@@ -1,0 +1,17 @@
+{
+  "name": "virtualtour-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "docs",
+    "demo"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "npm run build --workspace virtualtour",
+    "typecheck": "npm run typecheck --workspace virtualtour"
+  }
+}
