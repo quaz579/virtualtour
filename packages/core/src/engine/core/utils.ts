@@ -1,4 +1,5 @@
 import type { DriveStep } from "../types";
+import type { Context } from "./context";
 import { EXTRA_SELECTOR, fixedNames } from "./namespace";
 
 export function resolveElement(element: DriveStep["element"]): Element | null | undefined {
@@ -145,10 +146,30 @@ export function isElementVisible(el: HTMLElement) {
 
 const dialogsWithLayer = new WeakSet<Element>();
 
-export function layerFor(element: Element): Element {
+export type LayerKind = "popover" | "overlay";
+
+export function resolveMount(ctx: Context, kind: LayerKind): Element | null {
+  const option = ctx.getConfig(kind === "popover" ? "mountIn" : "dimMountIn");
+  if (option === undefined) {
+    return null;
+  }
+
+  const mount = typeof option === "function" ? option() : option;
+  if (
+    !(mount instanceof Element) ||
+    mount.ownerDocument !== document ||
+    mount.getRootNode() !== document
+  ) {
+    throw new Error("mountIn must be an element in the document");
+  }
+
+  return mount;
+}
+
+export function layerFor(ctx: Context, element: Element, kind: LayerKind): Element {
   const dialog = element.closest("dialog[open]");
   if (!dialog) {
-    return document.body;
+    return resolveMount(ctx, kind) ?? document.body;
   }
 
   if (!("showPopover" in dialog)) {
@@ -199,8 +220,9 @@ export function placeInLayer(node: Element, layer: Element, isUnderneath = false
   layer.appendChild(node);
 }
 
-export function moveToLayerOf(node: Element, element: Element, isUnderneath = false): boolean {
-  const layer = layerFor(element);
+export function moveToLayerOf(ctx: Context, node: Element, element: Element, kind: LayerKind): boolean {
+  const isUnderneath = kind === "overlay";
+  const layer = layerFor(ctx, element, kind);
   const previous = node.parentElement;
   if (previous === layer) {
     return false;

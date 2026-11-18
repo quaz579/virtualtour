@@ -136,6 +136,19 @@ export type Config = {
   allowArrowKeys?: boolean;
   /** Whether the dimmed overlay is drawn. Defaults to `true`; `false` draws no overlay and no `data-vt-dim`. */
   overlay?: boolean;
+  /**
+   * Where the popover is inserted instead of `document.body`: an element, or a function returning
+   * one at mount time. Must be an element of the current document, outside any shadow root. A step
+   * whose target is inside an open `<dialog>` still mounts in the dialog; pass the dialog itself
+   * to override. A container that is a containing block for fixed descendants (transform, filter)
+   * offsets the popover.
+   */
+  mountIn?: Element | (() => Element);
+  /**
+   * Where the dimmed overlay is inserted instead of `document.body`. Same rules as `mountIn`. The
+   * overlay stays `position: fixed`, so a container that creates a containing block misplaces it.
+   */
+  dimMountIn?: Element | (() => Element);
 
   presenter?: EnginePresenter;
   onReposition?: (info: RepositionInfo, opts: HookOpts) => void;
