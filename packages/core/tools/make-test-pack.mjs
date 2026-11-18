@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { deflateSync } from "node:zlib";
@@ -110,8 +110,7 @@ function fillRect(rgb, sheetWidth, x0, y0, size, color) {
 }
 
 function drawFrame(rgb, sheetWidth, index) {
-  const col = index % COLUMNS;
-  const row = Math.floor(index / COLUMNS);
+  const { col, row } = gridOf(index);
   const originX = col * FRAME_SIZE;
   const originY = row * FRAME_SIZE;
   const color = PALETTE[index];
@@ -148,8 +147,7 @@ function packJson() {
   const animations = {};
   for (const animation of ANIMATIONS) {
     const frames = animation.frames.map((index) => {
-      const col = index % COLUMNS;
-      const row = Math.floor(index / COLUMNS);
+      const { col, row } = gridOf(index);
       return animation.pixels
         ? { x: col * FRAME_SIZE, y: row * FRAME_SIZE, ms: animation.ms }
         : { col, row, ms: animation.ms };
@@ -220,7 +218,7 @@ export function writeTestPack(dir = FIXTURE_DIR) {
   }
 }
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   writeTestPack();
   console.log(`wrote synthetic test pack to ${FIXTURE_DIR}`);
 }

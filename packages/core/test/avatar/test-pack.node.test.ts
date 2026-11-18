@@ -42,7 +42,7 @@ const generated = buildTestPack();
 const committed = (name: string): Buffer => readFileSync(join(FIXTURE_DIR, name));
 const committedJson = (name: string): unknown => JSON.parse(committed(name).toString("utf8"));
 
-const pack = validatePack(committedJson("pack.json"));
+const loadPack = () => validatePack(committedJson("pack.json"));
 
 describe("synthetic test pack fixture", () => {
   it("is exactly what the generator writes", () => {
@@ -76,6 +76,7 @@ describe("synthetic test pack fixture", () => {
   });
 
   it("pack.json passes validatePack and keeps the synthetic identity", () => {
+    const pack = loadPack();
     expect(pack.format).toBe("virtualtour-avatar/1");
     expect(pack.name).toBe("Synthetic test pack");
     expect(pack.sheet).toEqual({ src: "sheet.png", frameWidth: FRAME_SIZE, frameHeight: FRAME_SIZE, columns: COLUMNS, pixelArt: true });
@@ -90,7 +91,7 @@ describe("synthetic test pack fixture", () => {
   });
 
   it("resolves every role to the animation it names", () => {
-    const normalized = normalizePack(pack, packBaseUrl);
+    const normalized = normalizePack(loadPack(), packBaseUrl);
     const random = () => 0;
     expect(resolveRole(normalized, "rest")).toBe("rest");
     expect(resolveRole(normalized, "greet")).toBe("wave");
@@ -108,7 +109,7 @@ describe("synthetic test pack fixture", () => {
   });
 
   it("keeps every frame on the sheet and resolves the sheet URL", () => {
-    const normalized = normalizePack(pack, packBaseUrl);
+    const normalized = normalizePack(loadPack(), packBaseUrl);
     const width = COLUMNS * FRAME_SIZE;
     const height = ROWS * FRAME_SIZE;
     for (const [name, frames] of Object.entries(normalized.frames)) {
@@ -123,7 +124,7 @@ describe("synthetic test pack fixture", () => {
   });
 
   it("gives the expected still frame for each animation kind", () => {
-    const normalized = normalizePack(pack, packBaseUrl);
+    const normalized = normalizePack(loadPack(), packBaseUrl);
     expect(normalized.stillOf("wave")).toBe(0);
     expect(normalized.stillOf("rest")).toBe(0);
     expect(normalized.stillOf("exit")).toBe(2);
@@ -131,11 +132,12 @@ describe("synthetic test pack fixture", () => {
   });
 
   it("draws the think animation from pixel positions and the rest from grid indices", () => {
+    const pack = loadPack();
     expect(pack.animations.think?.frames[0]).toEqual({ x: 0, y: FRAME_SIZE, ms: 120 });
     expect(pack.animations.rest?.frames[0]).toEqual({ col: 0, row: 0, ms: 500 });
   });
 
-  it("classic-a.json and classic-b.json describe the same frames as pack.json", () => {
+  it("classic-a.json and classic-b.json describe the same frames", () => {
     const classicA = committedJson("classic-a.json") as {
       Name: string;
       Frames: { Duration: number; ImagesOffsets: { Column: number; Row: number } | null }[];
