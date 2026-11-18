@@ -36,7 +36,7 @@
   ],
   "scripts": {
     "build": "vite build && vite build --mode dev",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.check.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.check.json && tsc --noEmit -p e2e/engine/tsconfig.json",
     "test": "vitest run",
     "e2e": "playwright test"
   },

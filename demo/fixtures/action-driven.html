@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour action-driven fixture</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      .demo-container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 40px;
+      }
+      .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      #demo-files {
+        margin: 24px 0;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+      }
+      #demo-file {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+      }
+      .demo-menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 6px 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-container">
+      <header class="page-header">
+        <h1>Fixture</h1>
+      </header>
+      <div class="buttons">
+        <button id="card-1" type="button">Card One</button>
+        <button id="card-2" type="button">Card Two</button>
+        <button id="card-3" type="button">Card Three</button>
+      </div>
+    </div>
+
+    <script type="module" src="./action-driven.ts"></script>
+  </body>
+</html>
