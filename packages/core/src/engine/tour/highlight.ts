@@ -1,4 +1,5 @@
 import { Context } from "../core/context";
+import { prefersReducedMotion } from "../core/env";
 import { fixedNames, type Names } from "../core/namespace";
 import type { DriveStep } from "../types";
 import { refreshOverlay, trackActiveElement, transitionStage } from "../overlay/overlay";
@@ -128,7 +129,8 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
   const isFromDummyElement = isDummyElement(fromElement);
 
   const hasOverlay = () => ctx.getConfig("overlay") !== false;
-  const isAnimatedTour = !!ctx.getConfig("animate") && hasOverlay();
+  const reducedMotion = prefersReducedMotion();
+  const isAnimatedTour = !!ctx.getConfig("animate") && !reducedMotion && hasOverlay();
   const highlightStartedHook = toStep.onHighlightStarted || ctx.getConfig("onHighlightStarted");
   const highlightedHook = toStep.onHighlighted || ctx.getConfig("onHighlighted");
   const deselectedHook = fromStep?.onDeselected || ctx.getConfig("onDeselected");
@@ -183,7 +185,7 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
       isPopoverRendered = true;
     }
 
-    if (ctx.getConfig("animate") && hasOverlay() && elapsed < duration) {
+    if (ctx.getConfig("animate") && !reducedMotion && hasOverlay() && elapsed < duration) {
       transitionStage(ctx, elapsed, duration, fromElement, targetElement);
     } else {
       trackActiveElement(ctx, targetElement);
