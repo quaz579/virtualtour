@@ -2,6 +2,8 @@ import { DEFAULT_DIM, DEFAULT_POSITION, DEFAULT_STEP_CONFIG, mergeStepConfig } f
 import type { NormalizedTourConfig } from "./config";
 import type { Config, DriveStep, Popover } from "./engine/types";
 import type { AllowedButtons, Alignment, Side } from "./engine/popover/popover";
+import { resolveBody, resolveText, resolveTitle } from "./render/content";
+import type { Sanitizer } from "./render/content";
 import type { CornerRadius, StepConfig, TourStepLike } from "./types";
 
 type Corners = Required<CornerRadius>;
@@ -22,12 +24,11 @@ type FutureStepKeys =
   | "popoverPadding"
   | "scrollIntoView";
 
-type FuturePopoverKeys = "side" | "label" | "arrow" | "arrowMinInset" | "flip" | "shift" | "strategy";
+type FuturePopoverKeys = "side" | "arrow" | "arrowMinInset" | "flip" | "shift" | "strategy";
 
 /** Engine popover options, including the ones the engine reads once the matching milestone-two task lands. */
 export type EnginePopover = Omit<Popover, FuturePopoverKeys> & {
   side?: Side | "auto" | "over";
-  label?: string;
   arrow?: boolean;
   arrowMinInset?: number;
   flip?: boolean;
@@ -90,23 +91,12 @@ function toCorners(radius: number | CornerRadius, fallback: number | CornerRadiu
   return out;
 }
 
-function describeBody(body: StepConfig["body"], evaluate: boolean): string | undefined {
-  const value = typeof body === "function" ? (evaluate ? body() : undefined) : body;
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value.map((p) => `<p>${p}</p>`).join("");
-  return undefined;
-}
-
-function textOf(value: string | (() => string) | undefined, evaluate: boolean): string | undefined {
-  if (typeof value === "function") return evaluate ? value() : undefined;
-  return value;
-}
-
 function compileStep(
   step: TourStepLike,
   base: Partial<StepConfig>,
   dimRadius: number | CornerRadius,
-  evaluate: boolean
+  evaluate: boolean,
+  sanitize: Sanitizer
 ): EngineStep {
   const config = mergeStepConfig(base, step.config);
   const hasTarget = config.target !== undefined;
@@ -117,13 +107,14 @@ function compileStep(
 
   if (hasTarget) out.element = targetFn(step);
 
-  const title = textOf(config.title, evaluate);
+  const title = resolveTitle(config.title, evaluate, sanitize);
   if (title !== undefined) popover.title = title;
-  const description = describeBody(config.body, evaluate);
-  if (description !== undefined) popover.description = description;
-  const label = textOf(config.label, evaluate);
+  const body = resolveBody(config.body, evaluate, sanitize);
+  if (body.description !== undefined) popover.description = body.description;
+  if (body.element !== undefined) out.data = { vt: step, vtBody: body.element };
+  const label = resolveText(config.label, evaluate);
   if (label !== undefined) popover.label = label;
-  const instruction = textOf(config.instruction, evaluate);
+  const instruction = resolveText(config.instruction, evaluate);
   if (instruction !== undefined) popover.instruction = instruction;
 
   const closeButton = config.closeButton;
@@ -131,7 +122,7 @@ function compileStep(
   if (closeButton !== false) showButtons.push("close");
   popover.showButtons = showButtons;
   if (typeof closeButton === "object") {
-    const closeLabel = textOf(closeButton.label, evaluate);
+    const closeLabel = resolveText(closeButton.label, evaluate);
     if (closeLabel !== undefined) popover.closeBtnLabel = closeLabel;
   }
 
@@ -183,7 +174,8 @@ function compileStep(
 /**
  * Compiles a tour into engine config and one engine step per tour step. Pure: no DOM access, no
  * mutation of the inputs, and equal inputs give deep-equal output. Function-valued title, label,
- * instruction and body are left out; {@link compileStepForShow} evaluates them.
+ * instruction and body are left out; {@link compileStepForShow} evaluates them. Title and body HTML pass through
+ * `sanitize` once per string, before the engine sees it.
  */
 export function compileTour(c: NormalizedTourConfig, steps: readonly TourStepLike[]): CompiledTour {
   const dim = c.dimOptions;
@@ -214,7 +206,7 @@ export function compileTour(c: NormalizedTourConfig, steps: readonly TourStepLik
   const total = steps.length;
   const counter = c.counter;
   const compiled = steps.map((step, index) => {
-    const out = compileStep(step, c.stepDefaults, dim.radius, false);
+    const out = compileStep(step, c.stepDefaults, dim.radius, false, c.sanitize);
     if (typeof counter === "function") {
       out.popover = { ...out.popover, progressText: counter(index + 1, total) };
     }
@@ -227,8 +219,13 @@ export function compileTour(c: NormalizedTourConfig, steps: readonly TourStepLik
  * Compiles one step with its function-valued title, label, instruction and body evaluated.
  * `step.config` must already include the tour's step defaults (see `resolveStepConfig`). Tour-level fields
  * (the progress text) are not included. Pass the tour's `dimOptions.radius` as
- * `dimRadius` so partial corner radii fall back exactly as in {@link compileTour}.
+ * `dimRadius` so partial corner radii fall back exactly as in {@link compileTour}; pass the tour's `sanitize` so
+ * title and body HTML is cleaned as there. An element body travels in `data.vtBody`.
  */
-export function compileStepForShow(step: TourStepLike, dimRadius: number | CornerRadius = DEFAULT_DIM.radius): EngineStep {
-  return compileStep(step, DEFAULT_STEP_CONFIG, dimRadius, true);
+export function compileStepForShow(
+  step: TourStepLike,
+  dimRadius: number | CornerRadius = DEFAULT_DIM.radius,
+  sanitize?: Sanitizer
+): EngineStep {
+  return compileStep(step, DEFAULT_STEP_CONFIG, dimRadius, true, sanitize);
 }
