@@ -36,6 +36,14 @@ function mount(options: { itemStyle?: string; scrollerStyle?: string } = {}) {
 
 const lastSubpath = () => document.querySelector("[data-vt-overlay] path")!.getAttribute("d")!.split("M").at(-1)!;
 
+const holeBox = () => {
+  const d = lastSubpath();
+  const [, x, y] = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(d)!;
+  const { width, height } = hole();
+
+  return { left: Number(x), top: Number(y), right: Number(x) + width, bottom: Number(y) + height };
+};
+
 const hole = () => {
   const d = lastSubpath();
   return {
@@ -79,6 +87,53 @@ describe("clipRectByScrollParents", () => {
   });
 });
 
+describe("clipRectByScrollParents containing blocks", () => {
+  const nest = (wrapperStyle: string) => {
+    const scroller = document.createElement("div");
+    scroller.style.cssText = "overflow:hidden";
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = wrapperStyle;
+    const item = document.createElement("div");
+    item.style.cssText = "position:absolute";
+    wrapper.appendChild(item);
+    scroller.appendChild(wrapper);
+    document.body.appendChild(scroller);
+    stub(scroller, rect(0, 100, 300, 200));
+    return item;
+  };
+
+  it("does not clip an absolute target by an overflow ancestor outside its containing block", () => {
+    const item = nest("overflow:hidden;position:static");
+    stub(item.parentElement!, rect(0, 100, 300, 200));
+    const clipped = clipRectByScrollParents(item, rect(10, 220, 100, 200));
+
+    expect(clipped.height).toBe(200);
+  });
+
+  it("clips an absolute target by a positioned overflow ancestor", () => {
+    const item = nest("overflow:hidden;position:relative");
+    stub(item.parentElement!, rect(0, 100, 300, 200));
+    const clipped = clipRectByScrollParents(item, rect(10, 220, 100, 200));
+
+    expect(clipped.height).toBe(80);
+  });
+
+  it("clips an absolute target past a positioned wrapper by the outer scroller", () => {
+    const item = nest("position:relative");
+    const clipped = clipRectByScrollParents(item, rect(10, 220, 100, 200));
+
+    expect(clipped.height).toBe(80);
+  });
+
+  it("treats a transformed ancestor as a containing block", () => {
+    const item = nest("overflow:hidden;transform:translateX(0)");
+    stub(item.parentElement!, rect(0, 100, 300, 200));
+    const clipped = clipRectByScrollParents(item, rect(10, 220, 100, 200));
+
+    expect(clipped.height).toBe(80);
+  });
+});
+
 describe("overlay clipping", () => {
   const run = async (config: Record<string, unknown>, element = "#item") => {
     const d = createDriver({ animate: false, stagePadding: 0, stageRadius: 0, ...config });
@@ -116,7 +171,31 @@ describe("overlay clipping", () => {
     stub(item, rect(10, 400, 100, 50));
     await run({});
 
-    expect(hole()).toEqual({ width: 100, height: 0 });
+    expect(hole()).toEqual({ width: 0, height: 0 });
+  });
+
+  it("draws no hole for a fully scrolled-out element with the default padding", async () => {
+    const { item } = mount();
+    stub(item, rect(10, 400, 100, 50));
+    await run({ stagePadding: 10 });
+
+    expect(hole()).toEqual({ width: 0, height: 0 });
+  });
+
+  it("never extends the padded hole past the scroller edge", async () => {
+    const { item } = mount();
+    stub(item, rect(10, 220, 100, 200));
+    await run({ stagePadding: 10 });
+
+    expect(holeBox()).toEqual({ left: 0, top: 210, right: 120, bottom: 300 });
+  });
+
+  it("keeps the unclipped padded hole when the option is off", async () => {
+    const { item } = mount();
+    stub(item, rect(10, 220, 100, 200));
+    await run({ stagePadding: 10, clipStageToScrollParents: false });
+
+    expect(holeBox()).toEqual({ left: 0, top: 210, right: 120, bottom: 430 });
   });
 
   it("lets a step override the config option in both directions", async () => {

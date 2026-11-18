@@ -115,16 +115,36 @@ function isClippedByScrollContainer(element: Element, rect: DOMRect) {
   );
 }
 
+function createsContainingBlock(style: CSSStyleDeclaration) {
+  const set = (value: string | undefined) => !!value && value !== "none";
+
+  return (
+    style.position !== "static" ||
+    set(style.transform) ||
+    set(style.perspective) ||
+    set(style.filter) ||
+    set(style.backdropFilter) ||
+    /layout|paint|strict|content/.test(style.contain ?? "") ||
+    /transform|perspective|filter/.test(style.willChange ?? "")
+  );
+}
+
 export function clipRectByScrollParents(element: Element, rect: DOMRect): DOMRect {
   let left = rect.left;
   let top = rect.top;
   let right = rect.right;
   let bottom = rect.bottom;
   let current: Element | null = element;
+  let skipping = false;
 
   while (current) {
-    if (getComputedStyle(current).position === "fixed") {
+    const currentPosition = getComputedStyle(current).position;
+    if (currentPosition === "fixed") {
       break;
+    }
+
+    if (currentPosition === "absolute") {
+      skipping = true;
     }
 
     const parent: HTMLElement | null = current.parentElement;
@@ -133,9 +153,10 @@ export function clipRectByScrollParents(element: Element, rect: DOMRect): DOMRec
     }
 
     const style = getComputedStyle(parent);
+    const isContainingBlock = createsContainingBlock(style);
     const clipsX = !!style.overflowX && style.overflowX !== "visible";
     const clipsY = !!style.overflowY && style.overflowY !== "visible";
-    if (clipsX || clipsY) {
+    if ((!skipping || isContainingBlock) && (clipsX || clipsY)) {
       const box = parent.getBoundingClientRect();
       const boxLeft = box.left + parent.clientLeft;
       const boxTop = box.top + parent.clientTop;
@@ -151,6 +172,10 @@ export function clipRectByScrollParents(element: Element, rect: DOMRect): DOMRec
         top = Math.min(Math.max(top, boxTop), boxBottom);
         bottom = Math.max(Math.min(bottom, boxBottom), top);
       }
+    }
+
+    if (isContainingBlock) {
+      skipping = false;
     }
 
     current = parent;

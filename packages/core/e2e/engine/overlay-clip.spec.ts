@@ -3,7 +3,7 @@ import { skipWhenEdgeMissing, near, openFixture, overlay, settle } from "./harne
 
 test.beforeEach(skipWhenEdgeMissing);
 
-type ClipConfig = { clipStageToScrollParents?: boolean };
+type ClipConfig = { clipStageToScrollParents?: boolean; stagePadding?: number };
 
 const holeHeight = (page: Page) =>
   page.locator(".vt-overlay path").evaluate(element => {
@@ -49,6 +49,12 @@ test.describe("scroll container clipping", () => {
     await highlight(page, { clipStageToScrollParents: false });
     await scrollList(page, 0);
     near(await holeHeight(page), 80);
+  });
+
+  test("keeps the padded hole inside the scroll container", async ({ page }) => {
+    await highlight(page, { stagePadding: 10 });
+    await scrollList(page, 0);
+    near(await holeHeight(page), 50);
   });
 
   test("follows the scroll container after refresh", async ({ page }) => {

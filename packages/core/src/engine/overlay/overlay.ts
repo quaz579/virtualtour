@@ -28,7 +28,23 @@ function stageRect(ctx: Context, element: Element): DOMRect {
     return rect;
   }
 
-  return clipRectByScrollParents(element, rect);
+  const padding = stageOptions(ctx, element).padding;
+  const padded = new DOMRect(
+    rect.x - padding,
+    rect.y - padding,
+    rect.width + padding * 2,
+    rect.height + padding * 2
+  );
+  const clipped = clipRectByScrollParents(element, padded);
+
+  const empty = clipped.width <= 0 || clipped.height <= 0;
+
+  return new DOMRect(
+    clipped.x + padding,
+    clipped.y + padding,
+    empty ? -padding * 2 : clipped.width - padding * 2,
+    empty ? -padding * 2 : clipped.height - padding * 2
+  );
 }
 
 export function transitionStage(ctx: Context, elapsed: number, duration: number, from: Element, to: Element) {
@@ -156,8 +172,8 @@ export function redrawOverlay(ctx: Context, isOutsideDialogToo = false) {
   }
 }
 
-function stageOptions(ctx: Context) {
-  const element = ctx.getState("activeElement");
+function stageOptions(ctx: Context, target?: Element) {
+  const element = target ?? ctx.getState("activeElement");
   if (element && (isDummyElement(element) || isInsideAllowedElement(element))) {
     return { padding: 0, radius: 0 };
   }
