@@ -23,7 +23,6 @@ const notBuiltYet = [
   "./dist/avatar.css",
   "./dist/thumbtack/pack.json",
   "./dist/thumbtack/sheet.png",
-  "./schemas/*",
 ];
 
 function exportTargets(value: unknown): string[] {
@@ -74,6 +73,10 @@ describe("build output", () => {
   it("has no dependencies key", () => {
     const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as Record<string, unknown>;
     expect(pkg).not.toHaveProperty("dependencies");
+  });
+
+  it("ships the avatar pack schema", () => {
+    expect(existsSync(join(root, "schemas/avatar-pack.v1.schema.json"))).toBe(true);
   });
 
   it("every export target is either built or explicitly pending", () => {

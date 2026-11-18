@@ -281,7 +281,7 @@ docs example against it with a dev-only schema validator (dev dependency; never 
 ```
 
 Frame fields: `col`/`row` are grid indices (0-based); alternatively `x`/`y` give pixel
-offsets in CSS px (either pair is allowed, not both). `ms` is the frame duration (> 0).
+offsets in image pixels, divided by `sheet.scale` to get CSS px (either pair is allowed, not both). `ms` is the frame duration (> 0).
 `still` is the frame index shown under reduced motion and after a non-loop animation ends
 (default: last frame for non-loop, frame 0 for loop).
 
