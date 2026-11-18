@@ -10,6 +10,7 @@ import {
 import { destroyDriverClick, onDriverClick } from "../core/click";
 import { EXTRA_SELECTOR } from "../core/namespace";
 import { Context } from "../core/context";
+import { stepOption } from "../core/options";
 import {
   createStageSvg,
   generateExtraCutoutsPathString,
@@ -115,6 +116,10 @@ function allowedCutouts(overlaySvg: SVGSVGElement, cutout: StageCutout): string 
 }
 
 function renderOverlay(ctx: Context, stagePosition: StageDefinition, element: Element) {
+  if (ctx.getConfig("overlay") === false) {
+    return;
+  }
+
   const overlaySvg = ctx.getState("__overlaySvg") ?? mountOverlay(ctx, stagePosition, element);
   placeOverlay(overlaySvg, element);
 
@@ -147,9 +152,11 @@ function stageOptions(ctx: Context) {
     return { padding: 0, radius: 0 };
   }
 
+  const step = ctx.getState("activeStep");
+
   return {
-    padding: ctx.getConfig("stagePadding") || 0,
-    radius: ctx.getConfig("stageRadius") || 0,
+    padding: stepOption(ctx, step, "stagePadding") || 0,
+    radius: stepOption(ctx, step, "stageRadius") || 0,
   };
 }
 

@@ -1,4 +1,4 @@
-import type { Alignment, AllowedButtons, PopoverDOM, Side } from "./popover/popover";
+import type { Alignment, AllowedButtons, Placement, PopoverDOM, Side } from "./popover/popover";
 import type { StageDefinition } from "./overlay/stage";
 
 export type DestroyReason = "done" | "close" | "escape" | "overlay" | "replaced" | "api";
@@ -12,6 +12,24 @@ export type HookOpts = {
   reason?: DestroyReason;
 
   signal?: AbortSignal | undefined;
+};
+
+/** What `onReposition` and `EnginePresenter.afterReposition` receive after the popover is placed. */
+export type RepositionInfo = {
+  /** The side the popover was rendered on. */
+  side: Placement;
+  align: Alignment;
+  wrapperRect: DOMRect;
+  /** `null` when the step has no real target element. */
+  targetRect: DOMRect | null;
+};
+
+/** The engine's view of a presenter: it runs while the popover is rendered and positioned. */
+export type EnginePresenter = {
+  layout?: "dialog" | "speaker";
+  /** Runs after the popover content is applied and before the popover is positioned. */
+  mount(popover: PopoverDOM, step: DriveStep): void;
+  afterReposition?(info: RepositionInfo): void;
 };
 
 export type DriverHook = (element: Element | undefined, step: DriveStep, opts: HookOpts) => void;
@@ -110,7 +128,17 @@ export type Config = {
 
   advanceDelay?: number;
 
+  /** @deprecated Use `allowEscape` and `allowArrowKeys`. `false` disables both. */
   allowKeyboardControl?: boolean;
+  /** Whether Escape closes the tour. Defaults to `true`. */
+  allowEscape?: boolean;
+  /** Whether the arrow keys move between steps. Defaults to `true`. */
+  allowArrowKeys?: boolean;
+  /** Whether the dimmed overlay is drawn. Defaults to `true`; `false` draws no overlay and no `data-vt-dim`. */
+  overlay?: boolean;
+
+  presenter?: EnginePresenter;
+  onReposition?: (info: RepositionInfo, opts: HookOpts) => void;
 
   popoverClass?: string;
   popoverOffset?: number;
@@ -182,6 +210,9 @@ export type DriveStep = {
   skipMissingElement?: boolean;
   waitForElement?: number;
   advanceDelay?: number;
+  stagePadding?: number;
+  stageRadius?: number;
+  popoverOffset?: number;
   data?: Record<string, any>;
 };
 

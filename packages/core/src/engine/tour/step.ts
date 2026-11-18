@@ -1,5 +1,5 @@
 import type { Context, DriverHook, StepWait } from "../core/context";
-import type { DriveStep, Popover } from "../types";
+import type { DriveStep, Popover, RepositionInfo } from "../types";
 import {
   AllowedButtons,
   destroyPopover,
@@ -163,12 +163,12 @@ export function markStandalone(step: DriveStep): DriveStep {
 }
 
 function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): PositionOptions {
-  const stagePadding = ctx.getConfig("stagePadding") || 0;
+  const stagePadding = stepOption(ctx, step, "stagePadding") || 0;
 
   return {
     side: step.popover?.side || "bottom",
     align: step.popover?.align || "start",
-    offset: stagePadding + (ctx.getConfig("popoverOffset") || 0),
+    offset: stagePadding + (stepOption(ctx, step, "popoverOffset") || 0),
     padding: stagePadding,
     centered: isDummyElement(element),
     sideAttribute: ctx.names.sideAttr,
@@ -243,8 +243,17 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
       onPopoverRender?.(popoverDom, ctx.getHookOpts());
     },
 
+    presenter: ctx.getConfig("presenter"),
+    step,
+    onPositioned: info => notifyRepositioned(ctx, info),
+
     position: resolveStepPosition(ctx, element, step),
   };
+}
+
+function notifyRepositioned(ctx: Context, info: RepositionInfo) {
+  ctx.getConfig("presenter")?.afterReposition?.(info);
+  ctx.getConfig("onReposition")?.(info, ctx.getHookOpts());
 }
 
 export function renderStepPopover(ctx: Context, element: Element, step: DriveStep) {
@@ -302,7 +311,7 @@ export function repositionStepPopover(ctx: Context, element: Element, step: Driv
     return;
   }
 
-  repositionPopover(popover, element, resolveStepPosition(ctx, element, step));
+  notifyRepositioned(ctx, repositionPopover(popover, element, resolveStepPosition(ctx, element, step)));
 }
 
 function showPopoverWaiting(ctx: Context) {

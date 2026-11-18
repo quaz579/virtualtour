@@ -1,5 +1,6 @@
 import { destroyDriverClick, onDriverClick } from "../core/click";
 import { PositionOptions, repositionPopover } from "./position";
+import type { DriveStep, EnginePresenter, RepositionInfo } from "../types";
 import { bringInView, layerFor, removeFromLayer } from "../core/utils";
 import { fixedNames } from "../core/namespace";
 
@@ -7,6 +8,7 @@ const P = fixedNames.popover;
 const PRESSABLE_BUTTONS = [P.previousButton, P.nextButton, P.closeButton].map(name => `.${name}`).join(", ");
 
 export type Side = "top" | "right" | "bottom" | "left";
+export type Placement = Side | "over";
 export type Alignment = "start" | "center" | "end";
 export type AllowedButtons = "next" | "previous" | "close";
 
@@ -59,6 +61,9 @@ export type PopoverRenderOptions = {
   keepFocus?: boolean;
 
   onRender?: (popover: PopoverDOM) => void;
+  presenter?: EnginePresenter | undefined;
+  step?: DriveStep | undefined;
+  onPositioned?: (info: RepositionInfo) => void;
 
   position: PositionOptions;
 };
@@ -249,8 +254,8 @@ export function updatePopoverContent(popover: PopoverDOM, anchor: Element, optio
     popover.wrapper.focus();
   }
 
-  repositionPopover(popover, anchor, options.position);
-  repositionOnImagesLoad(popover, anchor, options.position);
+  options.onPositioned?.(repositionPopover(popover, anchor, options.position));
+  repositionOnImagesLoad(popover, anchor, options.position, options.onPositioned);
 }
 
 export function renderPopover(anchor: Element, options: PopoverRenderOptions): PopoverDOM {
@@ -305,9 +310,12 @@ export function renderPopover(anchor: Element, options: PopoverRenderOptions): P
   );
 
   options.onRender?.(popover);
+  if (options.presenter && options.step) {
+    options.presenter.mount(popover, options.step);
+  }
 
-  repositionPopover(popover, anchor, options.position);
-  repositionOnImagesLoad(popover, anchor, options.position);
+  options.onPositioned?.(repositionPopover(popover, anchor, options.position));
+  repositionOnImagesLoad(popover, anchor, options.position, options.onPositioned);
   bringInView(popoverWrapper, options.smoothScroll);
 
   if (!options.keepFocus) {
@@ -333,11 +341,22 @@ function focusPopover(popover: PopoverDOM) {
   }
 }
 
-const imageTargets = new WeakMap<PopoverDOM, { anchor: Element; position: PositionOptions }>();
+type ImageTarget = {
+  anchor: Element;
+  position: PositionOptions;
+  onPositioned: ((info: RepositionInfo) => void) | undefined;
+};
+
+const imageTargets = new WeakMap<PopoverDOM, ImageTarget>();
 const watchedImages = new WeakSet<HTMLImageElement>();
 
-function repositionOnImagesLoad(popover: PopoverDOM, anchor: Element, position: PositionOptions) {
-  imageTargets.set(popover, { anchor, position });
+function repositionOnImagesLoad(
+  popover: PopoverDOM,
+  anchor: Element,
+  position: PositionOptions,
+  onPositioned?: (info: RepositionInfo) => void
+) {
+  imageTargets.set(popover, { anchor, position, onPositioned });
 
   popover.wrapper.querySelectorAll("img").forEach(image => {
     if (image.complete || watchedImages.has(image)) {
@@ -349,7 +368,7 @@ function repositionOnImagesLoad(popover: PopoverDOM, anchor: Element, position: 
       watchedImages.delete(image);
       const target = imageTargets.get(popover);
       if (target && popover.wrapper.isConnected) {
-        repositionPopover(popover, target.anchor, target.position);
+        target.onPositioned?.(repositionPopover(popover, target.anchor, target.position));
       }
     };
 

@@ -1,9 +1,8 @@
-import type { Alignment, PopoverDOM, Side } from "./popover";
+import type { Alignment, Placement, PopoverDOM, Side } from "./popover";
+import type { RepositionInfo } from "../types";
 import { fixedNames } from "../core/namespace";
 
 const popoverNames = fixedNames.popover;
-
-type Placement = Side | "over";
 
 export type PositionOptions = {
   side: Side;
@@ -56,7 +55,7 @@ function alignAlongEdge(
   return Math.max(Math.min(start, viewportSize - popoverSize - arrowSize), arrowSize);
 }
 
-export function repositionPopover(popover: PopoverDOM, anchor: Element, options: PositionOptions) {
+export function repositionPopover(popover: PopoverDOM, anchor: Element, options: PositionOptions): RepositionInfo {
   const { align: requiredAlignment, side } = options;
   const requiredSide: Placement = options.centered ? "over" : side;
   const popoverPadding = options.padding;
@@ -178,6 +177,13 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   if (options.sideAttribute) {
     popover.wrapper.setAttribute(options.sideAttribute, popoverRenderedSide);
   }
+
+  return {
+    side: popoverRenderedSide,
+    align: requiredAlignment,
+    wrapperRect: popover.wrapper.getBoundingClientRect(),
+    targetRect: options.centered ? null : elementDimensions,
+  };
 }
 
 export const ARROW_SIZE = 10;
