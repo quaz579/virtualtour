@@ -31,7 +31,8 @@
   "files": [
     "dist",
     "schemas",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE.md"
   ],
   "scripts": {
     "build": "vite build && vite build --mode dev",
