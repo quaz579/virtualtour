@@ -32,7 +32,7 @@ otherwise stop and ask about; each is **assumed** until the owner says otherwise
 | A5 | Q7 React `<TourStep>` component | No; provider plus hook only (plan default). |
 | A6 | Q8 avatar `point.<dir>` rule | Vector to target center (plan default). |
 | A7 | Q9 browser versions | Pinned at 1.0 in `docs/guide/browser-support.md`, ES2020 target (plan default). |
-| A8 | Banned-words list for the prose lint gate (`11-testing.md` §6.6, "maintainer-supplied") | WU-02 ships the lint script with the list in `tools/banned-words.txt`, seeded empty except for a comment; the owner fills it in. The gate is active from day one but trivially green until then. |
+| A8 | Banned-words list for the prose lint gate (`11-testing.md` §6.6, "maintainer-supplied") | WU-02 ships the lint script. The committed `tools/banned-words.txt` stays empty apart from a comment, so no names are ever committed. The lint merges it with a gitignored `tools/banned-words.local.txt` and an optional comma-separated `BANNED_WORDS` env var; the owner fills in the local file. The gate is active from day one but trivially green until a list exists. |
 | A9 | Edge channel on test machines | Optional; the `edge` Playwright project skips loudly when `msedge` is absent. Only WU-46 (release readiness) requires one full four-engine run. |
 | A10 | Lawyer review of the classic-pack docs page (V-17 checklist) | Not a blocker for any unit; WU-46 records it as an open release gate, not a coding task. |
 
@@ -120,8 +120,8 @@ after WU-12, seven units (WU-13 … WU-19) run together.
   `playwright.config.ts` (chromium, edge-optional, firefox, webkit; `webServer` on `demo/`),
   `demo/` (`index.html`, `main.ts`, `e2e.html`, `e2e.ts` ported from `e2e.astro`, `fixtures/`),
   `test/ssr.node.test.ts`, `test/build.node.test.ts`, `test/fork-point.node.test.ts`,
-  `test/fixtures/fork-point.sha256`, `tools/size-report.mjs`, `SIZE.md`,
-  `e2e/smoke.spec.ts`, `tools/lint-prose.mjs` + `tools/banned-words.txt` (A8), root scripts
+  `test/fixtures/fork-point.sha256` (fingerprint of the committed `src/engine/` at main after WU-01, not upstream plus renames), `tools/size-report.mjs`, `SIZE.md`,
+  `e2e/smoke.spec.ts`, `tools/lint-prose.mjs` + `tools/banned-words.txt` (A8, root `tools/`), `.gitignore` entry for `tools/banned-words.local.txt`, root scripts
   `test`/`e2e`/`size`/`lint:prose`.
 - **Acceptance:** the F-01 "Tests/proof required" list passes; `dist/index.js` has no bare
   imports; size report prints a table (core ≈ 14 KB) and exits 0; edge project reports

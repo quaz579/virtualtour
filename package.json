@@ -12,6 +12,10 @@
   },
   "scripts": {
     "build": "npm run build --workspace virtualtour",
-    "typecheck": "npm run typecheck --workspace virtualtour"
+    "typecheck": "npm run typecheck --workspace virtualtour",
+    "test": "npm test --workspace virtualtour",
+    "e2e": "npm run e2e --workspace virtualtour",
+    "size": "node packages/core/tools/size-report.mjs",
+    "lint:prose": "node tools/lint-prose.mjs"
   }
 }

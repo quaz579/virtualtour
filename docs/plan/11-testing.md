@@ -146,7 +146,8 @@ measured box.
    changed engine files in its description (so `UPSTREAM.md`'s per-file table can be kept
    current).
 6. Lint for banned words in prose files (`docs/**`, `*.md`, TSDoc): a small script fails on
-   a maintainer-supplied list (company, product, and ticket-prefix names) so the library
+   a maintainer-supplied list (company, product, and ticket-prefix names, kept out of the
+   repository: a gitignored local file plus an optional `BANNED_WORDS` env var) so the library
    stays generic. "driver.js", its repository URL, and its author's copyright line are on
    the allow list.
 7. `grep -r "driver-" src/` is empty after F-03.
