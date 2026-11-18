@@ -3,6 +3,7 @@ import { createTour, tours, TourEnvironmentError, TourNavigationError } from "..
 import type { Tour, TourStep } from "../src/index";
 import type { PopoverDOM } from "../src/engine/popover/popover";
 import { setCurrentTour } from "../src/registry";
+import { engineOf } from "../src/tour";
 import type { Presenter, StepConfig, TourConfig } from "../src/types";
 import { nextFrame, pressKey, tick } from "./engine/utils";
 
@@ -1070,5 +1071,91 @@ describe("lifecycle edge cases", () => {
 
     expect(tour.isRunning()).toBe(true);
     expect(tour.currentStep?.id).toBe("a");
+  });
+});
+
+describe("lifecycle failure paths", () => {
+  it("a navigation whose step cannot be compiled rejects and ends the run", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const tour = createTour({
+      animate: false,
+      steps: [
+        { id: "a", title: "A" },
+        {
+          id: "b",
+          title: () => {
+            throw new Error("title failed");
+          },
+        },
+      ],
+    });
+    created.push(tour);
+    await tour.start();
+
+    await expect(tour.forward()).rejects.toThrow("title failed");
+
+    expect(tour.isRunning()).toBe(false);
+    expect(tours.current).toBeNull();
+  });
+
+  it("a goTo whose step was dropped while queued rejects without ending the run", async () => {
+    const tour = make();
+    await tour.start();
+    const first = tour.forward();
+    const stale = tour.goTo("c");
+    const outcome = stale.then(
+      () => "resolved",
+      (error: unknown) => error
+    );
+    tour.dropStep("c");
+    await first;
+
+    expect(await outcome).toBeInstanceOf(TourNavigationError);
+    expect(tour.isRunning()).toBe(true);
+  });
+
+  it("dropStep of the hidden current step does not show another popover", async () => {
+    const tour = make();
+    await tour.start();
+    tour.hideCurrent();
+    tour.dropStep("a");
+    await tick(30);
+
+    expect(wrapper()).toBeNull();
+    expect(tour.isRunning()).toBe(true);
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("b");
+  });
+
+  it("a presenter whose unmount throws still ends the run", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const tour = make({
+      presenter: () => ({
+        mount: () => undefined,
+        afterShow: () => undefined,
+        afterReposition: () => undefined,
+        update: () => undefined,
+        beforeLeave: () => undefined,
+        unmount: () => {
+          throw new Error("unmount failed");
+        },
+      }),
+    });
+    await tour.start();
+    tour.finish();
+
+    expect(tour.isRunning()).toBe(false);
+    expect(tours.current).toBeNull();
+  });
+
+  it("appendStep keeps the engine entry of the step on screen", async () => {
+    let n = 0;
+    const tour = createTour({ animate: false, steps: [{ id: "a", title: () => `Run ${++n}` }, { id: "b" }] });
+    created.push(tour);
+    await tour.start();
+    tour.appendStep({ id: "c" });
+
+    const entry = engineOf(tour)?.getConfig().steps?.[0];
+    expect(entry?.popover?.title).toBe("Run 1");
   });
 });

@@ -142,7 +142,7 @@ export class Tour {
       return;
     }
     const wasVisible = state.steps[state.currentIndex] === step;
-    const wasTarget = state.anchorIndex === index && !wasVisible;
+    const wasTarget = state.anchorIndex === index && !wasVisible && state.waiter !== null;
     leaveStep(this, step);
     state.steps.splice(index, 1);
     if (index < state.currentIndex) state.currentIndex -= 1;
@@ -171,7 +171,7 @@ export class Tour {
   /**
    * Starts the tour at its first step. Does nothing when a run is already active, and any other running tour ends
    * with `exited` (reason `replaced`). The run counts as active until just before `deactivated`, so a restart
-   * belongs in a `deactivated` handler. Resolves once the first step is shown; rejects with
+   * belongs in a `deactivated` handler. Resolves once the first step is shown, or at once when a run is already active; rejects with
    * {@link TourEnvironmentError} when there is no browser document.
    */
   async start(): Promise<void> {
@@ -467,10 +467,11 @@ function navigate(tour: Tour, direction: "forward" | "backward"): Promise<void> 
 }
 
 async function navigateGuarded(tour: Tour, task: () => Promise<void>): Promise<void> {
+  const runId = internalsOf(tour).runId;
   try {
     await internalsOf(tour).queue.enqueue(task);
   } catch (error) {
-    terminate(tour, "api");
+    if (!(error instanceof TourNavigationError) && internalsOf(tour).runId === runId) terminate(tour, "api");
     throw error;
   }
 }
@@ -507,7 +508,7 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
     emitTour(tour, "exited", { tour, reason: kind });
   }
   for (const step of state.steps.slice()) step.dispose();
-  releasePresenter(tour);
+  guarded("presenter.unmount", () => releasePresenter(tour));
   state.abort?.abort();
   state.abort = null;
   state.queue.cancelWaiting();
@@ -568,6 +569,11 @@ function requestExit(tour: Tour, reason: ExitReason): Promise<boolean> {
   return pending;
 }
 
+/** The engine of the current run, or `null` while none exists. Internal. */
+export function engineOf(tour: Tour): Driver | null {
+  return internalsOf(tour).engine;
+}
+
 /** The abort signal of the current run; it aborts when the run ends. Internal. */
 export function runSignal(tour: Tour): AbortSignal | null {
   return internalsOf(tour).abort?.signal ?? null;
@@ -601,8 +607,9 @@ export function presenterOf(tour: Tour): Presenter {
 /** Unmounts and forgets the tour's presenter at the end of a run. Internal. */
 export function releasePresenter(tour: Tour): void {
   const state = internalsOf(tour);
-  state.presenter?.unmount();
+  const presenter = state.presenter;
   state.presenter = null;
+  presenter?.unmount();
 }
 
 /** The normalized configuration of a tour. Internal. */
