@@ -1,18 +1,12 @@
 import "./styles/base.css";
+import { createTour } from "./tour";
 
 export { Emitter } from "./events";
+export type { ExitReason, StepEvents, TourEvents } from "./events";
+export { TourEnvironmentError, TourNavigationError } from "./errors";
+export { tours } from "./registry";
+export { TourStep } from "./step";
+export { createTour, Tour } from "./tour";
 export type * from "./types";
-
-/** Placeholder returned by {@link createTour} until the public API lands. */
-export interface Tour {
-  readonly placeholder: true;
-}
-
-/**
- * Creates a tour. Placeholder: the real configuration and lifecycle API arrives in a later milestone.
- */
-export function createTour(): Tour {
-  return { placeholder: true };
-}
 
 export default createTour;
