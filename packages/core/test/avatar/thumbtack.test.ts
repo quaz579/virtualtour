@@ -72,15 +72,34 @@ describe("thumbtack pack.json", () => {
     expect(Object.keys(pack().animations).sort()).toEqual([...required].sort());
   });
 
+  it("has the planned frame count per animation", () => {
+    const counts = Object.fromEntries(Object.entries<any>(pack().animations).map(([name, a]) => [name, a.frames.length]));
+    expect(counts).toEqual({
+      rest: 1,
+      blink: 4,
+      wobble: 8,
+      "look-around": 8,
+      wave: 8,
+      "point-left": 6,
+      "point-right": 6,
+      "point-up": 6,
+      "point-down": 6,
+      think: 6,
+      cheer: 8,
+      "pop-out": 6,
+      boing: 6,
+    });
+  });
+
   it("resolves every role to an existing animation", () => {
     const normalized = normalizePack(validatePack(pack()), "https://example.test/thumbtack/pack.json");
     const roles: AvatarRole[] = ["rest", "idle", "greet", "think", "celebrate", "exit", "alert"];
     for (const role of roles) {
       expect(normalized.animations, role).toHaveProperty(resolveRole(normalized, role));
     }
-    for (const dir of ["left", "right", "up", "down"] as const) {
-      const name = resolveRole(normalized, "point", dir);
-      expect(name).toBe(`point-${dir}`);
+    for (const side of ["left", "right", "up", "down"] as const) {
+      const name = resolveRole(normalized, "point", side);
+      expect(name).toBe(`point-${side}`);
       expect(normalized.animations).toHaveProperty(name);
     }
     for (const name of normalized.roles.idle as string[]) expect(normalized.animations).toHaveProperty(name);
@@ -165,8 +184,9 @@ describe("thumbtack svg sources", () => {
 
   it("contain no raster or external references", () => {
     for (const name of required) {
-      const svg = readFileSync(join(dir, "svg", name, "00.svg"), "utf8");
-      expect(svg).not.toMatch(/<image|href=|<text|url\(http/);
+      for (const file of readdirSync(join(dir, "svg", name))) {
+        expect(readFileSync(join(dir, "svg", name, file), "utf8")).not.toMatch(/<image|href=|<text|url\(http/);
+      }
     }
   });
 });

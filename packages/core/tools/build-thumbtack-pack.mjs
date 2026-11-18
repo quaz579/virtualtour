@@ -177,17 +177,19 @@ export async function rasterize(svgs) {
 
 export async function buildThumbtack() {
   const svgRoot = join(outDir, "svg");
-  await rm(svgRoot, { recursive: true, force: true });
-  const svgs = [];
+  const written = [];
   for (const [name, animation] of Object.entries(animations)) {
-    await mkdir(join(svgRoot, name), { recursive: true });
     for (const [index, frame] of animation.frames.entries()) {
-      const svg = frameSvg(frame);
-      svgs.push(svg);
-      await writeFile(join(svgRoot, name, `${String(index).padStart(2, "0")}.svg`), svg);
+      written.push({ file: join(svgRoot, name, `${String(index).padStart(2, "0")}.svg`), svg: frameSvg(frame) });
     }
   }
+  const svgs = written.map((entry) => entry.svg);
   const { width, height, rgba } = await rasterize(svgs);
+  await rm(svgRoot, { recursive: true, force: true });
+  for (const { file, svg } of written) {
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, svg);
+  }
   await writeFile(join(outDir, "sheet.png"), encodePng(width, height, rgba));
   await writeFile(join(outDir, "pack.json"), `${JSON.stringify(buildPack(), null, 2)}\n`);
   return { frames: svgs.length, width, height };

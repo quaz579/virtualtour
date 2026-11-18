@@ -33,7 +33,8 @@
     "schemas",
     "LICENSE",
     "NOTICE.md",
-    "ART.md"
+    "ART.md",
+    "src/avatar/thumbtack/LICENSE-ART.md"
   ],
   "scripts": {
     "build": "vite build && vite build --mode dev",

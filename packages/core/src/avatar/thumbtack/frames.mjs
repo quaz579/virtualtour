@@ -100,13 +100,13 @@ export const animations = {
     loop: false,
     ms: 80,
     still: 2,
-    frames: pointSequence((s) => ({ nod: lean * s, eyeY: -s, lift: 2 * s, mouth: 0.3 * s })),
+    frames: pointSequence((s) => ({ nod: lean * s, eyeY: -s, lift: 3 * s, squash: -0.2 * s, browL: 0.6 * s, browR: 0.6 * s, mouth: 0.3 * s })),
   },
   "point-down": {
     loop: false,
     ms: 80,
     still: 2,
-    frames: pointSequence((s) => ({ nod: -lean * s, eyeY: s, squash: 0.08 * s })),
+    frames: pointSequence((s) => ({ nod: -lean * s, eyeY: s, squash: 0.25 * s })),
   },
   think: {
     loop: true,
@@ -150,9 +150,9 @@ export const animations = {
     still: 1,
     frames: fromList([
       {},
-      { squash: 0.2, lift: 0, wide: 0.3, browL: 1, browR: 1 },
-      { squash: -0.16, lift: 6, wide: 0.4, browL: 1, browR: 1, mouth: 0.9 },
-      { squash: 0.1, lift: 0, wide: 0.3, browL: 0.8, browR: 0.8, mouth: 0.6 },
+      { squash: 0.2, lift: 0, wide: 0.2, browL: 1, browR: 1 },
+      { squash: -0.16, lift: 6, wide: 0.3, browL: 1, browR: 1, mouth: 0.9 },
+      { squash: 0.1, lift: 0, wide: 0.2, browL: 0.8, browR: 0.8, mouth: 0.6 },
       { squash: -0.05, lift: 2, wide: 0.1, browL: 0.3, browR: 0.3 },
       {},
     ]),
@@ -190,7 +190,7 @@ export function frameSvg(partial) {
   const p = pose(partial);
   const c = palette;
   const rad = (p.nod * Math.PI) / 180;
-  const faceDy = -p.nod * 0.2;
+  const faceDy = -p.nod * 0.3;
   const flat = Math.cos(rad);
   const sx = bodyScale * (1 + 0.16 * p.squash);
   const sy = bodyScale * (1 - 0.2 * p.squash);
