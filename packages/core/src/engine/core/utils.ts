@@ -148,9 +148,20 @@ const dialogsWithLayer = new WeakSet<Element>();
 
 export type LayerKind = "popover" | "overlay";
 
-export function resolveMount(ctx: Context, kind: LayerKind): Element | null {
+const resolvedMounts = new WeakMap<Context, Partial<Record<LayerKind, Element>>>();
+
+export function resolveMount(ctx: Context, kind: LayerKind, isFresh = false): Element | null {
+  const cache = resolvedMounts.get(ctx) ?? {};
+  resolvedMounts.set(ctx, cache);
+
+  const cached = cache[kind];
+  if (!isFresh && cached?.isConnected) {
+    return cached;
+  }
+
+  delete cache[kind];
   const option = ctx.getConfig(kind === "popover" ? "mountIn" : "dimMountIn");
-  if (option === undefined) {
+  if (option === undefined || option === null) {
     return null;
   }
 
@@ -162,6 +173,8 @@ export function resolveMount(ctx: Context, kind: LayerKind): Element | null {
   ) {
     throw new Error("mountIn must be an element in the document");
   }
+
+  cache[kind] = mount;
 
   return mount;
 }

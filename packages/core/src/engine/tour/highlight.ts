@@ -131,7 +131,11 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
   const hasOverlay = () => ctx.getConfig("overlay") !== false;
 
   if (hasOverlay()) {
-    resolveMount(ctx, "overlay");
+    resolveMount(ctx, "overlay", true);
+  }
+
+  if (toStep.popover) {
+    resolveMount(ctx, "popover", true);
   }
 
   const isAnimatedTour = !!ctx.getConfig("animate") && hasOverlay();

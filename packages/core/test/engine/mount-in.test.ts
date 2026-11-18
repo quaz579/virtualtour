@@ -58,6 +58,66 @@ describe("mountIn / dimMountIn", () => {
     expect(document.querySelector("[data-vt-overlay]")?.parentElement).toBe(document.body);
   });
 
+  it("calls the function form once per step and keeps the overlay first in the container", async () => {
+    const dim = container("dim");
+    dim.appendChild(document.createElement("span"));
+    const dimMountIn = vi.fn(() => dim);
+    const d = createDriver({
+      animate: false,
+      dimMountIn,
+      steps: [
+        { element: "#intro", popover: { title: "A" } },
+        { element: "#card-1", popover: { title: "B" } },
+      ],
+    });
+    d.drive();
+    await nextFrame();
+    expect(dimMountIn).toHaveBeenCalledTimes(1);
+
+    d.moveNext();
+    await nextFrame();
+    expect(dimMountIn).toHaveBeenCalledTimes(2);
+    expect(dim.firstElementChild?.hasAttribute("data-vt-overlay")).toBe(true);
+  });
+
+  it("prepends the overlay into dimMountIn when it moves there from a dialog", async () => {
+    const dim = container("dim");
+    dim.appendChild(document.createElement("span"));
+    const dialog = document.createElement("dialog");
+    dialog.setAttribute("open", "");
+    dialog.innerHTML = `<button id="in-dialog" type="button">Go</button>`;
+    document.body.appendChild(dialog);
+    const d = createDriver({
+      animate: false,
+      dimMountIn: dim,
+      steps: [
+        { element: "#in-dialog", popover: { title: "A" } },
+        { element: "#intro", popover: { title: "B" } },
+      ],
+    });
+    d.drive();
+    await nextFrame();
+    d.moveNext();
+    await nextFrame();
+
+    expect(dim.firstElementChild?.hasAttribute("data-vt-overlay")).toBe(true);
+  });
+
+  it("treats null as unset", async () => {
+    createDriver({ animate: false, steps: STEPS, mountIn: null as unknown as Element }).drive();
+    await nextFrame();
+
+    expect(document.querySelector(".vt-popover")?.parentElement).toBe(document.body);
+  });
+
+  it("throws from drive before drawing anything when mountIn is invalid", () => {
+    const d = createDriver({ animate: false, steps: STEPS, mountIn: document.createElement("div") });
+
+    expect(() => d.drive()).toThrow("mountIn must be an element in the document");
+    expect(document.querySelector("[data-vt-overlay]")).toBeNull();
+    expect(document.querySelector(".vt-popover")).toBeNull();
+  });
+
   it("removes the popover and the overlay from the containers on destroy", async () => {
     const app = container("app");
     const dim = container("dim");

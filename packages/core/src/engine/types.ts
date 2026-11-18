@@ -139,13 +139,13 @@ export type Config = {
   /**
    * Where the popover is inserted instead of `document.body`: an element, or a function returning
    * one at mount time. Must be an element of the current document, outside any shadow root. A step
-   * whose target is inside an open `<dialog>` still mounts in the dialog; pass the dialog itself
-   * to override. A container that is a containing block for fixed descendants (transform, filter)
-   * offsets the popover.
+   * whose target is inside an open `<dialog>` mounts in that dialog and ignores `mountIn`. A container
+   * that is a containing block for fixed descendants (transform, filter) offsets the popover.
    */
   mountIn?: Element | (() => Element);
   /**
-   * Where the dimmed overlay is inserted instead of `document.body`. Same rules as `mountIn`. The
+   * Where the dimmed overlay is inserted instead of `document.body`. Same rules as `mountIn`. Outside
+   * `document.body` the overlay is inserted before the container's other children. The
    * overlay stays `position: fixed`, so a container that creates a containing block misplaces it.
    */
   dimMountIn?: Element | (() => Element);
