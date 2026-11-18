@@ -1,5 +1,5 @@
 import type { Alignment, AllowedButtons, Placement, PopoverDOM, Side } from "./popover/popover";
-import type { StageDefinition } from "./overlay/stage";
+import type { StageCornerRadius, StageDefinition } from "./overlay/stage";
 
 export type DestroyReason = "done" | "close" | "escape" | "overlay" | "replaced" | "api";
 
@@ -111,7 +111,7 @@ export type Config = {
   allowScroll?: boolean;
   overlayClickBehavior?: "close" | "nextStep" | "none" | DriverHook;
   stagePadding?: number;
-  stageRadius?: number;
+  stageRadius?: number | StageCornerRadius;
 
   disableActiveInteraction?: boolean | "clicks";
 
@@ -211,7 +211,7 @@ export type DriveStep = {
   waitForElement?: number;
   advanceDelay?: number;
   stagePadding?: number;
-  stageRadius?: number;
+  stageRadius?: number | StageCornerRadius;
   popoverOffset?: number;
   data?: Record<string, any>;
 };
