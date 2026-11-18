@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const toolsDir = dirname(fileURLToPath(import.meta.url));
 const skipDirs = new Set(["node_modules", "dist", ".git", "test-results", "playwright-report", "coverage"]);
+const scanned = /\.(md|mdx|tsx?|mts|mjs|json|html|css)$/;
 const allowList = ["driver.js", "github.com/nilbuild/driver.js", "Kamran Ahmed"];
 
 /**
@@ -67,14 +68,14 @@ function* walk(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
       if (!skipDirs.has(entry.name)) yield* walk(join(dir, entry.name));
-    } else if (entry.name.endsWith(".md") || /\.tsx?$/.test(entry.name)) {
+    } else if (entry.name !== "package-lock.json" && scanned.test(entry.name)) {
       yield join(dir, entry.name);
     }
   }
 }
 
 /**
- * Lints every Markdown file and TypeScript source file under `root`.
+ * Lints every Markdown, TypeScript, JavaScript module, JSON, HTML and CSS file under `root`.
  * @param {{ root: string, words: string[] }} options
  * @returns {{ file: string, line: number, word: string }[]}
  */
@@ -92,6 +93,15 @@ export function lintProse({ root, words }) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const root = resolve(toolsDir, "..");
   const words = loadBannedWords();
+  if (words.length === 0) {
+    if (process.env["REQUIRE_BANNED_WORDS"] === "1") {
+      console.error("lint:prose failed: REQUIRE_BANNED_WORDS=1 but 0 banned words loaded");
+      process.exit(1);
+    }
+    if (process.env["CI"]) {
+      console.error("WARNING: lint:prose loaded 0 banned words in CI; the lint is trivially green. Set BANNED_WORDS or REQUIRE_BANNED_WORDS=1.");
+    }
+  }
   const violations = lintProse({ root, words });
   if (violations.length > 0) {
     for (const v of violations) console.error(`${v.file}:${v.line}: banned word "${v.word}"`);

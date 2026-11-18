@@ -77,8 +77,8 @@ scaffold), NF-size (report), NF-ssr (gate), NF-tests (harness).
 - A unit test asserts `src/engine/**` matches the upstream tree: `test/fork-point.node.test.ts`
   compares SHA-256 of every file under `src/engine/` against `test/fixtures/fork-point.sha256`
   (generated once from the committed `src/engine/` at the end of F-01, which includes the
-  two renames and the strict-flag type fixes), so later drift is caught. F-03 and later tasks update the fixture when they change a file and say
-  so in the PR.
+  two renames and the strict-flag type fixes), so later drift is caught.
+  F-03 and later tasks update the fixture when they change a file and say so in the PR.
 
 **Acceptance criteria.**
 - A fresh clone with Node 20 can run build, unit, e2e, and the size report with the

@@ -24,7 +24,7 @@ export default defineConfig({
     command: "npm run dev --workspace virtualtour-demo",
     cwd: "../..",
     url: "http://localhost:4173/e2e.html",
-    reuseExistingServer: !process.env["CI"],
+    reuseExistingServer: false,
     timeout: 60_000,
   },
   projects: [

@@ -29,7 +29,10 @@ function fingerprint(): string {
 describe("fork point", () => {
   it("src/engine matches test/fixtures/fork-point.sha256", () => {
     const actual = fingerprint();
-    if (process.env["UPDATE_FORK_POINT"] === "1") writeFileSync(fixture, actual);
+    if (process.env["UPDATE_FORK_POINT"]) {
+      if (process.env["CI"]) throw new Error("UPDATE_FORK_POINT must not be set in CI");
+      writeFileSync(fixture, actual);
+    }
     expect(actual).toBe(readFileSync(fixture, "utf8"));
   });
 });

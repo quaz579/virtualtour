@@ -2,7 +2,7 @@
 
 ## Prose lint
 
-`npm run lint:prose` scans every Markdown file and TypeScript source file for banned words, so the
+`npm run lint:prose` scans every `.md`, `.mdx`, `.ts`, `.tsx`, `.mts`, `.mjs`, `.json`, `.html` and `.css` file (skipping `node_modules`, `dist`, `.git`, `test-results`, `playwright-report`, `coverage` and `package-lock.json`) for banned words, so the
 library stays generic. The word list is merged from three sources; blank lines and lines starting
 with `#` are ignored in each:
 
@@ -13,3 +13,6 @@ with `#` are ignored in each:
 Matching is case-insensitive and whole-word. `driver.js`, its repository URL, and its author's
 copyright line are allow-listed. Never commit words to the list; add them to the local file or the
 environment variable instead.
+
+With zero words loaded the lint passes trivially. Set `REQUIRE_BANNED_WORDS=1` to make that case exit
+non-zero. When `CI` is set and zero words load, the lint prints a loud warning instead.

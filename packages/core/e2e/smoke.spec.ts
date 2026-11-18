@@ -15,6 +15,7 @@ test("fixture page exposes the engine and shows a popover", async ({ page }) => 
     () => typeof (window as unknown as { __engine: { createEngine: unknown } }).__engine.createEngine === "function",
   );
   expect(hasFactory).toBe(true);
+  expect(await page.evaluate(() => (window as unknown as { log?: unknown[] }).log)).toEqual([]);
 
   await page.evaluate(() => {
     const w = window as unknown as {
