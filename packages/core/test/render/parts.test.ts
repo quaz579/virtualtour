@@ -40,6 +40,13 @@ describe("attribute guard", () => {
     expect(kept).toEqual({ "data-track": "close", title: "Close it" });
   });
 
+  it.each(["hidden", "disabled", "tabindex", "aria-hidden", "role", "aria-labelledby", "aria-describedby", "form", "formaction"])(
+    "drops %s",
+    (name) => {
+      expect(guardAttrs({ [name]: "x", [name.toUpperCase()]: "y", "data-ok": "1" })).toEqual({ "data-ok": "1" });
+    }
+  );
+
   it("returns nothing for missing attrs", () => {
     expect(guardAttrs(undefined)).toEqual({});
   });
@@ -107,6 +114,16 @@ describe("layer parts next to engine parts", () => {
     expect(document.querySelector(".vt-popover-description")!.innerHTML).toBe("plain");
     await tour.backward();
     expect(document.querySelector(".vt-body")!.contains(el)).toBe(true);
+  });
+
+  it("warns instead of throwing when the body cannot be mounted", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(Element.prototype, "after").mockImplementation(() => {
+      throw new DOMException("no", "HierarchyRequestError");
+    });
+    const tour = await show({ steps: [{ title: "T", body: document.createElement("p") }] });
+    expect(tour.isRunning()).toBe(true);
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("could not be mounted"))).toBe(true);
   });
 
   it("mountBody keeps other described-by tokens", () => {

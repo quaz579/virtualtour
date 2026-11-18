@@ -21,7 +21,13 @@ export class DialogPresenter implements Presenter {
   mount(popover: PopoverDOM, step: TourStep, parts: StepParts): void {
     popover.wrapper.classList.add(DIALOG_CLASS);
     popover.wrapper.setAttribute(this.stepAttr, String(this.tour.steps.indexOf(step)));
-    if (parts.content) parts.body = mountBody(popover, parts.content);
+    if (parts.content) {
+      try {
+        parts.body = mountBody(popover, parts.content);
+      } catch (error) {
+        console.warn(`[virtualtour] Step "${step.id}" body could not be mounted.`, error);
+      }
+    }
     this.applyCloseAttrs(popover, step);
   }
 

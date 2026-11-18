@@ -6,9 +6,24 @@ const P = fixedNames.popover;
 export const BODY_CLASS = "vt-body";
 export const BODY_ID = "vt-popover-body";
 
-const PROTECTED_ATTRS: ReadonlySet<string> = new Set(["type", "class", "id", "aria-label", "style"]);
+const PROTECTED_ATTRS: ReadonlySet<string> = new Set([
+  "type",
+  "class",
+  "id",
+  "aria-label",
+  "aria-hidden",
+  "aria-labelledby",
+  "aria-describedby",
+  "role",
+  "style",
+  "hidden",
+  "disabled",
+  "tabindex",
+  "form",
+  "formaction",
+]);
 
-/** Returns the attributes that may be set on a layer-owned button: drops `type`, `class`, `id`, `aria-label`, `style` and every `on*`. */
+/** Returns the attributes that may be set on a layer-owned button: drops `type`, `class`, `id`, `aria-label`, `aria-hidden`, `aria-labelledby`, `aria-describedby`, `role`, `style`, `hidden`, `disabled`, `tabindex`, `form`, `formaction` and every `on*`. */
 export function guardAttrs(attrs: Record<string, string> | undefined): Record<string, string> {
   const out: Record<string, string> = {};
   if (!attrs) return out;

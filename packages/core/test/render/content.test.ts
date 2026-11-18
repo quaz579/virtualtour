@@ -129,6 +129,16 @@ describe("sanitize", () => {
     expect(engineOf(tour)).not.toBeNull();
   });
 
+  it("clears the sanitizer memo between runs", async () => {
+    const sanitize = vi.fn((html: string) => html);
+    const tour = await show({ sanitize, steps: [{ title: "T", body: "same" }] });
+    const first = sanitize.mock.calls.filter((c) => c[0] === "same").length;
+    expect(first).toBeGreaterThan(0);
+    tour.finish();
+    await tour.start();
+    expect(sanitize.mock.calls.filter((c) => c[0] === "same").length).toBe(first * 2);
+  });
+
   it("does not sanitize an element body or the label", async () => {
     const sanitize = vi.fn((html: string) => html);
     const el = document.createElement("div");
