@@ -329,5 +329,10 @@ const examples: Record<string, () => void> = {
   },
 };
 
-examples[new URLSearchParams(location.search).get("example") ?? ""]?.();
+const name = new URLSearchParams(location.search).get("example") ?? "";
+const run = examples[name];
+if (!run) {
+  throw new Error(`unknown example: ${name}`);
+}
+run();
 document.documentElement.dataset.ready = "true";
