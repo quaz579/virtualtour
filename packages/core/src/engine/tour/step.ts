@@ -31,7 +31,7 @@ export function findReachableIndex(ctx: Context, fromIndex: number, direction: 1
   const steps = ctx.getConfig("steps") || [];
 
   for (let i = fromIndex; i >= 0 && i < steps.length; i += direction) {
-    if (!shouldSkipStep(ctx, steps[i])) {
+    if (!shouldSkipStep(ctx, steps[i]!)) {
       return i;
     }
   }
@@ -124,7 +124,7 @@ export function resolvePopoverOptions(ctx: Context, popover: Popover = {}, place
 
 export function resolveTourStep(ctx: Context, stepIndex: number): DriveStep {
   const steps = ctx.getConfig("steps") || [];
-  const step = steps[stepIndex];
+  const step = steps[stepIndex]!;
   const popover = step.popover || {};
   const place = placeOf(ctx, stepIndex);
   const resolved = resolvePopoverOptions(ctx, popover, place);

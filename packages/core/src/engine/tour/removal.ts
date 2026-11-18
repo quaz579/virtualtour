@@ -19,7 +19,7 @@ function goBack(ctx: Context, preset: ElementMissingPreset) {
 
   const steps = ctx.getConfig("steps") || [];
   for (let index = activeIndex - 1; preset === "previousAction" && index >= 0; index--) {
-    const candidate = steps[index];
+    const candidate = steps[index]!;
     if (isActionStep(candidate) && candidate.element && resolveElement(candidate.element)?.isConnected) {
       ctx.tour.drive(index);
       return;

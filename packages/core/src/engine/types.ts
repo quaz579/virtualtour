@@ -11,7 +11,7 @@ export type HookOpts = {
 
   reason?: DestroyReason;
 
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
 };
 
 export type DriverHook = (element: Element | undefined, step: DriveStep, opts: HookOpts) => void;
@@ -130,8 +130,8 @@ export type Config = {
 };
 
 export type Popover = {
-  title?: string;
-  description?: string;
+  title?: string | undefined;
+  description?: string | undefined;
   side?: Side;
   align?: Alignment;
 
@@ -139,15 +139,15 @@ export type Popover = {
   showProgress?: boolean;
   disableButtons?: AllowedButtons[];
 
-  popoverClass?: string;
+  popoverClass?: string | undefined;
 
-  progressText?: string;
-  doneBtnText?: string;
-  nextBtnText?: string;
-  prevBtnText?: string;
-  closeBtnLabel?: string;
+  progressText?: string | undefined;
+  doneBtnText?: string | undefined;
+  nextBtnText?: string | undefined;
+  prevBtnText?: string | undefined;
+  closeBtnLabel?: string | undefined;
 
-  instruction?: string;
+  instruction?: string | undefined;
 
   onPopoverRender?: (popover: PopoverDOM, opts: HookOpts) => void;
 
@@ -162,7 +162,7 @@ export type DriveStep = {
   onHighlightStarted?: DriverHook;
   onHighlighted?: DriverHook;
   onDeselected?: DriverHook;
-  popover?: Popover;
+  popover?: Popover | undefined;
   disableActiveInteraction?: boolean | "clicks";
   advanceOn?: AdvanceOn;
   /** @deprecated Use `advanceOn: "click"`. */

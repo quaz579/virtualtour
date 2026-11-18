@@ -41,7 +41,7 @@ export function elementBlockOf(ctx: Context, event: Event): ElementBlock | undef
   }
 
   const expected = strictGestures(ctx, step);
-  if (!expected || expected.some(type => GESTURE_PARTS[type].includes(part))) {
+  if (!expected || expected.some(type => GESTURE_PARTS[type]!.includes(part))) {
     return undefined;
   }
 

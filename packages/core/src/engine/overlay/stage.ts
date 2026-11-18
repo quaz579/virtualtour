@@ -81,8 +81,8 @@ export function generateExtraCutoutsPathString(cutout: StageCutout, rects: Rect[
 
   columns.forEach((x, column) => {
     rows.forEach((y, row) => {
-      const width = columns[column + 1] - x;
-      const height = rows[row + 1] - y;
+      const width = columns[column + 1]! - x;
+      const height = rows[row + 1]! - y;
       const centerX = x + width / 2;
       const centerY = y + height / 2;
       if (isInsideExtraCutout(centerX, centerY) && !isInside(cutout, centerX, centerY)) {

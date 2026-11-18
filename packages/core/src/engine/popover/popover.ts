@@ -25,8 +25,8 @@ export type PopoverDOM = {
 };
 
 export type PopoverRenderOptions = {
-  title?: string;
-  description?: string;
+  title?: string | undefined;
+  description?: string | undefined;
 
   showButtons: AllowedButtons[];
   disableButtons: AllowedButtons[];
@@ -37,16 +37,16 @@ export type PopoverRenderOptions = {
   prevBtnText: string;
   closeBtnLabel: string;
 
-  doneButton?: boolean;
+  doneButton?: boolean | undefined;
 
-  instruction?: string;
-  isGated?: boolean;
-  isDone?: boolean;
+  instruction?: string | undefined;
+  isGated?: boolean | undefined;
+  isDone?: boolean | undefined;
 
-  feedback?: string;
+  feedback?: string | undefined;
 
-  popoverClass?: string;
-  smoothScroll?: boolean;
+  popoverClass?: string | undefined;
+  smoothScroll?: boolean | undefined;
 
   onNextClick?: () => void;
   onPrevClick?: () => void;

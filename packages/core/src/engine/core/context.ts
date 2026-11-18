@@ -23,13 +23,13 @@ export type StepWait = "initial" | "next" | "missing";
 export type Activation = {
   step: DriveStep;
   controller: AbortController;
-  placeholder?: { element: Element; index: number };
-  wait?: StepWait;
+  placeholder?: { element: Element; index: number } | undefined;
+  wait?: StepWait | undefined;
   latched: boolean;
   settling?: boolean;
   done?: boolean;
   recheck?: () => void;
-  popoverPatch?: PopoverPatch;
+  popoverPatch?: PopoverPatch | undefined;
   feedback?: string;
 };
 
@@ -79,7 +79,7 @@ export type InternalState = State & {
   __openObserver?: MutationObserver;
   __refreshMissed?: boolean;
   __advanceClick?: MouseEvent;
-  __marked?: { element: Element; parent?: Element };
+  __marked?: { element: Element; parent?: Element | undefined };
   __activation?: Activation;
   __liveRegion?: HTMLElement;
   __handledKeys?: Set<string>;

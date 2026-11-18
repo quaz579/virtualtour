@@ -137,7 +137,7 @@ export function initGate(ctx: Context): () => void {
   const listen = (type: string, listener: (event: Event) => void) => {
     window.addEventListener(type, listener, {
       capture: true,
-      passive: TOUCH_EVENTS.has(type) || undefined,
+      ...(TOUCH_EVENTS.has(type) ? { passive: true } : {}),
       signal: controller.signal,
     });
   };

@@ -34,8 +34,8 @@ export function usesAdvanceOnClick(ctx: Context, step: DriveStep): boolean {
 
 export type AdvanceEvents = {
   types: string[];
-  when?: AdvanceOnEvent["when"];
-  strict?: boolean;
+  when?: AdvanceOnEvent["when"] | undefined;
+  strict?: boolean | undefined;
 };
 
 export function advanceEvents(advanceOn: AdvanceOn | undefined): AdvanceEvents {
