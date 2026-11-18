@@ -16,13 +16,14 @@ const builtToday = [
   "dist/avatar.d.ts",
   "dist/motion.d.ts",
   "dist/base.css",
+  "dist/thumbtack/pack.json",
+  "dist/thumbtack/sheet.png",
+  "dist/thumbtack/LICENSE-ART.md",
 ];
 
 const notBuiltYet = [
   "./dist/theme.css",
   "./dist/avatar.css",
-  "./dist/thumbtack/pack.json",
-  "./dist/thumbtack/sheet.png",
 ];
 
 function exportTargets(value: unknown): string[] {

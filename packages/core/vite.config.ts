@@ -1,3 +1,4 @@
+import { copyFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
@@ -29,6 +30,15 @@ export default defineConfig(({ mode }) => {
     plugins: dev
       ? []
       : [
+          {
+            name: "thumbtack-assets",
+            closeBundle() {
+              const from = resolve(__dirname, "src/avatar/thumbtack");
+              const to = resolve(__dirname, "dist/thumbtack");
+              mkdirSync(to, { recursive: true });
+              for (const file of ["pack.json", "sheet.png", "LICENSE-ART.md"]) copyFileSync(resolve(from, file), resolve(to, file));
+            },
+          },
           dts({
             include: ["src/index.ts", "src/avatar", "src/motion"],
             tsconfigPath: resolve(__dirname, "tsconfig.json"),
