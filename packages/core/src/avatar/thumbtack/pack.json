@@ -1,0 +1,516 @@
+{
+  "format": "virtualtour-avatar/1",
+  "name": "Thumbtack",
+  "version": "1.0.0",
+  "sheet": {
+    "src": "./sheet.png",
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "columns": 10,
+    "scale": 2,
+    "pixelArt": false
+  },
+  "animations": {
+    "rest": {
+      "frames": [
+        {
+          "col": 0,
+          "row": 0,
+          "ms": 100
+        }
+      ],
+      "loop": false,
+      "still": 0
+    },
+    "blink": {
+      "frames": [
+        {
+          "col": 1,
+          "row": 0,
+          "ms": 60
+        },
+        {
+          "col": 2,
+          "row": 0,
+          "ms": 60
+        },
+        {
+          "col": 3,
+          "row": 0,
+          "ms": 60
+        },
+        {
+          "col": 4,
+          "row": 0,
+          "ms": 60
+        }
+      ],
+      "loop": false,
+      "still": 0
+    },
+    "wobble": {
+      "frames": [
+        {
+          "col": 5,
+          "row": 0,
+          "ms": 80
+        },
+        {
+          "col": 6,
+          "row": 0,
+          "ms": 80
+        },
+        {
+          "col": 7,
+          "row": 0,
+          "ms": 80
+        },
+        {
+          "col": 8,
+          "row": 0,
+          "ms": 80
+        },
+        {
+          "col": 9,
+          "row": 0,
+          "ms": 80
+        },
+        {
+          "col": 0,
+          "row": 1,
+          "ms": 80
+        },
+        {
+          "col": 1,
+          "row": 1,
+          "ms": 80
+        },
+        {
+          "col": 2,
+          "row": 1,
+          "ms": 80
+        }
+      ],
+      "loop": false,
+      "still": 0
+    },
+    "look-around": {
+      "frames": [
+        {
+          "col": 3,
+          "row": 1,
+          "ms": 90
+        },
+        {
+          "col": 4,
+          "row": 1,
+          "ms": 90
+        },
+        {
+          "col": 5,
+          "row": 1,
+          "ms": 90
+        },
+        {
+          "col": 6,
+          "row": 1,
+          "ms": 90
+        },
+        {
+          "col": 7,
+          "row": 1,
+          "ms": 90
+        },
+        {
+          "col": 8,
+          "row": 1,
+          "ms": 90
+        },
+        {
+          "col": 9,
+          "row": 1,
+          "ms": 90
+        },
+        {
+          "col": 0,
+          "row": 2,
+          "ms": 90
+        }
+      ],
+      "loop": false,
+      "still": 0
+    },
+    "wave": {
+      "frames": [
+        {
+          "col": 1,
+          "row": 2,
+          "ms": 90
+        },
+        {
+          "col": 2,
+          "row": 2,
+          "ms": 90
+        },
+        {
+          "col": 3,
+          "row": 2,
+          "ms": 90
+        },
+        {
+          "col": 4,
+          "row": 2,
+          "ms": 90
+        },
+        {
+          "col": 5,
+          "row": 2,
+          "ms": 90
+        },
+        {
+          "col": 6,
+          "row": 2,
+          "ms": 90
+        },
+        {
+          "col": 7,
+          "row": 2,
+          "ms": 90
+        },
+        {
+          "col": 8,
+          "row": 2,
+          "ms": 90
+        }
+      ],
+      "loop": false,
+      "still": 1
+    },
+    "point-left": {
+      "frames": [
+        {
+          "col": 9,
+          "row": 2,
+          "ms": 80
+        },
+        {
+          "col": 0,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 1,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 2,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 3,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 4,
+          "row": 3,
+          "ms": 80
+        }
+      ],
+      "loop": false,
+      "still": 2
+    },
+    "point-right": {
+      "frames": [
+        {
+          "col": 5,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 6,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 7,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 8,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 9,
+          "row": 3,
+          "ms": 80
+        },
+        {
+          "col": 0,
+          "row": 4,
+          "ms": 80
+        }
+      ],
+      "loop": false,
+      "still": 2
+    },
+    "point-up": {
+      "frames": [
+        {
+          "col": 1,
+          "row": 4,
+          "ms": 80
+        },
+        {
+          "col": 2,
+          "row": 4,
+          "ms": 80
+        },
+        {
+          "col": 3,
+          "row": 4,
+          "ms": 80
+        },
+        {
+          "col": 4,
+          "row": 4,
+          "ms": 80
+        },
+        {
+          "col": 5,
+          "row": 4,
+          "ms": 80
+        },
+        {
+          "col": 6,
+          "row": 4,
+          "ms": 80
+        }
+      ],
+      "loop": false,
+      "still": 2
+    },
+    "point-down": {
+      "frames": [
+        {
+          "col": 7,
+          "row": 4,
+          "ms": 80
+        },
+        {
+          "col": 8,
+          "row": 4,
+          "ms": 80
+        },
+        {
+          "col": 9,
+          "row": 4,
+          "ms": 80
+        },
+        {
+          "col": 0,
+          "row": 5,
+          "ms": 80
+        },
+        {
+          "col": 1,
+          "row": 5,
+          "ms": 80
+        },
+        {
+          "col": 2,
+          "row": 5,
+          "ms": 80
+        }
+      ],
+      "loop": false,
+      "still": 2
+    },
+    "think": {
+      "frames": [
+        {
+          "col": 3,
+          "row": 5,
+          "ms": 140
+        },
+        {
+          "col": 4,
+          "row": 5,
+          "ms": 140
+        },
+        {
+          "col": 5,
+          "row": 5,
+          "ms": 140
+        },
+        {
+          "col": 6,
+          "row": 5,
+          "ms": 140
+        },
+        {
+          "col": 7,
+          "row": 5,
+          "ms": 140
+        },
+        {
+          "col": 8,
+          "row": 5,
+          "ms": 140
+        }
+      ],
+      "loop": true,
+      "still": 2
+    },
+    "cheer": {
+      "frames": [
+        {
+          "col": 9,
+          "row": 5,
+          "ms": 80
+        },
+        {
+          "col": 0,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 1,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 2,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 3,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 4,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 5,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 6,
+          "row": 6,
+          "ms": 80
+        }
+      ],
+      "loop": false,
+      "still": 2
+    },
+    "pop-out": {
+      "frames": [
+        {
+          "col": 7,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 8,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 9,
+          "row": 6,
+          "ms": 80
+        },
+        {
+          "col": 0,
+          "row": 7,
+          "ms": 80
+        },
+        {
+          "col": 1,
+          "row": 7,
+          "ms": 80
+        },
+        {
+          "col": 2,
+          "row": 7,
+          "ms": 80
+        }
+      ],
+      "loop": false,
+      "still": 3
+    },
+    "boing": {
+      "frames": [
+        {
+          "col": 3,
+          "row": 7,
+          "ms": 70
+        },
+        {
+          "col": 4,
+          "row": 7,
+          "ms": 70
+        },
+        {
+          "col": 5,
+          "row": 7,
+          "ms": 70
+        },
+        {
+          "col": 6,
+          "row": 7,
+          "ms": 70
+        },
+        {
+          "col": 7,
+          "row": 7,
+          "ms": 70
+        },
+        {
+          "col": 8,
+          "row": 7,
+          "ms": 70
+        }
+      ],
+      "loop": false,
+      "still": 1
+    }
+  },
+  "roles": {
+    "rest": "rest",
+    "idle": [
+      "blink",
+      "wobble",
+      "look-around"
+    ],
+    "greet": "wave",
+    "point": {
+      "left": "point-left",
+      "right": "point-right",
+      "up": "point-up",
+      "down": "point-down"
+    },
+    "think": "think",
+    "celebrate": "cheer",
+    "exit": "pop-out",
+    "alert": "boing"
+  },
+  "bubble": {
+    "dock": "end",
+    "gap": 8
+  },
+  "license": {
+    "name": "CC0-1.0",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "attribution": "Thumbtack character, original to this project; no credit required"
+  }
+}

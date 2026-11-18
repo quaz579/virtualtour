@@ -1,0 +1,5 @@
+# Artwork
+
+Thumbtack, the avatar that ships with VirtualTour, is original to this project. It is a push pin (a round head on a short needle), drawn entirely by code: `src/avatar/thumbtack/frames.mjs` describes every pose as a handful of parameters (tilt, nod, squash, pupil position, eyebrow raise, blink, mouth), `tools/build-thumbtack-pack.mjs` writes one SVG per frame and rasterizes them into `sheet.png` and `pack.json`. The author is the VirtualTour contributors. No frame was traced from, measured against, or derived from another character, and no third-party character art, screenshot of such art, or animation data describing it is accepted into this repository.
+
+The Thumbtack art (the SVG sources, `frames.mjs`, `sheet.png`, and `pack.json`) is dedicated to the public domain under CC0 1.0; see [`src/avatar/thumbtack/LICENSE-ART.md`](src/avatar/thumbtack/LICENSE-ART.md), which is copied to `dist/thumbtack/` by the build. The code in `tools/build-thumbtack-pack.mjs` stays under the project's MIT license.
