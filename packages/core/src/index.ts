@@ -1,5 +1,8 @@
 import "./styles/base.css";
 
+export { Emitter } from "./events";
+export type * from "./types";
+
 /** Placeholder returned by {@link createTour} until the public API lands. */
 export interface Tour {
   readonly placeholder: true;
