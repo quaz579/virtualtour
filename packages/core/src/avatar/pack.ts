@@ -207,6 +207,7 @@ function validateRoles(value: unknown, animations: Record<string, AnimationDef>)
   if (roles.rest === undefined) fail("roles.rest", "is required");
   const out: RoleMap = { rest: exists(roles.rest, "roles.rest") };
   if (roles.idle !== undefined) {
+    if (Array.isArray(roles.idle) && roles.idle.length === 0) fail("roles.idle", "must not be an empty array");
     out.idle = Array.isArray(roles.idle)
       ? roles.idle.map((name, i) => exists(name, `roles.idle[${i}]`))
       : exists(roles.idle, "roles.idle");
@@ -279,8 +280,8 @@ export function validatePack(json: unknown): AvatarPack {
 }
 
 function resolveSheetUrl(src: string, baseUrl: string): string {
-  const base = /^[a-z][a-z0-9+.-]*:/i.test(baseUrl) || typeof location === "undefined" ? baseUrl : new URL(baseUrl, location.href).href;
   try {
+    const base = /^[a-z][a-z0-9+.-]*:/i.test(baseUrl) || typeof location === "undefined" ? baseUrl : new URL(baseUrl, location.href).href;
     return new URL(src, base).href;
   } catch {
     return fail("sheet.src", `cannot be resolved against "${baseUrl}"`);
@@ -317,14 +318,15 @@ export function normalizePack(pack: AvatarPack, baseUrl: string): NormalizedPack
 
 /**
  * Loads and decodes the sheet image so the first frame paints without a flash.
- * Rejects with an {@link AvatarPackError} when the image fails to load or decode.
+ * Rejects with an {@link AvatarPackError} when the image fails to load; a decode failure after a
+ * successful load still resolves because the browser will decode on paint. Has no timeout of its own.
  */
 export function preloadSheet(url: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const image = new Image();
     const failed = (): void => reject(new AvatarPackError("sheet.src", `could not load ${url}`));
     image.onload = () => {
-      if (typeof image.decode === "function") image.decode().then(() => resolve(), failed);
+      if (typeof image.decode === "function") image.decode().then(() => resolve(), () => resolve());
       else resolve();
     };
     image.onerror = failed;
@@ -359,7 +361,8 @@ export function resolveRole(
   }
   if (role === "point") {
     const point = roles.point;
-    return (dir !== undefined ? point?.[dir] : undefined) ?? point?.any ?? roles.greet ?? roles.rest;
+    const directional = dir !== undefined && point !== undefined && hasOwn(point, dir) ? point[dir] : undefined;
+    return directional ?? point?.any ?? roles.greet ?? roles.rest;
   }
-  return roles[role] ?? roles.rest;
+  return (hasOwn(roles, role) ? roles[role] : undefined) ?? roles.rest;
 }

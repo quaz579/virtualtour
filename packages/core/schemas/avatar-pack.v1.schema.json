@@ -33,7 +33,7 @@
       "additionalProperties": false,
       "properties": {
         "rest": { "type": "string" },
-        "idle": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "idle": { "oneOf": [{ "type": "string" }, { "type": "array", "minItems": 1, "items": { "type": "string" } }] },
         "greet": { "type": "string" },
         "think": { "type": "string" },
         "celebrate": { "type": "string" },

@@ -116,6 +116,7 @@ describe("validatePack", () => {
     ["idle string names nothing", "roles.idle", (p) => (p.roles.idle = "nope")],
     ["point.left names nothing", "roles.point.left", (p) => (p.roles.point.left = "nope")],
     ["inherited name is not an animation", "roles.think", (p) => (p.roles.think = "constructor")],
+    ["empty idle list", "roles.idle", (p) => (p.roles.idle = [])],
     ["unknown role", "roles.dance", (p) => (p.roles.dance = "wave")],
     ["unknown point key", "roles.point.sideways", (p) => (p.roles.point.sideways = "wave")],
     ["bad dock", "bubble.dock", (p) => (p.bubble.dock = "middle")],
@@ -326,9 +327,9 @@ describe("preloadSheet", () => {
     });
   });
 
-  it("rejects when decode fails", async () => {
+  it("still resolves when decode rejects after a successful load", async () => {
     stubImage("load", () => Promise.reject(new Error("bad image")));
-    await expect(preloadSheet("https://x.test/broken.png")).rejects.toBeInstanceOf(AvatarPackError);
+    await expect(preloadSheet("https://x.test/odd.png")).resolves.toBeUndefined();
   });
 });
 
@@ -349,6 +350,7 @@ describe("avatar-pack.v1.schema.json", () => {
     ["missing roles.rest", (p) => delete p.roles.rest],
     ["unknown top-level key", (p) => (p.extra = true)],
     ["bad dock", (p) => (p.bubble.dock = "middle")],
+    ["empty idle list", (p) => (p.roles.idle = [])],
   ])("rejects a malformed pack: %s", (_label, edit) => {
     const bad = mutate(edit);
     expect(validate(bad)).toBe(false);
