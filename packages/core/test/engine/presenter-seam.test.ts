@@ -101,4 +101,19 @@ describe("presenter seam", () => {
     expect(onReposition.mock.calls[0]![0].targetRect).toBeNull();
     expect(onReposition.mock.calls[0]![0].side).toBe("over");
   });
+
+  it("fires onReposition again when an image in the popover finishes loading", () => {
+    const onReposition = vi.fn();
+    const d = createDriver({
+      animate: false,
+      onReposition,
+      steps: [{ element: "#intro", popover: { title: "Image", description: '<img src="about:blank" alt="">' } }],
+    });
+    d.drive();
+    const before = onReposition.mock.calls.length;
+
+    popoverEl()!.querySelector("img")!.dispatchEvent(new Event("load"));
+
+    expect(onReposition).toHaveBeenCalledTimes(before + 1);
+  });
 });
