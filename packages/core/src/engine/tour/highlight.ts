@@ -14,6 +14,7 @@ import {
   isInsideAllowedElement,
   isScrollable,
   moveToLayerOf,
+  resolveMount,
   resolveElement,
 } from "../core/utils";
 
@@ -109,7 +110,7 @@ export function refreshActiveHighlight(ctx: Context) {
 function followLayer(ctx: Context, element: Element) {
   const wrapper = ctx.getState("popover")?.wrapper;
   if (wrapper) {
-    moveToLayerOf(wrapper, element);
+    moveToLayerOf(ctx, wrapper, element, "popover");
   }
 }
 
@@ -129,6 +130,15 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
   const isFromDummyElement = isDummyElement(fromElement);
 
   const hasOverlay = () => ctx.getConfig("overlay") !== false;
+
+  if (hasOverlay()) {
+    resolveMount(ctx, "overlay", true);
+  }
+
+  if (toStep.popover) {
+    resolveMount(ctx, "popover", true);
+  }
+
   const reducedMotion = prefersReducedMotion();
   const isAnimatedTour = !!ctx.getConfig("animate") && !reducedMotion && hasOverlay();
   const highlightStartedHook = toStep.onHighlightStarted || ctx.getConfig("onHighlightStarted");
