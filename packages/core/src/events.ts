@@ -1,3 +1,6 @@
+import type { Tour } from "./tour";
+import type { TourStep } from "./step";
+
 interface Listener {
   fn: (payload: never) => void;
   ctx: object | undefined;
@@ -74,4 +77,33 @@ export class Emitter<Events extends object> {
     if (next.length) this.listeners.set(e, next);
     else this.listeners.delete(e);
   }
+}
+
+/** Why a tour ended without finishing. */
+export type ExitReason = "close" | "escape" | "overlay" | "api" | "replaced";
+
+/** Tour-level events; the registry relays every one of them. */
+export interface TourEvents {
+  started: { tour: Tour };
+  activated: { tour: Tour };
+  deactivated: { tour: Tour };
+  "step-shown": { tour: Tour; step: TourStep; previous: TourStep | null };
+  /** An action step's instruction was met. */
+  "step-completed": { tour: Tour; step: TourStep };
+  finished: { tour: Tour };
+  exited: { tour: Tour; reason: ExitReason };
+  bypassed: { tour: Tour; reason: "completed" };
+}
+
+/** Step-level events. */
+export interface StepEvents {
+  "will-show": { step: TourStep };
+  shown: { step: TourStep };
+  "will-hide": { step: TourStep };
+  hidden: { step: TourStep };
+  /** An action step's instruction was met. */
+  completed: { step: TourStep };
+  finished: { step: TourStep };
+  exited: { step: TourStep };
+  disposed: { step: TourStep };
 }

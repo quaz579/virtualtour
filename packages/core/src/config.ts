@@ -1,5 +1,5 @@
 import type { Config } from "./engine/types";
-import type { CornerRadius, DimConfig, StepConfig, TourConfig } from "./types";
+import type { CornerRadius, DimConfig, PresenterFactory, ProgressConfig, StepConfig, TourConfig } from "./types";
 
 const NAMESPACE_PATTERN = /^[a-zA-Z][\w-]*$/;
 
@@ -34,6 +34,8 @@ export interface NormalizedTourConfig {
   exitPrompt: false | string | (() => boolean | Promise<boolean>);
   counter: boolean | ((index: number, total: number) => string);
   labels: { next: string; back: string; done: string; close: string };
+  progress?: ProgressConfig;
+  presenter?: PresenterFactory;
   sanitize?: (html: string) => string;
   animate: boolean;
 }
@@ -202,6 +204,8 @@ export function normalizeTourConfig(config: TourConfig): NormalizedTourConfig {
   if (config.name !== undefined) out.name = config.name;
   if (config.mountIn !== undefined) out.mountIn = config.mountIn;
   if (config.dimMountIn !== undefined) out.dimMountIn = config.dimMountIn;
+  if (config.progress !== undefined) out.progress = config.progress;
+  if (config.presenter !== undefined) out.presenter = config.presenter;
   if (config.sanitize !== undefined) out.sanitize = config.sanitize;
   return out;
 }

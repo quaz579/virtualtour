@@ -1,3 +1,7 @@
+import type { PopoverDOM } from "./engine/popover/popover";
+import type { Tour } from "./tour";
+import type { TourStep } from "./step";
+
 /** Any value that survives `JSON.stringify` unchanged. */
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
@@ -76,12 +80,12 @@ export interface SpotlightOptions {
   targetInteractive?: boolean | "hover-only";
 }
 
-/** Minimal shape of a tour as seen by button handlers. */
+/** Minimal shape of a tour as seen by the compiler. */
 export interface TourLike {
   readonly id: string;
 }
 
-/** Minimal shape of a step as seen by the compiler and button handlers. */
+/** Minimal shape of a step as seen by the compiler. */
 export interface TourStepLike {
   readonly id: string;
   readonly config: Readonly<StepConfig>;
@@ -90,8 +94,8 @@ export interface TourStepLike {
 
 /** Context passed to a function button action. */
 export interface ButtonContext {
-  tour: TourLike;
-  step: TourStepLike;
+  tour: Tour;
+  step: TourStep;
 }
 
 /** A custom footer button. */
@@ -143,6 +147,68 @@ export interface StepConfig {
   extensions?: Record<string, unknown>;
 }
 
+/** One saved progress entry for a tour. */
+export interface ProgressRecord {
+  tourId: string;
+  lastStepId?: string;
+  completedAt?: string;
+  exitedAt?: string;
+  updatedAt: string;
+}
+
+/** Where progress is kept between page loads. */
+export interface ProgressStore {
+  load(tourId: string): Promise<ProgressRecord | null> | ProgressRecord | null;
+  save(record: ProgressRecord): Promise<void> | void;
+  clear(tourId: string): Promise<void> | void;
+}
+
+/** Progress persistence options. */
+export interface ProgressConfig {
+  store: ProgressStore;
+  /** Skip a tour the user already finished. Default true. */
+  skipCompleted?: boolean;
+  /** Start at the last step shown. Default false. */
+  resume?: boolean;
+}
+
+/** Elements a presenter may add next to the engine's own popover parts. */
+export interface StepParts {
+  /** `.vt-body`, only for non-string bodies. */
+  body?: HTMLElement;
+  /** `.vt-footer`, holding custom buttons. */
+  footer?: HTMLElement;
+  buttons: HTMLButtonElement[];
+}
+
+/** Where the popover ended up after positioning. */
+export interface RepositionInfo {
+  side: Side | "over";
+  align: Align;
+  wrapperRect: DOMRect;
+  /** The visible bubble; equals `wrapperRect` for layouts without one. */
+  bubbleRect: DOMRect;
+  /** `null` when the step has no real target element. */
+  targetRect: DOMRect | null;
+}
+
+/** Renders the parts of a step the engine does not draw. Created once per tour run. */
+export interface Presenter {
+  /** Runs after the popover content is applied and before the popover is positioned. */
+  mount(popover: PopoverDOM, step: TourStep, parts: StepParts): void;
+  afterShow(popover: PopoverDOM, step: TourStep): void;
+  afterReposition(popover: PopoverDOM, step: TourStep, info: RepositionInfo): void;
+  /** Re-applies a step whose configuration changed while it is shown. */
+  update(popover: PopoverDOM, step: TourStep, parts: StepParts): void;
+  beforeLeave(step: TourStep): void;
+  unmount(): void;
+  /** Which popover layout the engine builds. Default `dialog`. */
+  layout?: "dialog" | "speaker";
+}
+
+/** Builds the presenter for a tour. */
+export type PresenterFactory = (tour: Tour) => Presenter;
+
 /** Configuration of a tour. */
 export interface TourConfig {
   /** Defaults to `<name-slug>-<random>`. */
@@ -162,6 +228,9 @@ export interface TourConfig {
   /** `true` shows "1 of 3"; a function receives the 1-based index and the step count. */
   counter?: boolean | ((index: number, total: number) => string);
   labels?: { next?: string; back?: string; done?: string; close?: string };
+  progress?: ProgressConfig;
+  /** Replaces the built-in dialog presenter. */
+  presenter?: PresenterFactory;
   /** Hook that cleans HTML before it reaches the page. */
   sanitize?: (html: string) => string;
   animate?: boolean;

@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   root: __dirname,
   define: { __DEV__: "true" },
-  server: { fs: { allow: [resolve(__dirname, "..")] } },
+  server: { port: Number(process.env["VT_E2E_PORT"] || 4173), strictPort: true, fs: { allow: [resolve(__dirname, "..")] } },
   build: {
     rollupOptions: {
       input: {
