@@ -8,11 +8,16 @@ import type { PopoverDOM } from "./engine/popover/popover";
 import { TourEnvironmentError, TourNavigationError } from "./errors";
 import { Emitter } from "./events";
 import type { ExitReason, TourEvents } from "./events";
-import { NavigationQueue, resolveStepIndex, selectIndex } from "./navigator";
+import { listenForAdvance } from "./advance/auto-advance";
+import { resolveTarget, waitForTarget } from "./dom/target";
+import { chain, NavigationQueue, raceAbort, resolveStepIndex, selectEligible } from "./navigator";
+import type { NavigationOutcome } from "./navigator";
 import { DialogPresenter } from "./presenter";
 import { relayTourEvent, setCurrentTour, tours } from "./registry";
-import { emitStep, markHidden, markShown, resetStep, retireStep, TourStep } from "./step";
+import { emitStep, markHidden, markShown, resetStep, retireStep, setResolvedTarget, TourStep } from "./step";
 import type { Presenter, RepositionInfo, StepConfig, TourConfig } from "./types";
+
+const WAITING_CLASS = "vt-waiting";
 
 type EndKind = "finished" | ExitReason;
 
@@ -36,6 +41,7 @@ interface TourInternals {
   pendingExit: Promise<boolean> | null;
   previousStep: TourStep | null;
   mounted: { popover: PopoverDOM; step: TourStep } | null;
+  detachAdvance: (() => void) | null;
 }
 
 const internals = new WeakMap<object, TourInternals>();
@@ -73,6 +79,7 @@ export class Tour {
       pendingExit: null,
       previousStep: null,
       mounted: null,
+      detachAdvance: null,
     };
     internals.set(this, state);
     const reserved = new Set<string>();
@@ -153,14 +160,7 @@ export class Tour {
     if (state.engine) syncEngineSteps(this);
     if (wasTarget) settle(state);
     if (!wasVisible && !wasTarget) return;
-    const outcome = selectIndex(state.steps.length, index - 1, "forward");
-    if (outcome.kind === "show") {
-      const target = outcome.index;
-      reportFailure(state.queue.enqueue(() => showStep(this, target)));
-      return;
-    }
-    state.anchorIndex = -1;
-    terminate(this, "api");
+    reportFailure(state.queue.enqueue(() => resumeAfterDrop(this, index - 1)));
   }
 
   /** Repositions the popover. Does nothing while no run is active. */
@@ -203,9 +203,14 @@ export class Tour {
       requireDocument("goTo");
       beginRun(this);
     }
-    await navigateGuarded(this, async () => {
+    await navigateGuarded(this, () => {
       const index = ref === undefined ? Math.max(state.anchorIndex, 0) : resolveStepIndex(state.steps, ref);
-      await showStep(this, index);
+      const step = state.steps[index];
+      if (step && step.isShown() && state.engine?.isActive()) return Promise.resolve();
+      const runId = state.runId;
+      const backward = index < state.anchorIndex;
+      const outcome = advanceFrom(this, backward ? index + 1 : index - 1, backward ? "backward" : "forward", index);
+      return Promise.resolve(chain(outcome, (o) => concludeNavigation(this, runId, o)));
     });
   }
 
@@ -292,6 +297,12 @@ function settle(state: TourInternals): void {
   waiter?.();
 }
 
+function detachAdvance(state: TourInternals): void {
+  const detach = state.detachAdvance;
+  state.detachAdvance = null;
+  detach?.();
+}
+
 function stepOf(tour: Tour, driveStep: DriveStep | undefined): TourStep | undefined {
   const step = driveStep?.data?.["vt"] as TourStep | undefined;
   return step && internalsOf(tour).steps.includes(step) ? step : undefined;
@@ -299,6 +310,7 @@ function stepOf(tour: Tour, driveStep: DriveStep | undefined): TourStep | undefi
 
 function leaveStep(tour: Tour, step: TourStep): void {
   const state = internalsOf(tour);
+  detachAdvance(state);
   if (!step.isShown()) return;
   guarded("presenter.beforeLeave", () => state.presenter?.beforeLeave(step));
   emitStep(step, "will-hide", { step });
@@ -399,6 +411,7 @@ function ensureEngine(tour: Tour): Driver {
       state.currentIndex = index;
       state.anchorIndex = index;
       guarded("presenter.afterShow", () => presenter.afterShow(popover, step));
+      attachAdvance(tour, step);
       emitStep(step, "shown", { step });
       emitTour(tour, "step-shown", { tour, step, previous: state.previousStep });
       settle(state);
@@ -451,13 +464,165 @@ async function showStep(tour: Tour, index: number): Promise<void> {
   await shown;
 }
 
-async function runNavigation(tour: Tour, direction: "forward" | "backward"): Promise<void> {
+function attachAdvance(tour: Tour, step: TourStep): void {
   const state = internalsOf(tour);
-  if (!state.running || state.ending) return;
-  const outcome = selectIndex(state.steps.length, state.anchorIndex, direction);
-  if (outcome.kind === "show") await showStep(tour, outcome.index);
-  else if (outcome.kind === "finish") terminate(tour, "finished");
+  detachAdvance(state);
+  const auto = step.config.autoAdvance;
+  if (auto?.selector === undefined) return;
+  const detach = listenForAdvance(auto.selector, auto.event, () => {
+    if (state.detachAdvance === detach) state.detachAdvance = null;
+    if (state.running && !state.ending && state.steps[state.currentIndex] === step) reportFailure(tour.forward());
+  });
+  state.detachAdvance = detach;
+}
+
+function isLive(state: TourInternals, runId: number): boolean {
+  return state.running && !state.ending && state.runId === runId;
+}
+
+function passesShouldShow(step: TourStep): boolean {
+  const check = step.config.shouldShow;
+  if (!check) return true;
+  try {
+    return Boolean(check());
+  } catch (error) {
+    console.error("[virtualtour] shouldShow threw; the step is skipped:", error);
+    return false;
+  }
+}
+
+function markWaiting(state: TourInternals): () => void {
+  const engine = state.engine;
+  const popover = engine?.isActive() && state.currentIndex >= 0 ? (engine.getState("popover") as PopoverDOM | undefined) : undefined;
+  const wrapper = popover?.wrapper;
+  if (!wrapper) return () => {};
+  wrapper.classList.add(WAITING_CLASS);
+  wrapper.setAttribute("aria-busy", "true");
+  return () => {
+    wrapper.classList.remove(WAITING_CLASS);
+    wrapper.removeAttribute("aria-busy");
+  };
+}
+
+function checkEligible(
+  tour: Tour,
+  index: number,
+  runId: number,
+  forced: boolean,
+  found: Map<number, Element | null>
+): boolean | Promise<boolean> {
+  const state = internalsOf(tour);
+  const step = state.steps[index];
+  if (!step || !isLive(state, runId)) return false;
+  if (!forced && !passesShouldShow(step)) return false;
+  const config = step.config;
+  if (config.target === undefined) {
+    found.set(index, null);
+    return true;
+  }
+  const verdict = (target: Element | null): boolean => {
+    if (!target && config.whenMissing === "skip") return false;
+    found.set(index, target);
+    return true;
+  };
+  const target = resolveTarget(config.target);
+  const wait = config.waitFor ?? 0;
+  if (target || !(wait > 0)) return verdict(target);
+  const release = markWaiting(state);
+  return waitForTarget(config.target, wait, state.abort?.signal ?? null).then(
+    (late) => {
+      release();
+      return isLive(state, runId) && verdict(late);
+    },
+    (error: unknown) => {
+      release();
+      throw error;
+    }
+  );
+}
+
+function advanceFrom(
+  tour: Tour,
+  from: number,
+  direction: "forward" | "backward",
+  forcedIndex = -1
+): NavigationOutcome | Promise<NavigationOutcome> {
+  const state = internalsOf(tour);
+  const runId = state.runId;
+  const found = new Map<number, Element | null>();
+  const picked = selectEligible(state.steps.length, from, direction, (index) =>
+    checkEligible(tour, index, runId, index === forcedIndex, found)
+  );
+  return chain(picked, (outcome) => {
+    if (!isLive(state, runId)) return { kind: "stay" } as NavigationOutcome;
+    if (outcome.kind !== "show") return outcome;
+    return chain(presentStep(tour, outcome.index, found.get(outcome.index) ?? null), () => outcome);
+  });
+}
+
+function concludeNavigation(tour: Tour, runId: number, outcome: NavigationOutcome): void {
+  const state = internalsOf(tour);
+  if (!isLive(state, runId)) return;
+  if (outcome.kind === "finish") terminate(tour, "finished");
   else if (outcome.kind === "exit") terminate(tour, "api");
+}
+
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return typeof (value as { then?: unknown } | null | undefined)?.then === "function";
+}
+
+function runHook(label: string, call: () => unknown, signal: AbortSignal | null): void | Promise<void> {
+  const report = (error: unknown): void => console.error(`[virtualtour] ${label} threw; the step still shows:`, error);
+  let result: unknown;
+  try {
+    result = call();
+  } catch (error) {
+    report(error);
+    return;
+  }
+  if (!isThenable(result)) return;
+  return raceAbort(Promise.resolve(result), signal).then(() => undefined, report);
+}
+
+function presentStep(tour: Tour, index: number, target: Element | null): void | Promise<void> {
+  const state = internalsOf(tour);
+  const step = state.steps[index];
+  if (!step) return;
+  const runId = state.runId;
+  const signal = state.abort?.signal ?? null;
+  if (step.isShown() && state.engine?.isActive()) return;
+  const { prepare, revealWith } = step.config;
+  const reveal = (): void | Promise<void> => {
+    if (!isLive(state, runId)) return;
+    const revealing = target && revealWith ? runHook("revealWith", () => revealWith(target), signal) : undefined;
+    return chain(revealing, () => {
+      if (!isLive(state, runId)) return;
+      const current = state.steps.indexOf(step);
+      if (current < 0) return;
+      setResolvedTarget(step, target);
+      return showStep(tour, current);
+    });
+  };
+  return chain(prepare ? runHook("prepare", () => prepare(), signal) : undefined, reveal);
+}
+
+function resumeAfterDrop(tour: Tour, from: number): Promise<void> {
+  const state = internalsOf(tour);
+  const runId = state.runId;
+  return Promise.resolve(
+    chain(advanceFrom(tour, from, "forward"), (outcome) => {
+      if (!isLive(state, runId) || outcome.kind === "show" || outcome.kind === "stay") return;
+      state.anchorIndex = -1;
+      terminate(tour, "api");
+    })
+  );
+}
+
+function runNavigation(tour: Tour, direction: "forward" | "backward"): Promise<void> {
+  const state = internalsOf(tour);
+  if (!state.running || state.ending) return Promise.resolve();
+  const runId = state.runId;
+  return Promise.resolve(chain(advanceFrom(tour, state.anchorIndex, direction), (outcome) => concludeNavigation(tour, runId, outcome)));
 }
 
 function navigate(tour: Tour, direction: "forward" | "backward"): Promise<void> {
@@ -498,6 +663,7 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
   const state = internalsOf(tour);
   if (!state.running || state.ending) return;
   state.ending = true;
+  detachAdvance(state);
   const endStep = hookStep ?? state.steps[state.currentIndex] ?? state.steps[state.anchorIndex];
   for (const step of state.steps) leaveStep(tour, step);
   if (kind === "finished") {

@@ -394,9 +394,61 @@ describe("01-architecture.md §7.2 ordering", () => {
     expect(tour.isRunning()).toBe(true);
   });
 
-  it.todo("all remaining steps skipped moving forward (the eligibility loop arrives in V-04)");
+  it("all remaining steps skipped moving forward → finished sequence", async () => {
+    const tour = make({
+      steps: [
+        { id: "a", title: "A" },
+        { id: "b", title: "B", shouldShow: () => false },
+        { id: "c", title: "C", target: "#absent", whenMissing: "skip" },
+      ],
+    });
+    await tour.start();
+    const log = record(tour);
+    await tour.forward();
 
-  it.todo("all remaining steps skipped moving backward (the eligibility loop arrives in V-04)");
+    expect(log).toEqual([
+      "a:will-hide",
+      "a:hidden",
+      "a:finished",
+      "tour:finished",
+      "a:disposed",
+      "b:disposed",
+      "c:disposed",
+      "tour:deactivated",
+    ]);
+    expect(tour.isRunning()).toBe(false);
+  });
+
+  it("all earlier steps skipped moving backward → exited without the prompt", async () => {
+    const exitPrompt = vi.fn(() => false);
+    let open = true;
+    const tour = make({
+      exitPrompt,
+      steps: [
+        { id: "a", title: "A", shouldShow: () => open },
+        { id: "b", title: "B", target: "#absent", whenMissing: "skip" },
+        { id: "c", title: "C" },
+      ],
+    });
+    await tour.start();
+    await tour.goTo("c");
+    open = false;
+    const log = record(tour);
+    await tour.backward();
+
+    expect(exitPrompt).not.toHaveBeenCalled();
+    expect(log).toEqual([
+      "c:will-hide",
+      "c:hidden",
+      "c:exited",
+      "tour:exited api",
+      "a:disposed",
+      "b:disposed",
+      "c:disposed",
+      "tour:deactivated",
+    ]);
+    expect(tour.isRunning()).toBe(false);
+  });
 
   it("another tour starts while this one runs", async () => {
     const exitPrompt = vi.fn(() => false);
@@ -1157,5 +1209,41 @@ describe("lifecycle failure paths", () => {
 
     const entry = engineOf(tour)?.getConfig().steps?.[0];
     expect(entry?.popover?.title).toBe("Run 1");
+  });
+
+  it("hooks of an engine the tour no longer owns change nothing", async () => {
+    const tour = make();
+    await tour.start();
+    const stale = engineOf(tour);
+    tour.hideCurrent();
+    await tour.goTo("b");
+    const config = stale?.getConfig();
+    const step = tour.currentStep;
+    const driveStep = engineOf(tour)?.getConfig().steps?.[1];
+    const opts = { reason: "done" } as never;
+    config?.onNextClick?.(undefined, driveStep as never, opts);
+    config?.onPrevClick?.(undefined, driveStep as never, opts);
+    config?.onDestroyStarted?.(undefined, driveStep as never, opts);
+    config?.onDestroyed?.(undefined, driveStep as never, opts);
+    await tick(30);
+
+    expect(tour.isRunning()).toBe(true);
+    expect(tour.currentStep).toBe(step);
+    expect(tour.currentStep?.id).toBe("b");
+  });
+
+  it("ending a run leaves the registry alone when another tour has become current", async () => {
+    const tour = make();
+    const other = make({}, ["x"]);
+    await tour.start();
+    setCurrentTour(other);
+    tour.finish();
+
+    expect(tours.current).toBe(other);
+    setCurrentTour(null);
+    await tour.start();
+    expect(tours.current).toBe(tour);
+    tour.finish();
+    expect(tours.current).toBeNull();
   });
 });

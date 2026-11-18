@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour auto-advance fixture</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      .demo-container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-container">
+      <h1>VirtualTour auto-advance fixture</h1>
+      <button id="start" type="button">Start tour</button>
+      <p><button id="save" type="button">Save</button></p>
+      <p><input id="name" aria-label="Name" /></p>
+      <p><button id="page-forward" type="button">Forward from the page</button></p>
+    </div>
+
+    <script type="module" src="./auto-advance.ts"></script>
+  </body>
+</html>
