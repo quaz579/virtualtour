@@ -1,0 +1,209 @@
+[
+  {
+    "Name": "RestPose",
+    "Frames": [
+      {
+        "Duration": 500,
+        "ImagesOffsets": {
+          "Column": 0,
+          "Row": 0
+        }
+      }
+    ]
+  },
+  {
+    "Name": "Wave",
+    "Frames": [
+      {
+        "Duration": 90,
+        "ImagesOffsets": {
+          "Column": 1,
+          "Row": 0
+        }
+      },
+      {
+        "Duration": 90,
+        "ImagesOffsets": {
+          "Column": 2,
+          "Row": 0
+        }
+      },
+      {
+        "Duration": 90,
+        "ImagesOffsets": {
+          "Column": 3,
+          "Row": 0
+        }
+      },
+      {
+        "Duration": 90,
+        "ImagesOffsets": null
+      }
+    ]
+  },
+  {
+    "Name": "Thinking",
+    "Frames": [
+      {
+        "Duration": 120,
+        "ImagesOffsets": {
+          "Column": 0,
+          "Row": 1
+        }
+      },
+      {
+        "Duration": 120,
+        "ImagesOffsets": {
+          "Column": 1,
+          "Row": 1
+        }
+      }
+    ]
+  },
+  {
+    "Name": "IdleBlink",
+    "Frames": [
+      {
+        "Duration": 80,
+        "ImagesOffsets": {
+          "Column": 2,
+          "Row": 1
+        }
+      }
+    ]
+  },
+  {
+    "Name": "IdleWobble",
+    "Frames": [
+      {
+        "Duration": 80,
+        "ImagesOffsets": {
+          "Column": 3,
+          "Row": 1
+        }
+      }
+    ]
+  },
+  {
+    "Name": "IdleLook",
+    "Frames": [
+      {
+        "Duration": 80,
+        "ImagesOffsets": {
+          "Column": 0,
+          "Row": 2
+        }
+      }
+    ]
+  },
+  {
+    "Name": "GestureLeft",
+    "Frames": [
+      {
+        "Duration": 80,
+        "ImagesOffsets": {
+          "Column": 1,
+          "Row": 2
+        }
+      }
+    ]
+  },
+  {
+    "Name": "GestureRight",
+    "Frames": [
+      {
+        "Duration": 80,
+        "ImagesOffsets": {
+          "Column": 2,
+          "Row": 2
+        }
+      }
+    ]
+  },
+  {
+    "Name": "GestureUp",
+    "Frames": [
+      {
+        "Duration": 80,
+        "ImagesOffsets": {
+          "Column": 3,
+          "Row": 2
+        }
+      }
+    ]
+  },
+  {
+    "Name": "GestureDown",
+    "Frames": [
+      {
+        "Duration": 80,
+        "ImagesOffsets": {
+          "Column": 0,
+          "Row": 3
+        }
+      }
+    ]
+  },
+  {
+    "Name": "Explain",
+    "Frames": [
+      {
+        "Duration": 80,
+        "ImagesOffsets": {
+          "Column": 1,
+          "Row": 3
+        }
+      }
+    ]
+  },
+  {
+    "Name": "Congratulate",
+    "Frames": [
+      {
+        "Duration": 200,
+        "ImagesOffsets": {
+          "Column": 2,
+          "Row": 3
+        }
+      }
+    ]
+  },
+  {
+    "Name": "Alert",
+    "Frames": [
+      {
+        "Duration": 150,
+        "ImagesOffsets": {
+          "Column": 3,
+          "Row": 3
+        }
+      }
+    ]
+  },
+  {
+    "Name": "GoodBye",
+    "Frames": [
+      {
+        "Duration": 90,
+        "ImagesOffsets": {
+          "Column": 3,
+          "Row": 0
+        }
+      },
+      {
+        "Duration": 90,
+        "ImagesOffsets": {
+          "Column": 2,
+          "Row": 0
+        }
+      },
+      {
+        "Duration": 90,
+        "ImagesOffsets": {
+          "Column": 1,
+          "Row": 0
+        }
+      }
+    ]
+  }
+]
