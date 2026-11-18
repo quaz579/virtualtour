@@ -1,0 +1,47 @@
+{
+  "name": "virtualtour",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Guided tours and onboarding for the web, forked from driver.js.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./avatar": {
+      "types": "./dist/avatar.d.ts",
+      "import": "./dist/avatar.js"
+    },
+    "./motion": {
+      "types": "./dist/motion.d.ts",
+      "import": "./dist/motion.js"
+    },
+    "./base.css": "./dist/base.css",
+    "./theme.css": "./dist/theme.css",
+    "./avatar.css": "./dist/avatar.css",
+    "./thumbtack/pack.json": "./dist/thumbtack/pack.json",
+    "./thumbtack/sheet.png": "./dist/thumbtack/sheet.png",
+    "./schemas/*": "./schemas/*"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "LICENSE",
+    "NOTICE.md"
+  ],
+  "scripts": {
+    "build": "vite build && vite build --mode dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.8",
+    "vite-plugin-dts": "^4.5.4"
+  }
+}
