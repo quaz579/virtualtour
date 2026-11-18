@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDriver, navButton, nextFrame, popoverEl, SAMPLE_STEPS, useDriverHarness } from "../utils";
 
 useDriverHarness();
@@ -14,7 +14,12 @@ async function start(config: Parameters<typeof createDriver>[0] = {}) {
 }
 
 describe("nudge", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    document.documentElement.style.setProperty("--vt-nudge-duration", "10ms");
+  });
+
+  afterEach(async () => {
+    await tick(200);
     document.documentElement.style.removeProperty("--vt-nudge-duration");
   });
 
