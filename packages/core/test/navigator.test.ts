@@ -485,3 +485,156 @@ describe("dropStep follow-up", () => {
     expect(tour.isRunning()).toBe(false);
   });
 });
+
+describe("review round 1", () => {
+  it("goTo shows a skip step with a missing target centered", async () => {
+    const tour = make([{ id: "a" }, { id: "b", target: "#nope", whenMissing: "skip" }, { id: "c" }]);
+    await tour.start();
+    await tour.goTo("b");
+    expect(tour.isRunning()).toBe(true);
+    expect(tour.currentStep?.id).toBe("b");
+    expect(tour.currentStep?.resolvedTarget).toBeNull();
+  });
+
+  it("dropStep of a candidate during its wait moves on to the following step", async () => {
+    const tour = make([{ id: "a" }, { id: "b", target: "#never", waitFor: 5000 }, { id: "c" }]);
+    await tour.start();
+    const moving = tour.forward();
+    await tick(20);
+    tour.dropStep("b");
+    await moving;
+    expect(tour.currentStep?.id).toBe("c");
+    expect(tour.isRunning()).toBe(true);
+  });
+
+  it("appendStep at the front during a wait still lands on the step that was waited for", async () => {
+    const tour = make([{ id: "a" }, { id: "b", target: "#late", waitFor: 3000 }, { id: "c" }]);
+    await tour.start();
+    insertLater("late", 60);
+    const moving = tour.forward();
+    await tick(10);
+    tour.appendStep({ id: "z" }, 0);
+    await moving;
+    expect(tour.currentStep?.id).toBe("b");
+    expect(wrapper()?.getAttribute("data-vt-step")).toBe("2");
+  });
+
+  it("re-looks-up a target that prepare replaced", async () => {
+    const tour = make([
+      { id: "a" },
+      {
+        id: "b",
+        target: "#b",
+        prepare: () => {
+          const old = document.querySelector("#b");
+          const fresh = document.createElement("div");
+          fresh.id = "b";
+          fresh.dataset["fresh"] = "1";
+          old?.replaceWith(fresh);
+        },
+      },
+    ]);
+    await tour.start();
+    await tour.forward();
+    expect((tour.currentStep?.resolvedTarget as HTMLElement | null)?.dataset["fresh"]).toBe("1");
+  });
+
+  it("centers a step whose target prepare removed and does not reveal it", async () => {
+    const reveal = vi.fn();
+    const tour = make([
+      { id: "a" },
+      { id: "b", target: "#b", revealWith: reveal, prepare: () => document.querySelector("#b")?.remove() },
+    ]);
+    await tour.start();
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("b");
+    expect(tour.currentStep?.resolvedTarget).toBeNull();
+    expect(reveal).not.toHaveBeenCalled();
+  });
+
+  it("exit() during prepare skips revealWith and leaves no resolved target behind", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const reveal = vi.fn();
+    const tour = make([{ id: "a" }, { id: "b", target: "#b", prepare: () => gate, revealWith: reveal }]);
+    await tour.start();
+    const moving = tour.forward();
+    await tick(10);
+    await tour.exit();
+    release();
+    await moving;
+    await tick(10);
+    expect(reveal).not.toHaveBeenCalled();
+    expect(tour.steps[1]?.resolvedTarget).toBeNull();
+  });
+
+  it("exit() during revealWith leaves no resolved target behind", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const tour = make([{ id: "a" }, { id: "b", target: "#b", revealWith: () => gate }]);
+    await tour.start();
+    const moving = tour.forward();
+    await tick(10);
+    await tour.exit();
+    release();
+    await moving;
+    await tick(10);
+    expect(tour.steps[1]?.resolvedTarget).toBeNull();
+    expect(tour.isRunning()).toBe(false);
+  });
+
+  it("exit() during a wait never prepares the waited step", async () => {
+    const prepare = vi.fn();
+    const tour = make([{ id: "a" }, { id: "b", target: "#never", waitFor: 5000, prepare }]);
+    await tour.start();
+    const moving = tour.forward();
+    await tick(10);
+    await tour.exit();
+    await moving;
+    await tick(10);
+    expect(prepare).not.toHaveBeenCalled();
+    expect(tour.isRunning()).toBe(false);
+  });
+
+  it("exit() during a wait then an immediate restart is not disturbed by the old navigation", async () => {
+    const tour = make([{ id: "a" }, { id: "b", target: "#never", waitFor: 5000, whenMissing: "skip" }]);
+    await tour.start();
+    const moving = tour.forward();
+    await tick(10);
+    await tour.exit();
+    const restarted = tour.start();
+    await Promise.all([moving, restarted]);
+    expect(tour.isRunning()).toBe(true);
+    expect(tour.currentStep?.id).toBe("a");
+  });
+
+  it("whenMissing skip after a wait timeout is decided by the navigator, not the engine", async () => {
+    const prepare = vi.fn();
+    const tour = make([
+      { id: "a" },
+      { id: "b", target: "#never", waitFor: 50, whenMissing: "skip", prepare },
+      { id: "c" },
+    ]);
+    const willShow = vi.fn();
+    tour.steps[1]?.on("will-show", willShow);
+    await tour.start();
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("c");
+    expect(prepare).not.toHaveBeenCalled();
+    expect(willShow).not.toHaveBeenCalled();
+  });
+
+  it("clears the waiting mark on the popover that carried it", async () => {
+    const tour = make([{ id: "a" }, { id: "b", target: "#late", waitFor: 3000 }]);
+    await tour.start();
+    const old = wrapper() as HTMLElement;
+    insertLater("late", 50);
+    const moving = tour.forward();
+    await tick(10);
+    expect(old.classList.contains("vt-waiting")).toBe(true);
+    await moving;
+    expect(old.classList.contains("vt-waiting")).toBe(false);
+    expect(old.hasAttribute("aria-busy")).toBe(false);
+  });
+});
+

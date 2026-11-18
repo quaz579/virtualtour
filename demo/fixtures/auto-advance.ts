@@ -8,11 +8,18 @@ declare global {
   }
 }
 
+const createMode = new URLSearchParams(location.search).get("mode") === "create";
+
 const tour = createTour({
   name: "auto-advance",
   animate: false,
   dim: false,
-  steps: [
+  steps: createMode
+    ? [
+        { id: "save", title: "Save", body: "Click Save.", target: "#save", autoAdvance: { event: "click", selector: "#save" } },
+        { id: "created", title: "Created", body: "Points at what Save made.", target: "#created" },
+      ]
+    : [
     { id: "save", title: "Save", body: "Click Save.", target: "#save", autoAdvance: { event: "click", selector: "#save" } },
     { id: "name", title: "Name", body: "Type a name.", target: "#name", autoAdvance: { event: "input" } },
     { id: "page", title: "Page", body: "The page moves the tour." },
@@ -28,7 +35,14 @@ tour.on("finished", () => window.vtLog.push("finished"));
 document.querySelector<HTMLButtonElement>("#start")?.addEventListener("click", () => {
   void tour.start();
 });
-document.querySelector<HTMLButtonElement>("#save")?.addEventListener("click", () => window.vtLog.push("save-clicked"));
+document.querySelector<HTMLButtonElement>("#save")?.addEventListener("click", () => {
+  window.vtLog.push("save-clicked");
+  if (!createMode || document.querySelector("#created")) return;
+  const created = document.createElement("p");
+  created.id = "created";
+  created.textContent = "Saved";
+  document.body.appendChild(created);
+});
 document.querySelector<HTMLButtonElement>("#page-forward")?.addEventListener("click", () => {
   void tours.current?.forward();
 });

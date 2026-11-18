@@ -90,17 +90,33 @@ describe("waitForTarget", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("checks at most once per frame however many mutations arrive", async () => {
+  it("checks at most once per frame however many mutation batches arrive", async () => {
     const spy = vi.fn(() => null);
     const pending = waitForTarget(spy, 500);
     spy.mockClear();
-    for (let i = 0; i < 20; i += 1) add(`n${i}`);
-    await vi.advanceTimersByTimeAsync(0);
-    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    for (let i = 0; i < 5; i += 1) {
+      add(`n${i}`);
+      await vi.advanceTimersByTimeAsync(0);
+    }
+    expect(spy).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(16);
     expect(spy).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(600);
     await pending;
+  });
+
+  it("cancels a scheduled frame when it settles", async () => {
+    const spy = vi.fn(() => null);
+    const controller = new AbortController();
+    const pending = waitForTarget(spy, 5000, controller.signal);
+    add("n");
+    await vi.advanceTimersByTimeAsync(0);
+    spy.mockClear();
+    controller.abort();
+    await pending;
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it("resolves null after the timeout and leaves no timers", async () => {

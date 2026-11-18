@@ -185,3 +185,62 @@ describe("autoAdvance on a tour (AD-1, AD-2)", () => {
     expect(tour.currentStep?.id).toBe("b");
   });
 });
+
+describe("auto-advance listener lifecycle", () => {
+  const EVENT = "vt-test-advance";
+  const counts = () => {
+    const add = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+    return () => ({
+      added: add.mock.calls.filter((c) => c[0] === EVENT).length,
+      removed: remove.mock.calls.filter((c) => c[0] === EVENT).length,
+    });
+  };
+  const fire = () => document.querySelector("#save")?.dispatchEvent(new Event(EVENT, { bubbles: true }));
+
+  it("removes the listener when the step is left", async () => {
+    const read = counts();
+    const tour = make([{ id: "a", autoAdvance: { event: EVENT, selector: "#save" } }, { id: "b" }]);
+    await tour.start();
+    expect(read()).toEqual({ added: 1, removed: 0 });
+    await tour.forward();
+    expect(read()).toEqual({ added: 1, removed: 1 });
+  });
+
+  it("removes the listener when the popover is hidden", async () => {
+    const read = counts();
+    const tour = make([{ id: "a", autoAdvance: { event: EVENT, selector: "#save" } }, { id: "b" }]);
+    await tour.start();
+    tour.hideCurrent();
+    expect(read()).toEqual({ added: 1, removed: 1 });
+  });
+
+  it("removes the listener when the tour ends", async () => {
+    const read = counts();
+    const tour = make([{ id: "a", autoAdvance: { event: EVENT, selector: "#save" } }, { id: "b" }]);
+    await tour.start();
+    tour.finish();
+    expect(read()).toEqual({ added: 1, removed: 1 });
+  });
+
+  it("does not advance when the step is no longer current by the time the deferred move runs", async () => {
+    const tour = make([{ id: "a", autoAdvance: { event: EVENT, selector: "#save" } }, { id: "b" }, { id: "c" }]);
+    await tour.start();
+    fire();
+    await tour.forward();
+    await tick(30);
+    expect(tour.currentStep?.id).toBe("b");
+  });
+
+  it("runs the page's own handler before the tour moves", async () => {
+    const order: string[] = [];
+    const tour = make([{ id: "a", autoAdvance: { event: "click", selector: "#save" } }, { id: "b" }]);
+    tour.steps[1]?.on("will-show", () => order.push("will-show"));
+    document.querySelector("#save")?.addEventListener("click", () => order.push("page"));
+    await tour.start();
+    click("#save");
+    await tick(30);
+    expect(order).toEqual(["page", "will-show"]);
+  });
+});
+

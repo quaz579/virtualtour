@@ -18,13 +18,7 @@ export function selectIndex(
   direction: "forward" | "backward",
   isEligible: (index: number) => boolean = () => true
 ): NavigationOutcome {
-  if (direction === "forward") {
-    for (let i = from + 1; i < total; i += 1) if (isEligible(i)) return { kind: "show", index: i };
-    return { kind: "finish" };
-  }
-  if (from <= 0) return { kind: "stay" };
-  for (let i = Math.min(from, total) - 1; i >= 0; i -= 1) if (isEligible(i)) return { kind: "show", index: i };
-  return { kind: "exit" };
+  return selectEligible(total, from, direction, isEligible) as NavigationOutcome;
 }
 
 /**

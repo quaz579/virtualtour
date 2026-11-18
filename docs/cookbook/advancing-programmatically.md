@@ -31,3 +31,7 @@ A step's target is looked up before its `prepare` runs, so a `prepare` that crea
 { id: "open", title: "Open the panel", prepare: openPanel }
 { id: "panel", title: "The panel", target: "#panel-button" }
 ```
+
+## Hooks that never settle
+
+`prepare` and `revealWith` have no timeout: a hook that never settles holds the move until the tour ends, so settle them yourself.

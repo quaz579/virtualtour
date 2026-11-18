@@ -9,8 +9,8 @@ test.beforeEach(({}, testInfo) => {
 
 const log = (page: Page) => page.evaluate(() => (window as unknown as { vtLog: string[] }).vtLog);
 
-async function open(page: Page) {
-  await page.goto("/fixtures/auto-advance.html");
+async function open(page: Page, query = "") {
+  await page.goto(`/fixtures/auto-advance.html${query}`);
   await page.locator("html[data-ready=true]").waitFor();
   await page.locator("#start").focus();
   await page.keyboard.press("Enter");
@@ -42,4 +42,14 @@ test("tours.current?.forward() from a page button moves the tour", async ({ page
   await expect.poll(() => log(page)).toContain("shown:page");
   await page.locator("#page-forward").click();
   await expect.poll(() => log(page)).toContain("shown:end");
+});
+
+test("the next step finds a target the clicked button's own handler just created", async ({ page }) => {
+  await open(page, "?mode=create");
+  await page.locator("#save").click();
+  await expect.poll(() => log(page)).toContain("shown:created");
+  const id = await page.evaluate(
+    () => (window as unknown as { vtTour: { currentStep: { resolvedTarget: Element | null } | null } }).vtTour.currentStep?.resolvedTarget?.id ?? null,
+  );
+  expect(id).toBe("created");
 });
