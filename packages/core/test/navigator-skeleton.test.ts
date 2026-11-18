@@ -104,16 +104,74 @@ describe("NavigationQueue", () => {
     const c = q.enqueue(async () => {
       log.push("c");
     });
-    let bSettled = false;
-    void b.then(() => {
-      bSettled = true;
-    });
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(bSettled).toBe(true);
     gate.resolve();
-    await Promise.all([first, c]);
+    await Promise.all([first, b, c]);
     expect(log).toEqual(["c"]);
+  });
+
+  it("resolves a replaced caller only after the task that replaced it settled", async () => {
+    const q = new NavigationQueue();
+    const log: string[] = [];
+    const gate = deferred();
+    const slow = deferred();
+    const first = q.enqueue(() => gate.promise);
+    const b = q.enqueue(async () => {
+      log.push("b");
+    });
+    const c = q.enqueue(async () => {
+      log.push("c:start");
+      await slow.promise;
+      log.push("c:end");
+    });
+    void b.then(() => log.push("b settled"));
+    void c.then(() => log.push("c settled"));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(log).toEqual([]);
+    gate.resolve();
+    await first;
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(log).toEqual(["c:start"]);
+    slow.resolve();
+    await Promise.all([b, c]);
+    expect(log).toEqual(["c:start", "c:end", "c settled", "b settled"]);
+  });
+
+  it("does not reject a replaced caller when the replacing task throws", async () => {
+    const q = new NavigationQueue();
+    const gate = deferred();
+    const first = q.enqueue(() => gate.promise);
+    const b = q.enqueue(async () => undefined);
+    const c = q.enqueue(async () => {
+      throw new Error("boom");
+    });
+    const cOutcome = c.then(
+      () => "resolved",
+      () => "rejected"
+    );
+    gate.resolve();
+    await first;
+    await expect(b).resolves.toBeUndefined();
+    expect(await cOutcome).toBe("rejected");
+  });
+
+  it("resolves a waiting task and its replaced callers at once when cancelled", async () => {
+    const q = new NavigationQueue();
+    const log: string[] = [];
+    const gate = deferred();
+    const first = q.enqueue(() => gate.promise);
+    const b = q.enqueue(async () => {
+      log.push("b");
+    });
+    const c = q.enqueue(async () => {
+      log.push("c");
+    });
+    q.cancelWaiting();
+    await Promise.all([b, c]);
+    gate.resolve();
+    await first;
+    expect(log).toEqual([]);
   });
 
   it("rejects the caller's promise when its task throws and keeps serving the queue", async () => {

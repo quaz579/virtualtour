@@ -11,6 +11,7 @@ export default defineConfig({
         index: resolve(__dirname, "index.html"),
         e2e: resolve(__dirname, "e2e.html"),
         actionDriven: resolve(__dirname, "fixtures/action-driven.html"),
+        navigation: resolve(__dirname, "fixtures/navigation.html"),
       },
     },
   },

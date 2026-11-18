@@ -44,11 +44,13 @@ interface Queued {
   task: () => Promise<void>;
   resolve: () => void;
   reject: (error: unknown) => void;
+  followers: Array<() => void>;
 }
 
 /**
  * Serializes navigation: one task runs at a time and at most one waits behind it. A newer request replaces the
- * waiting one, whose promise then resolves without running.
+ * waiting one without running it; the replaced caller's promise resolves when the replacing task settles, so every
+ * caller still observes the move that actually happened.
  */
 export class NavigationQueue {
   private running = false;
@@ -62,9 +64,10 @@ export class NavigationQueue {
   /** Runs `task` now, or queues it behind the running task. */
   enqueue(task: () => Promise<void>): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      const entry: Queued = { task, resolve, reject };
+      const entry: Queued = { task, resolve, reject, followers: [] };
       if (this.running) {
-        this.waiting?.resolve();
+        const replaced = this.waiting;
+        if (replaced) entry.followers.push(replaced.resolve, ...replaced.followers);
         this.waiting = entry;
         return;
       }
@@ -72,10 +75,13 @@ export class NavigationQueue {
     });
   }
 
-  /** Drops the waiting task; its promise resolves without running. */
+  /** Drops the waiting task; its promise resolves at once without running. */
   cancelWaiting(): void {
-    this.waiting?.resolve();
+    const waiting = this.waiting;
     this.waiting = null;
+    if (!waiting) return;
+    waiting.resolve();
+    for (const follower of waiting.followers) follower();
   }
 
   private async run(first: Queued): Promise<void> {
@@ -88,6 +94,7 @@ export class NavigationQueue {
       } catch (error) {
         entry.reject(error);
       }
+      for (const follower of entry.followers) follower();
       entry = this.waiting;
       this.waiting = null;
     }
