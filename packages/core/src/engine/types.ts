@@ -109,6 +109,11 @@ export type Config = {
   smoothScroll?: boolean;
   allowClose?: boolean;
   allowScroll?: boolean;
+  /**
+   * Freezes the scroll position of the highlighted element's scrollable parent while a step is shown.
+   * Defaults to `false`: the parent keeps scrolling and the popover and cut-out follow it.
+   */
+  lockScrollParent?: boolean;
   overlayClickBehavior?: "close" | "nextStep" | "none" | DriverHook;
   stagePadding?: number;
   stageRadius?: number;

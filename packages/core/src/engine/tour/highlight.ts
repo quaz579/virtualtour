@@ -300,7 +300,7 @@ function markActiveElement(ctx: Context, element: Element, step: DriveStep) {
     markedParent.classList.add(ctx.names.targetParent);
     markedParent.setAttribute(ctx.names.attr.targetParent, "");
 
-    if (isScrollable(markedParent)) {
+    if (ctx.getConfig("lockScrollParent") && isScrollable(markedParent)) {
       markedParent.setAttribute(ctx.names.attr.lockScroll, "");
     }
   }

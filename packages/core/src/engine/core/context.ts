@@ -48,6 +48,7 @@ function createConfigStore() {
       duration: 400,
       allowClose: true,
       allowScroll: true,
+      lockScrollParent: false,
       overlayClickBehavior: "close",
       overlayOpacity: 0.7,
       smoothScroll: false,
