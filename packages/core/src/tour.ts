@@ -152,7 +152,7 @@ export class Tour {
     retireStep(step);
     if (state.engine) syncEngineSteps(this);
     if (wasTarget) settle(state);
-    if (!wasVisible) return;
+    if (!wasVisible && !wasTarget) return;
     const outcome = selectIndex(state.steps.length, index - 1, "forward");
     if (outcome.kind === "show") {
       const target = outcome.index;
@@ -170,7 +170,8 @@ export class Tour {
 
   /**
    * Starts the tour at its first step. Does nothing when a run is already active, and any other running tour ends
-   * with `exited` (reason `replaced`). Resolves once the first step is shown; rejects with
+   * with `exited` (reason `replaced`). The run counts as active until just before `deactivated`, so a restart
+   * belongs in a `deactivated` handler. Resolves once the first step is shown; rejects with
    * {@link TourEnvironmentError} when there is no browser document.
    */
   async start(): Promise<void> {
@@ -196,12 +197,16 @@ export class Tour {
    */
   async goTo(ref?: string | number | TourStep): Promise<void> {
     const state = internalsOf(this);
-    const index = ref === undefined ? Math.max(state.anchorIndex, 0) : resolveStepIndex(state.steps, ref);
+    if (ref !== undefined) resolveStepIndex(state.steps, ref);
+    else if (state.steps.length === 0) throw new TourNavigationError("[virtualtour] Cannot go to a step: the tour has no steps.");
     if (!state.running) {
       requireDocument("goTo");
       beginRun(this);
     }
-    await navigateGuarded(this, () => showStep(this, index));
+    await navigateGuarded(this, async () => {
+      const index = ref === undefined ? Math.max(state.anchorIndex, 0) : resolveStepIndex(state.steps, ref);
+      await showStep(this, index);
+    });
   }
 
   /**
@@ -344,13 +349,23 @@ function evaluatedStep(tour: Tour, index: number): EngineStep {
   return out;
 }
 
-function syncEngineSteps(tour: Tour, evaluateIndex?: number): void {
+function syncEngineSteps(tour: Tour): void {
   const state = internalsOf(tour);
   const engine = state.engine;
   if (!engine) return;
-  const steps = compileTour(state.normalized, state.steps).steps;
-  if (evaluateIndex !== undefined && state.steps[evaluateIndex]) steps[evaluateIndex] = evaluatedStep(tour, evaluateIndex);
-  engine.setConfig({ ...engine.getConfig(), steps: steps as DriveStep[] });
+  const shown = state.steps[state.currentIndex];
+  const previous = (engine.getConfig().steps ?? []).find((s) => s.data?.["vt"] === shown);
+  const steps = compileTour(state.normalized, state.steps).steps as DriveStep[];
+  if (shown && previous) steps[state.currentIndex] = previous;
+  engine.setConfig({ ...engine.getConfig(), steps });
+}
+
+function evaluateStepInto(tour: Tour, index: number): void {
+  const engine = internalsOf(tour).engine;
+  if (!engine) return;
+  const steps = (engine.getConfig().steps ?? []).slice();
+  steps[index] = evaluatedStep(tour, index) as DriveStep;
+  engine.setConfig({ ...engine.getConfig(), steps });
 }
 
 function ensureEngine(tour: Tour): Driver {
@@ -427,7 +442,7 @@ async function showStep(tour: Tour, index: number): Promise<void> {
   if (!state.running || state.ending || !step) return;
   if (step.isShown() && state.engine?.isActive()) return;
   const engine = ensureEngine(tour);
-  syncEngineSteps(tour, index);
+  evaluateStepInto(tour, index);
   settle(state);
   const shown = new Promise<void>((resolve) => {
     state.waiter = resolve;
@@ -448,7 +463,7 @@ async function runNavigation(tour: Tour, direction: "forward" | "backward"): Pro
 function navigate(tour: Tour, direction: "forward" | "backward"): Promise<void> {
   const state = internalsOf(tour);
   if (!state.running) return Promise.resolve();
-  return state.queue.enqueue(() => runNavigation(tour, direction));
+  return navigateGuarded(tour, () => runNavigation(tour, direction));
 }
 
 async function navigateGuarded(tour: Tour, task: () => Promise<void>): Promise<void> {
@@ -515,9 +530,10 @@ function terminate(tour: Tour, kind: EndKind): void {
   const state = internalsOf(tour);
   if (!state.running || state.ending) return;
   state.endKind = kind;
+  const runId = state.runId;
   const engine = state.engine;
   if (engine?.isActive()) engine.destroy();
-  endRun(tour, kind);
+  if (state.runId === runId) endRun(tour, kind);
 }
 
 async function askExit(tour: Tour): Promise<boolean> {

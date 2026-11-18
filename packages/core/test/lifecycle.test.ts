@@ -975,3 +975,100 @@ describe("compiled step content", () => {
     expect(document.body.classList.contains("acme-active")).toBe(true);
   });
 });
+
+describe("lifecycle edge cases", () => {
+  it("goTo() on a tour with no steps rejects and does not start a run", async () => {
+    const tour = make({ steps: [] });
+    await expect(tour.goTo()).rejects.toBeInstanceOf(TourNavigationError);
+    expect(tour.isRunning()).toBe(false);
+    expect(tours.current).toBeNull();
+  });
+
+  it("dropStep of the step an in-flight navigation is heading to shows the step that follows it", async () => {
+    const tour = make();
+    await tour.start();
+    const pending = tour.forward();
+    tour.dropStep("b");
+    await pending;
+    await tick(30);
+
+    expect(tour.steps.map((s) => s.id)).toEqual(["a", "c"]);
+    expect(tour.currentStep?.id).toBe("c");
+    expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
+    expect(stepAttr()).toBe("1");
+  });
+
+  it("goTo resolves its reference when it runs, not when it is called", async () => {
+    const tour = make();
+    await tour.start();
+    const first = tour.forward();
+    const second = tour.goTo("c");
+    tour.appendStep({ id: "z" }, 0);
+    await Promise.all([first, second]);
+
+    expect(tour.currentStep?.id).toBe("c");
+  });
+
+  it("a deactivated handler can restart the tour, a finished handler cannot", async () => {
+    const tour = make();
+    const log = record(tour);
+    let restarted: Promise<void> | null = null;
+    tour.once("finished", () => {
+      void tour.start();
+    });
+    await tour.start();
+    tour.finish();
+    expect(tour.isRunning()).toBe(false);
+
+    tour.once("deactivated", () => {
+      restarted = tour.start();
+    });
+    await tour.start();
+    tour.finish();
+    await restarted;
+    expect(tour.isRunning()).toBe(true);
+    expect(tour.currentStep?.id).toBe("a");
+    expect(log.filter((e) => e === "tour:started")).toHaveLength(3);
+  });
+
+  it("the Done button never opens the exit prompt", async () => {
+    const exitPrompt = vi.fn(() => false);
+    const tour = make({ exitPrompt }, ["a", "b"]);
+    await tour.start();
+    await tour.forward();
+    click(".vt-popover-next-btn");
+
+    expect(exitPrompt).not.toHaveBeenCalled();
+    expect(tour.isRunning()).toBe(false);
+  });
+
+  it("hideCurrent() settles a navigation that is still in flight", async () => {
+    const tour = make();
+    await tour.start();
+    const pending = tour.forward();
+    tour.hideCurrent();
+    await pending;
+    expect(tour.isRunning()).toBe(true);
+    await tour.goTo("c");
+    expect(tour.currentStep?.id).toBe("c");
+  });
+
+  it("a prompt answered after its run ended does not end the next run", async () => {
+    let answer!: (value: boolean) => void;
+    const tour = make({
+      exitPrompt: () =>
+        new Promise<boolean>((resolve) => {
+          answer = resolve;
+        }),
+    });
+    await tour.start();
+    const pending = tour.exit();
+    tour.finish();
+    await tour.start();
+    answer(true);
+    await pending;
+
+    expect(tour.isRunning()).toBe(true);
+    expect(tour.currentStep?.id).toBe("a");
+  });
+});

@@ -9,6 +9,7 @@ test.beforeEach(({}, testInfo) => {
 
 const popover = (page: Page) => page.locator(".vt-popover");
 const title = (page: Page) => page.locator(".vt-popover-title");
+const shownCount = (page: Page) => log(page).then((entries) => entries.filter((e) => e.startsWith("shown:")).length);
 const log = (page: Page) => page.evaluate(() => (window as unknown as { vtLog: string[] }).vtLog);
 
 async function open(page: Page, query = "") {
@@ -26,14 +27,17 @@ test("forward and backward walk three steps and mark the popover with its step i
   await expect(title(page)).toHaveText("One");
 
   await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => shownCount(page)).toBe(2);
   await expect(popover(page)).toHaveAttribute("data-vt-step", "1");
   await expect(title(page)).toHaveText("Two");
 
   await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => shownCount(page)).toBe(3);
   await expect(popover(page)).toHaveAttribute("data-vt-step", "2");
   await expect(page.locator(".vt-popover-next-btn")).toHaveText("Done");
 
   await page.locator(".vt-popover-prev-btn").click();
+  await expect.poll(() => shownCount(page)).toBe(4);
   await expect(popover(page)).toHaveAttribute("data-vt-step", "1");
   await expect(popover(page)).toHaveClass(/vt-dialog/);
   expect(await log(page)).toEqual(["shown:one", "shown:two", "shown:three", "shown:two"]);
@@ -42,10 +46,13 @@ test("forward and backward walk three steps and mark the popover with its step i
 test("the arrow keys move between steps", async ({ page }) => {
   await open(page);
   await page.keyboard.press("ArrowRight");
+  await expect.poll(() => shownCount(page)).toBe(2);
   await expect(popover(page)).toHaveAttribute("data-vt-step", "1");
   await page.keyboard.press("ArrowRight");
+  await expect.poll(() => shownCount(page)).toBe(3);
   await expect(popover(page)).toHaveAttribute("data-vt-step", "2");
   await page.keyboard.press("ArrowLeft");
+  await expect.poll(() => shownCount(page)).toBe(4);
   await expect(popover(page)).toHaveAttribute("data-vt-step", "1");
 });
 
