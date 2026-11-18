@@ -76,8 +76,8 @@ scaffold), NF-size (report), NF-ssr (gate), NF-tests (harness).
 - `node tools/size-report.mjs` prints sizes; the core entry reports about 14 KB.
 - A unit test asserts `src/engine/**` matches the upstream tree: `test/fork-point.node.test.ts`
   compares SHA-256 of every file under `src/engine/` against `test/fixtures/fork-point.sha256`
-  (generated once from the upstream clone minus the two renames), so the "byte-for-byte"
-  claim is checked. F-03 and later tasks update the fixture when they change a file and say
+  (generated once from the committed `src/engine/` at the end of F-01, which includes the
+  two renames and the strict-flag type fixes), so later drift is caught. F-03 and later tasks update the fixture when they change a file and say
   so in the PR.
 
 **Acceptance criteria.**

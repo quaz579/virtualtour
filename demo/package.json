@@ -1,0 +1,12 @@
+{
+  "name": "virtualtour-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 4173 --strictPort",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^7.3.8"
+  }
+}

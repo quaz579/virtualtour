@@ -1,0 +1,5 @@
+# Intentionally empty: no words are committed to this repository.
+# The prose lint merges three sources, ignoring blank lines and lines starting with '#':
+#   1. this file (kept empty so no names are ever committed)
+#   2. tools/banned-words.local.txt (gitignored, one word or phrase per line)
+#   3. the BANNED_WORDS environment variable (comma-separated)

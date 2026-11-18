@@ -36,12 +36,17 @@
   ],
   "scripts": {
     "build": "vite build && vite build --mode dev",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.check.json",
+    "test": "vitest run",
+    "e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/node": "^22.0.0",
+    "jsdom": "^31.0.1",
     "typescript": "~5.9.3",
     "vite": "^7.3.8",
-    "vite-plugin-dts": "^4.5.4"
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^3.2.7"
   }
 }
