@@ -213,6 +213,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
     ...options,
     title: popover.title,
     description: popover.description,
+    label: popover.label,
 
     isGated,
     isDone: isGated && isDone(ctx, step),
