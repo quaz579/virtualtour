@@ -1,10 +1,11 @@
 import type { Context } from "../core/context";
+import { fixedNames } from "../core/namespace";
 
-const POPOVER_CLASS = "driver-popover-nudge";
+const POPOVER_CLASS = fixedNames.popover.nudge;
 const timers = new WeakMap<Element, number>();
 
 function nudgeDuration(): number {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue("--driver-nudge-duration").trim();
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(fixedNames.nudgeDurationVar).trim();
   const value = parseFloat(raw);
   if (Number.isNaN(value)) {
     return 500;
@@ -25,7 +26,7 @@ function untilAnimationEnds(element: Element, onEnd: () => void) {
 
   const onAnimationEnd = (event: Event) => {
     const name = (event as AnimationEvent).animationName;
-    if (name && !name.startsWith("driver-nudge")) {
+    if (name && !name.startsWith(fixedNames.nudgeAnimationPrefix)) {
       return;
     }
 

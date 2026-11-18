@@ -2,12 +2,12 @@
 
 exports[`highlight() precedence > keeps its own defaults unless the popover overrides them 1`] = `
 {
-  "config showButtons": "shown: "", footer: false, progress: false, next: "Next", close: "Close", class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "config showProgress": "shown: "", footer: false, progress: false, next: "Next", close: "Close", class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "config texts": "shown: "", footer: false, progress: false, next: "Go", close: "Dismiss", class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "plain": "shown: "", footer: false, progress: false, next: "Next", close: "Close", class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "popover showButtons": "shown: "next,close", footer: true, progress: false, next: "Next", close: "Close", class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "popover showProgress": "shown: "", footer: true, progress: "x", next: "Next", close: "Close", class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
+  "config showButtons": "shown: "", footer: false, progress: false, next: "Next", close: "Close", class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "config showProgress": "shown: "", footer: false, progress: false, next: "Next", close: "Close", class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "config texts": "shown: "", footer: false, progress: false, next: "Go", close: "Dismiss", class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "plain": "shown: "", footer: false, progress: false, next: "Next", close: "Close", class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "popover showButtons": "shown: "next,close", footer: true, progress: false, next: "Next", close: "Close", class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "popover showProgress": "shown: "", footer: true, progress: "x", next: "Next", close: "Close", class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
 }
 `;
 
@@ -327,43 +327,43 @@ exports[`step vs config precedence > nextBtnText on step 3 of 3 1`] = `
 
 exports[`step vs config precedence > popoverClass on step 1 of 3 1`] = `
 {
-  "step "" / config """: "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step "" / config "G-mine"": "class: "driver-popover G-mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "" / config unset": "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config """: "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config "G-mine"": "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config unset": "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config """: "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config "G-mine"": "class: "driver-popover G-mine driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config unset": "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
+  "step "" / config """: "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step "" / config "G-mine"": "class: "vt-popover G-mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "" / config unset": "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config """: "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config "G-mine"": "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config unset": "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config """: "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config "G-mine"": "class: "vt-popover G-mine vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config unset": "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
 }
 `;
 
 exports[`step vs config precedence > popoverClass on step 2 of 3 1`] = `
 {
-  "step "" / config """: "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step "" / config "G-mine"": "class: "driver-popover G-mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "" / config unset": "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config """: "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config "G-mine"": "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config unset": "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config """: "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config "G-mine"": "class: "driver-popover G-mine driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config unset": "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
+  "step "" / config """: "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step "" / config "G-mine"": "class: "vt-popover G-mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "" / config unset": "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config """: "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config "G-mine"": "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config unset": "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config """: "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config "G-mine"": "class: "vt-popover G-mine vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config unset": "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
 }
 `;
 
 exports[`step vs config precedence > popoverClass on step 3 of 3 1`] = `
 {
-  "step "" / config """: "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step "" / config "G-mine"": "class: "driver-popover G-mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "" / config unset": "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config """: "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config "G-mine"": "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step "mine" / config unset": "class: "driver-popover mine driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config """: "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config "G-mine"": "class: "driver-popover G-mine driver-popover-side-bottom driver-popover-align-start"",
-  "step unset / config unset": "class: "driver-popover driver-popover-side-bottom driver-popover-align-start"",
+  "step "" / config """: "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step "" / config "G-mine"": "class: "vt-popover G-mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "" / config unset": "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config """: "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config "G-mine"": "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step "mine" / config unset": "class: "vt-popover mine vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config """: "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config "G-mine"": "class: "vt-popover G-mine vt-popover-side-bottom vt-popover-align-start"",
+  "step unset / config unset": "class: "vt-popover vt-popover-side-bottom vt-popover-align-start"",
 }
 `;
 

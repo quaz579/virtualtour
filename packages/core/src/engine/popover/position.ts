@@ -1,4 +1,7 @@
 import type { Alignment, PopoverDOM, Side } from "./popover";
+import { fixedNames } from "../core/namespace";
+
+const popoverNames = fixedNames.popover;
 
 type Placement = Side | "over";
 
@@ -158,10 +161,10 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
 
   renderPopoverArrow(popover, noneOptimal ? "over" : popoverRenderedSide, requiredAlignment, elementDimensions);
 
-  const sideClass = `driver-popover-side-${popoverRenderedSide}`;
-  const alignClass = `driver-popover-align-${requiredAlignment}`;
+  const sideClass = popoverNames.sideClass(popoverRenderedSide);
+  const alignClass = popoverNames.alignClass(requiredAlignment);
   [...classList]
-    .filter(className => className.startsWith("driver-popover-side-") || className.startsWith("driver-popover-align-"))
+    .filter(className => className.startsWith(popoverNames.sidePrefix) || className.startsWith(popoverNames.alignPrefix))
     .filter(className => className !== sideClass && className !== alignClass)
     .forEach(className => classList.remove(className));
 
@@ -247,14 +250,14 @@ export function resolveArrowSide(
 function renderPopoverArrow(popover: PopoverDOM, side: Placement, alignment: Alignment, elementRect: DOMRect) {
   const popoverArrow = popover.arrow;
 
-  popoverArrow.className = "driver-popover-arrow";
+  popoverArrow.className = popoverNames.arrow;
   popoverArrow.style.top = "";
   popoverArrow.style.right = "";
   popoverArrow.style.bottom = "";
   popoverArrow.style.left = "";
 
   if (side === "over") {
-    popoverArrow.classList.add("driver-popover-arrow-none");
+    popoverArrow.classList.add(popoverNames.arrowNone);
     return;
   }
 
@@ -263,7 +266,7 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, alignment: Ali
 
   const arrowSide = resolveArrowSide(side, elementRect, popoverRect);
 
-  popoverArrow.classList.add(`driver-popover-arrow-side-${arrowSide}`);
+  popoverArrow.classList.add(popoverNames.arrowSideClass(arrowSide));
 
   if (arrowSide === "left" || arrowSide === "right") {
     const target = calculateArrowTarget(

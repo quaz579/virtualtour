@@ -3,10 +3,10 @@ import { skipWhenEdgeMissing, box, description, log, nextButton, openFixture, ov
 
 test.beforeEach(skipWhenEdgeMissing);
 
-const instruction = (page: Page) => page.locator(".driver-popover-instruction");
-const NUDGE_CLASS = /driver-popover-nudge/;
+const instruction = (page: Page) => page.locator(".vt-popover-instruction");
+const NUDGE_CLASS = /vt-popover-nudge/;
 
-const feedback = (page: Page) => page.locator(".driver-popover-feedback");
+const feedback = (page: Page) => page.locator(".vt-popover-feedback");
 
 const farthestShake = (page: Page) => page.evaluate(() => Number(document.documentElement.dataset.shake));
 
@@ -25,11 +25,11 @@ async function startActionTour(page: Page) {
   await settle(page);
 
   await page.evaluate(() => {
-    const wrapper = document.querySelector(".driver-popover")!;
+    const wrapper = document.querySelector(".vt-popover")!;
     const home = wrapper.getBoundingClientRect().x;
     document.documentElement.dataset.shake = "0";
     document.addEventListener("animationend", event => {
-      window.log.push(`${event.animationName} ended, nudged: ${wrapper.classList.contains("driver-popover-nudge")}`);
+      window.log.push(`${event.animationName} ended, nudged: ${wrapper.classList.contains("vt-popover-nudge")}`);
     });
 
     const sample = () => {
@@ -124,8 +124,8 @@ test.describe("nudge", () => {
 
     await page.evaluate(() => window.tour.nudge("Not that one."));
     await expect(popover(page)).toHaveClass(NUDGE_CLASS);
-    await expect(popover(page)).toHaveCSS("animation-name", "driver-nudge-shake");
-    await expect.poll(() => log(page)).toEqual(["driver-nudge-shake ended, nudged: false"]);
+    await expect(popover(page)).toHaveCSS("animation-name", "vt-nudge-shake");
+    await expect.poll(() => log(page)).toEqual(["vt-nudge-shake ended, nudged: false"]);
     expect(await farthestShake(page)).toBeGreaterThan(2);
     await expect(popover(page)).toHaveCSS("animation-name", "none");
 
@@ -144,8 +144,8 @@ test.describe("nudge", () => {
 
     await page.evaluate(() => window.tour.nudge());
     await expect(popover(page)).toHaveClass(NUDGE_CLASS);
-    await expect(popover(page)).toHaveCSS("animation-name", "driver-nudge-flash");
-    await expect.poll(() => log(page)).toEqual(["driver-nudge-flash ended, nudged: false"]);
+    await expect(popover(page)).toHaveCSS("animation-name", "vt-nudge-flash");
+    await expect.poll(() => log(page)).toEqual(["vt-nudge-flash ended, nudged: false"]);
     expect(await farthestShake(page)).toBe(0);
   });
 });
@@ -172,15 +172,15 @@ test.describe("nudge with a message", () => {
     await page.evaluate(() => window.tour.nudge("Not that one."));
     await expect(feedback(page)).toHaveText("Not that one.");
     await expect(feedback(page)).toBeVisible();
-    await expect(popover(page)).toHaveClass(/driver-popover-nudge/);
+    await expect(popover(page)).toHaveClass(/vt-popover-nudge/);
     await expect(instruction(page)).toHaveText("Click One.");
-    await expect(page.locator(".driver-popover-description")).toHaveText("Why");
-    await expect(page.locator(".driver-live-region")).toHaveText("Not that one.");
+    await expect(page.locator(".vt-popover-description")).toHaveText("Why");
+    await expect(page.locator(".vt-live-region")).toHaveText("Not that one.");
 
     const row = await box(feedback(page));
     const action = await box(instruction(page));
     expect(row.y).toBeGreaterThanOrEqual(action.y + action.height);
-    await expect(popover(page)).not.toHaveClass(/driver-popover-nudge/, { timeout: 2000 });
+    await expect(popover(page)).not.toHaveClass(/vt-popover-nudge/, { timeout: 2000 });
     const grown = await box(popover(page));
     expect(grown.height).toBeGreaterThan(before.height);
 

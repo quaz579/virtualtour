@@ -1,4 +1,5 @@
 import type { DriveStep } from "../types";
+import { fixedNames } from "./namespace";
 
 export function resolveElement(element: DriveStep["element"]): Element | null | undefined {
   if (typeof element === "function") {
@@ -12,17 +13,15 @@ export function resolveElement(element: DriveStep["element"]): Element | null | 
   return element;
 }
 
-export const DUMMY_ELEMENT_ID = "driver-dummy-element";
+export const DUMMY_ELEMENT_ID = fixedNames.dummyId;
 
 export function isDummyElement(element: Element | undefined): boolean {
   return !element || element.id === DUMMY_ELEMENT_ID;
 }
 
-export const ALLOWED_CLASS = "driver-allowed-element";
-export const RAISED_CLASS = "driver-active-element-raised";
 
 export function isInsideAllowedElement(element: Element): boolean {
-  return !!element.closest(`.${ALLOWED_CLASS}`);
+  return !!element.closest(`[${fixedNames.attr.extra}]`);
 }
 
 export function isScrollable(element: Element) {
@@ -157,10 +156,11 @@ export function layerFor(element: Element): Element {
     return dialog;
   }
 
-  let layer = dialog.querySelector<HTMLElement>(":scope > .driver-layer");
+  let layer = dialog.querySelector<HTMLElement>(`:scope > [${fixedNames.attr.layer}]`);
   if (!layer) {
     layer = document.createElement("div");
-    layer.className = "driver-layer";
+    layer.className = fixedNames.layer;
+    layer.setAttribute(fixedNames.attr.layer, "");
     layer.setAttribute("popover", "manual");
     dialog.appendChild(layer);
   }
@@ -168,7 +168,7 @@ export function layerFor(element: Element): Element {
   if (!dialogsWithLayer.has(dialog)) {
     dialogsWithLayer.add(dialog);
     dialog.addEventListener("close", () => {
-      dialog.querySelector<HTMLElement>(":scope > .driver-layer:popover-open")?.hidePopover();
+      dialog.querySelector<HTMLElement>(`:scope > [${fixedNames.attr.layer}]:popover-open`)?.hidePopover();
     });
   }
 
@@ -180,7 +180,7 @@ export function layerFor(element: Element): Element {
 }
 
 function dropEmptyLayer(layer: Element | null) {
-  if (layer?.classList.contains("driver-layer") && !layer.childElementCount) {
+  if (layer?.hasAttribute(fixedNames.attr.layer) && !layer.childElementCount) {
     layer.remove();
   }
 }

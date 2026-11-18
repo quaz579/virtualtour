@@ -2,11 +2,12 @@ import type { AllowedElements, Context } from "../core/context";
 import type { DriveStep } from "../types";
 import { redrawOverlay } from "../overlay/overlay";
 import { stepOption } from "../core/options";
-import { ALLOWED_CLASS, isDummyElement, isInsideAllowedElement, RAISED_CLASS } from "../core/utils";
+import { fixedNames } from "../core/namespace";
+import { isDummyElement, isInsideAllowedElement } from "../core/utils";
 
-export { ALLOWED_CLASS };
+const ENGINE_UI = `[${fixedNames.attr.layer}], [${fixedNames.attr.overlay}], .${fixedNames.popover.root}`;
 
-const DRIVER_UI = ".driver-layer, .driver-overlay, .driver-popover";
+export const EXTRA_SELECTOR = `[${fixedNames.attr.extra}]`;
 
 export function resolveAllowedSetting(ctx: Context, step: DriveStep): AllowedElements | undefined {
   return stepOption(ctx, step, "allowedElements");
@@ -38,6 +39,18 @@ export function trackAllowedElements(ctx: Context, step: DriveStep, signal: Abor
     return;
   }
 
+  const { names } = ctx;
+  const isMarked = (element: Element) =>
+    element.classList.contains(names.extra) && element.hasAttribute(names.attr.extra);
+  const mark = (element: Element) => {
+    element.classList.add(names.extra);
+    element.setAttribute(names.attr.extra, "");
+  };
+  const unmark = (element: Element) => {
+    element.classList.remove(names.extra);
+    element.removeAttribute(names.attr.extra);
+  };
+
   let marked = new Set<Element>();
   let frame: number | undefined;
 
@@ -48,21 +61,22 @@ export function trackAllowedElements(ctx: Context, step: DriveStep, signal: Abor
 
     const matches = new Set(resolveAllowedElements(setting));
     marked.forEach(element => {
-      if (!matches.has(element) && element.classList.contains(ALLOWED_CLASS)) {
-        element.classList.remove(ALLOWED_CLASS);
+      if (!matches.has(element)) {
+        unmark(element);
       }
     });
     matches.forEach(element => {
-      if (!element.classList.contains(ALLOWED_CLASS)) {
-        element.classList.add(ALLOWED_CLASS);
+      if (!isMarked(element)) {
+        mark(element);
       }
     });
     marked = matches;
 
     const active = ctx.getState("activeElement");
     const isRaised = !!active && !isDummyElement(active) && isInsideAllowedElement(active);
-    if (active && isRaised !== active.classList.contains(RAISED_CLASS)) {
-      active.classList.toggle(RAISED_CLASS, isRaised);
+    if (active && isRaised !== active.hasAttribute(names.attr.raised)) {
+      active.classList.toggle(names.targetRaised, isRaised);
+      active.toggleAttribute(names.attr.raised, isRaised);
       redrawOverlay(ctx, true);
     }
   };
@@ -83,13 +97,14 @@ export function trackAllowedElements(ctx: Context, step: DriveStep, signal: Abor
     let isRelevant = false;
     records.forEach(record => {
       const target = record.target as Element;
-      if (target.closest?.(DRIVER_UI)) {
+      if (target.closest?.(ENGINE_UI)) {
         return;
       }
 
       isRelevant = true;
-      if (record.attributeName === "class" && marked.has(target) && !target.classList.contains(ALLOWED_CLASS)) {
-        target.classList.add(ALLOWED_CLASS);
+      const isMarkerChange = record.attributeName === "class" || record.attributeName === names.attr.extra;
+      if (isMarkerChange && marked.has(target) && !isMarked(target)) {
+        mark(target);
       }
     });
 
@@ -105,7 +120,7 @@ export function trackAllowedElements(ctx: Context, step: DriveStep, signal: Abor
     childList: true,
     subtree: true,
     attributes: true,
-    ...(isLookup ? {} : { attributeFilter: ["class"] }),
+    ...(isLookup ? {} : { attributeFilter: ["class", names.attr.extra] }),
   });
   ctx.setState("__syncAllowedElements", sync);
 
@@ -115,7 +130,7 @@ export function trackAllowedElements(ctx: Context, step: DriveStep, signal: Abor
       window.cancelAnimationFrame(frame);
     }
 
-    marked.forEach(element => element.classList.remove(ALLOWED_CLASS));
+    marked.forEach(unmark);
     if (ctx.getState("__syncAllowedElements") === sync) {
       ctx.setState("__syncAllowedElements", undefined);
     }

@@ -20,18 +20,18 @@ describe("popover rendering", () => {
     });
 
     expect(navButton(name)?.disabled).toBe(true);
-    expect(navButton(name)?.classList.contains("driver-popover-btn-disabled")).toBe(true);
+    expect(navButton(name)?.classList.contains("vt-popover-btn-disabled")).toBe(true);
   });
 
   it("marks the next button as done on the last step only", () => {
     const d = createDriver({ animate: false, steps: SAMPLE_STEPS });
     d.drive();
 
-    expect(navButton("next")?.classList.contains("driver-popover-done-btn")).toBe(false);
+    expect(navButton("next")?.classList.contains("vt-popover-done-btn")).toBe(false);
 
     d.moveTo(SAMPLE_STEPS.length - 1);
 
-    expect(navButton("next")?.classList.contains("driver-popover-done-btn")).toBe(true);
+    expect(navButton("next")?.classList.contains("vt-popover-done-btn")).toBe(true);
   });
 
   it("allows mutating the popover from onPopoverRender", () => {
@@ -45,7 +45,7 @@ describe("popover rendering", () => {
     });
     d.highlight({ element: "#intro", popover: { title: "Intro" } });
 
-    expect(document.querySelector(".driver-popover .my-extra-btn")).not.toBeNull();
+    expect(document.querySelector(".vt-popover .my-extra-btn")).not.toBeNull();
   });
 });
 
@@ -68,11 +68,11 @@ describe("popover config fallbacks", () => {
     });
     d.drive();
 
-    expect(document.querySelector<HTMLElement>(".driver-popover-progress-text")!.style.display).toBe("none");
+    expect(document.querySelector<HTMLElement>(".vt-popover-progress-text")!.style.display).toBe("none");
 
     d.moveNext();
 
-    expect(document.querySelector<HTMLElement>(".driver-popover-progress-text")!.style.display).toBe("");
+    expect(document.querySelector<HTMLElement>(".vt-popover-progress-text")!.style.display).toBe("");
     expect(progressText()).toBe("2 of 2");
 
     d.setConfig({
@@ -85,16 +85,16 @@ describe("popover config fallbacks", () => {
     d.drive();
 
     expect(progressText()).toBe("1 of 2");
-    expect(document.querySelector<HTMLElement>(".driver-popover-progress-text")!.style.display).toBe("");
+    expect(document.querySelector<HTMLElement>(".vt-popover-progress-text")!.style.display).toBe("");
   });
 
   it("keeps the navigation for a tour step without a popover, hiding the empty title and description", () => {
     const d = createDriver({ animate: false, steps: [{ element: "#intro" }, SAMPLE_STEPS[1]] });
     d.drive();
 
-    expect(document.querySelector<HTMLElement>(".driver-popover-title")!.style.display).toBe("none");
-    expect(document.querySelector<HTMLElement>(".driver-popover-description")!.style.display).toBe("none");
-    expect(document.querySelector<HTMLElement>(".driver-popover-footer")!.style.display).toBe("");
+    expect(document.querySelector<HTMLElement>(".vt-popover-title")!.style.display).toBe("none");
+    expect(document.querySelector<HTMLElement>(".vt-popover-description")!.style.display).toBe("none");
+    expect(document.querySelector<HTMLElement>(".vt-popover-footer")!.style.display).toBe("");
     expect(navButton("next")?.style.display).toBe("");
   });
 });
@@ -104,8 +104,8 @@ describe("popover title", () => {
     const d = createDriver({ animate: false });
     d.highlight({ element: "#intro", popover: { description: "Only description" } });
 
-    expect(document.querySelector<HTMLElement>(".driver-popover-title")?.style.display).toBe("none");
-    expect(document.querySelector<HTMLElement>(".driver-popover-description")?.style.display).toBe("");
+    expect(document.querySelector<HTMLElement>(".vt-popover-title")?.style.display).toBe("none");
+    expect(document.querySelector<HTMLElement>(".vt-popover-description")?.style.display).toBe("");
   });
 });
 
@@ -165,7 +165,7 @@ describe("highlight() buttons without a hook", () => {
     navButton("next")!.click();
     navButton("prev")!.click();
     expect(d.isActive()).toBe(true);
-    expect(document.querySelector(".driver-popover-title")?.textContent).toBe("Solo");
+    expect(document.querySelector(".vt-popover-title")?.textContent).toBe("Solo");
 
     navButton("close")!.click();
     expect(d.isActive()).toBe(false);
@@ -182,7 +182,7 @@ describe("highlight() buttons without a hook", () => {
     navButton("prev")!.click();
     await nextFrame();
 
-    expect(document.querySelector(".driver-popover-title")?.textContent).toBe("Solo");
+    expect(document.querySelector(".vt-popover-title")?.textContent).toBe("Solo");
     expect(d.getActiveIndex()).toBe(1);
   });
 
@@ -230,7 +230,7 @@ describe("popover click target", () => {
     const onError = (e: ErrorEvent) => errors.push(e.error);
     window.addEventListener("error", onError);
 
-    const text = document.querySelector(".driver-popover-description")!.firstChild!;
+    const text = document.querySelector(".vt-popover-description")!.firstChild!;
     text.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 
     window.removeEventListener("error", onError);

@@ -4,16 +4,16 @@ import { createDriver, navButton, nextFrame, popoverEl, SAMPLE_STEPS, useDriverH
 
 useDriverHarness();
 
-const row = () => document.querySelector<HTMLElement>(".driver-popover-instruction");
-const rowText = () => document.querySelector<HTMLElement>(".driver-popover-instruction-text");
-const indicator = () => document.querySelector<HTMLElement>(".driver-popover-instruction-indicator");
-const footer = () => document.querySelector<HTMLElement>(".driver-popover-footer");
+const row = () => document.querySelector<HTMLElement>(".vt-popover-instruction");
+const rowText = () => document.querySelector<HTMLElement>(".vt-popover-instruction-text");
+const indicator = () => document.querySelector<HTMLElement>(".vt-popover-instruction-indicator");
+const footer = () => document.querySelector<HTMLElement>(".vt-popover-footer");
 const next = () => navButton("next")!;
 const hasClass = (name: string) => !!popoverEl()?.classList.contains(name);
-const isGated = () => hasClass("driver-popover-has-instruction");
-const isDone = () => hasClass("driver-popover-instruction-done");
-const isNudged = () => hasClass("driver-popover-nudge");
-const liveRegion = () => document.querySelector(".driver-live-region");
+const isGated = () => hasClass("vt-popover-has-instruction");
+const isDone = () => hasClass("vt-popover-instruction-done");
+const isNudged = () => hasClass("vt-popover-nudge");
+const liveRegion = () => document.querySelector(".vt-live-region");
 
 const actionStep = (extra: Partial<DriveStep> = {}, popover: DriveStep["popover"] = {}): DriveStep => ({
   ...SAMPLE_STEPS[0],
@@ -38,7 +38,7 @@ describe("popover.instruction", () => {
       expect(row()?.style.display).toBe("");
       expect(rowText()?.querySelector("b")?.textContent).toBe("Intro");
       expect(row()?.textContent).toBe("Click Intro to go on.");
-      expect(row()?.previousElementSibling?.classList.contains("driver-popover-description")).toBe(true);
+      expect(row()?.previousElementSibling?.classList.contains("vt-popover-description")).toBe(true);
       expect(row()?.nextElementSibling).toBe(footer());
       expect(isGated()).toBe(true);
     });
@@ -47,8 +47,8 @@ describe("popover.instruction", () => {
       await start({ steps: withFirst(actionStep()) });
 
       expect(Array.from(row()!.children).map(child => child.className)).toEqual([
-        "driver-popover-instruction-text",
-        "driver-popover-instruction-indicator",
+        "vt-popover-instruction-text",
+        "vt-popover-instruction-indicator",
       ]);
       expect(indicator()?.getAttribute("aria-hidden")).toBe("true");
       expect(indicator()?.textContent).toBe("");
@@ -61,9 +61,9 @@ describe("popover.instruction", () => {
       expect(next().style.display).toBe("");
       expect(next().getAttribute("aria-disabled")).toBe("true");
       expect(next().disabled).toBe(false);
-      expect(next().classList.contains("driver-popover-btn-disabled")).toBe(true);
+      expect(next().classList.contains("vt-popover-btn-disabled")).toBe(true);
       expect(next().textContent).toBe("Next");
-      expect(document.querySelector(".driver-popover-action-status")).toBeNull();
+      expect(document.querySelector(".vt-popover-action-status")).toBeNull();
     });
 
     it("shows the done text on the disabled Next of the last step", async () => {
@@ -113,13 +113,13 @@ describe("popover.instruction", () => {
     it("describes the dialog with the instruction", async () => {
       const d = await start({ steps: withFirst(actionStep()) });
       expect(popoverEl()?.getAttribute("aria-describedby")).toBe(
-        "driver-popover-description driver-popover-instruction-text"
+        "vt-popover-description vt-popover-instruction-text"
       );
-      expect(rowText()?.id).toBe("driver-popover-instruction-text");
+      expect(rowText()?.id).toBe("vt-popover-instruction-text");
 
       d.moveNext();
       await nextFrame();
-      expect(popoverEl()?.getAttribute("aria-describedby")).toBe("driver-popover-description");
+      expect(popoverEl()?.getAttribute("aria-describedby")).toBe("vt-popover-description");
     });
 
     it("does not create the instruction nodes for other popovers", async () => {
@@ -260,21 +260,21 @@ describe("popover.instruction", () => {
       const d = await start({ onPopoverRender: addHelp, steps: SAMPLE_STEPS });
 
       d.updatePopover({ title: "Changed" });
-      expect(popoverEl()?.getAttribute("aria-describedby")).toBe("driver-popover-description my-help");
+      expect(popoverEl()?.getAttribute("aria-describedby")).toBe("vt-popover-description my-help");
     });
 
     it("only adds and removes its own id on action steps", async () => {
       const d = await start({ onPopoverRender: addHelp, steps: withFirst(actionStep()) });
       expect(popoverEl()?.getAttribute("aria-describedby")).toBe(
-        "driver-popover-description driver-popover-instruction-text my-help"
+        "vt-popover-description vt-popover-instruction-text my-help"
       );
 
       d.updatePopover({ instruction: "" });
-      expect(popoverEl()?.getAttribute("aria-describedby")).toBe("driver-popover-description my-help");
+      expect(popoverEl()?.getAttribute("aria-describedby")).toBe("vt-popover-description my-help");
 
       d.updatePopover({ instruction: "Again." });
       expect(popoverEl()?.getAttribute("aria-describedby")).toBe(
-        "driver-popover-description my-help driver-popover-instruction-text"
+        "vt-popover-description my-help vt-popover-instruction-text"
       );
     });
   });

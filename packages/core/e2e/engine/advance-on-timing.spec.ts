@@ -233,7 +233,7 @@ test.describe("advanceOn and elements that come and go", () => {
       document.querySelector("#temp")!.remove();
       document.querySelector("#slot")!.innerHTML = `<input id="temp" type="text" />`;
     });
-    await expect(page.locator("#temp")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#temp")).toHaveAttribute("data-vt-target");
 
     await page.locator("#temp").click();
     await page.keyboard.type("a");

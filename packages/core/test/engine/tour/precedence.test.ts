@@ -19,14 +19,14 @@ const isShown = (element: HTMLElement | null) => !!element && element.style.disp
 
 function observe(): Observed {
   const popover = popoverEl() as HTMLElement;
-  const progress = popover.querySelector<HTMLElement>(".driver-popover-progress-text");
+  const progress = popover.querySelector<HTMLElement>(".vt-popover-progress-text");
   const buttons = { next: navButton("next"), previous: navButton("prev"), close: navButton("close") };
   const names = Object.keys(buttons) as Array<keyof typeof buttons>;
 
   return {
     shown: names.filter(name => isShown(buttons[name])).join(","),
     disabled: names.filter(name => buttons[name]?.disabled).join(","),
-    footer: isShown(popover.querySelector(".driver-popover-footer")),
+    footer: isShown(popover.querySelector(".vt-popover-footer")),
     progress: isShown(progress) ? progress!.innerHTML : false,
     next: buttons.next!.innerHTML,
     previous: buttons.previous!.innerHTML,

@@ -42,7 +42,7 @@ test.describe("focus when a step starts", () => {
     await start(page, { steps: [{ element: "#two", popover: { title: "Press it", description: "Go on" } }] });
 
     await expect(page.locator("#two")).toBeFocused();
-    await expect(page.locator(".driver-live-region")).toHaveText("Press it. Go on");
+    await expect(page.locator(".vt-live-region")).toHaveText("Press it. Go on");
   });
 
   test("stays on an allowed element", async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe("focus in a new popover", () => {
       ],
     });
 
-    await expect(page.locator(".driver-popover-next-btn")).toBeFocused();
+    await expect(page.locator(".vt-popover-next-btn")).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(title(page)).toHaveText("Two");
   });
@@ -102,7 +102,7 @@ test.describe("focus when Next cannot take it", () => {
   });
 
   test("goes to the popover when CSS hides Next", async ({ page }) => {
-    await page.addStyleTag({ content: ".driver-popover-next-btn { display: none; }" });
+    await page.addStyleTag({ content: ".vt-popover-next-btn { display: none; }" });
     await start(page, { steps: [{ element: "#one", popover: { title: "One" } }] });
 
     await expect(popover(page)).toBeFocused();
@@ -115,12 +115,12 @@ test.describe("focus when Next cannot take it", () => {
         { element: "#two", popover: { title: "Two" } },
       ],
     });
-    await expect(page.locator(".driver-popover-next-btn")).toBeFocused();
+    await expect(page.locator(".vt-popover-next-btn")).toBeFocused();
 
     await page.evaluate(() => window.tour.updatePopover({ disableButtons: ["next"] }));
     await expect(popover(page)).toBeFocused();
     await page.evaluate(() => window.tour.updatePopover({ disableButtons: [] }));
-    await expect(page.locator(".driver-popover-next-btn")).toBeFocused();
+    await expect(page.locator(".vt-popover-next-btn")).toBeFocused();
 
     await page.keyboard.press("Enter");
     await expect(title(page)).toHaveText("Two");
@@ -231,11 +231,11 @@ test.describe("focus on a plain tour", () => {
     }
 
     expect([...seen].sort()).toEqual(
-      ["driver-popover-close-btn", "driver-popover-next-btn driver-popover-footer-btn", "one"].sort()
+      ["vt-popover-close-btn", "vt-popover-next-btn vt-popover-footer-btn", "one"].sort()
     );
 
     await page.keyboard.press("Shift+Tab");
-    const focused = await page.evaluate(() => document.activeElement?.closest(".driver-popover, #one") !== null);
+    const focused = await page.evaluate(() => document.activeElement?.closest(".vt-popover, #one") !== null);
     expect(focused).toBe(true);
   });
 

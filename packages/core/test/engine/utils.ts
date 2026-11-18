@@ -48,12 +48,12 @@ export function append(id: string, tag = "button"): HTMLElement {
   return element;
 }
 
-export const popoverEl = () => document.querySelector<HTMLElement>(".driver-popover");
-export const popoverTitle = () => document.querySelector(".driver-popover-title")?.textContent?.trim();
-export const popoverDescription = () => document.querySelector(".driver-popover-description")?.textContent?.trim();
-export const progressText = () => document.querySelector(".driver-popover-progress-text")?.textContent?.trim();
+export const popoverEl = () => document.querySelector<HTMLElement>(".vt-popover");
+export const popoverTitle = () => document.querySelector(".vt-popover-title")?.textContent?.trim();
+export const popoverDescription = () => document.querySelector(".vt-popover-description")?.textContent?.trim();
+export const progressText = () => document.querySelector(".vt-popover-progress-text")?.textContent?.trim();
 export const navButton = (which: "next" | "prev" | "close") =>
-  document.querySelector<HTMLButtonElement>(`.driver-popover-${which}-btn`);
+  document.querySelector<HTMLButtonElement>(`.vt-popover-${which}-btn`);
 
 export function pressKey(key: string): void {
   window.dispatchEvent(new KeyboardEvent("keyup", { key }));

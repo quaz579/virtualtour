@@ -12,7 +12,7 @@ import {
 
 useDriverHarness();
 
-const liveRegion = () => document.querySelector(".driver-live-region");
+const liveRegion = () => document.querySelector(".vt-live-region");
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 describe("updatePopover", () => {
@@ -61,7 +61,7 @@ describe("updatePopover", () => {
 
     d.updatePopover({ description: "Added later" });
 
-    const description = document.querySelector<HTMLElement>(".driver-popover-description");
+    const description = document.querySelector<HTMLElement>(".vt-popover-description");
     expect(description?.style.display).toBe("");
     expect(popoverDescription()).toBe("Added later");
   });
@@ -81,7 +81,7 @@ describe("updatePopover", () => {
 
     d.updatePopover({ disableButtons: [] });
     expect(navButton("next")?.disabled).toBe(false);
-    expect(navButton("next")?.classList.contains("driver-popover-btn-disabled")).toBe(false);
+    expect(navButton("next")?.classList.contains("vt-popover-btn-disabled")).toBe(false);
   });
 
   it("swaps the custom popover class", async () => {
@@ -91,7 +91,7 @@ describe("updatePopover", () => {
 
     d.updatePopover({ popoverClass: "is-wrong" });
     expect(popoverEl()?.classList.contains("is-wrong")).toBe(true);
-    expect(popoverEl()?.classList.contains("driver-popover")).toBe(true);
+    expect(popoverEl()?.classList.contains("vt-popover")).toBe(true);
 
     d.updatePopover({ popoverClass: "" });
     expect(popoverEl()?.classList.contains("is-wrong")).toBe(false);
@@ -209,7 +209,7 @@ describe("updatePopover", () => {
 
     d.moveNext();
     await nextFrame();
-    const region = document.querySelector(".driver-live-region")!;
+    const region = document.querySelector(".vt-live-region")!;
     region.textContent = "";
     d.updatePopover({ description: "Right-click instead." });
 
@@ -250,7 +250,7 @@ describe("updatePopover precision", () => {
 
     d.updatePopover({ showProgress: false, popoverClass: "" });
 
-    expect(document.querySelector<HTMLElement>(".driver-popover-progress-text")?.style.display).toBe("none");
+    expect(document.querySelector<HTMLElement>(".vt-popover-progress-text")?.style.display).toBe("none");
     expect(popoverEl()?.classList.contains("global-theme")).toBe(false);
   });
 
@@ -261,7 +261,7 @@ describe("updatePopover precision", () => {
 
     d.updatePopover({ progressText: "Step {{current}} / {{total}}" });
 
-    expect(document.querySelector(".driver-popover-progress-text")?.textContent).toBe("Step 2 / 3");
+    expect(document.querySelector(".vt-popover-progress-text")?.textContent).toBe("Step 2 / 3");
   });
 });
 
@@ -289,6 +289,6 @@ describe("updatePopover from hooks", () => {
     }).drive();
     await wait(70);
 
-    expect(document.querySelector(".driver-popover-description")?.textContent).toBe("Load failed; retry");
+    expect(document.querySelector(".vt-popover-description")?.textContent).toBe("Load failed; retry");
   });
 });

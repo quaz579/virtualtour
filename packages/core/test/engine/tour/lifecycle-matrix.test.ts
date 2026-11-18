@@ -84,27 +84,27 @@ function stateOf(d: Driver): string {
 }
 
 function marks(): string {
-  const popovers = Array.from(document.querySelectorAll<HTMLElement>(".driver-popover"));
+  const popovers = Array.from(document.querySelectorAll<HTMLElement>(".vt-popover"));
   const shown = popovers.filter(popover => popover.style.display !== "none");
   const popover = shown[0];
-  const next = popover?.querySelector<HTMLButtonElement>(".driver-popover-next-btn");
-  const previous = popover?.querySelector<HTMLButtonElement>(".driver-popover-prev-btn");
+  const next = popover?.querySelector<HTMLButtonElement>(".vt-popover-next-btn");
+  const previous = popover?.querySelector<HTMLButtonElement>(".vt-popover-prev-btn");
   const flags = ["waiting", "instruction-done", "has-instruction", "nudge"].filter(name =>
-    popover?.classList.contains(`driver-popover-${name}`)
+    popover?.classList.contains(`vt-popover-${name}`)
   );
 
   return [
     `popovers=${popovers.length}/${shown.length}`,
-    `title=${popover?.querySelector(".driver-popover-title")?.textContent ?? "-"}`,
+    `title=${popover?.querySelector(".vt-popover-title")?.textContent ?? "-"}`,
     `flags=${flags.join("+") || "-"}`,
     `next=${next ? `${next.textContent}${next.disabled ? ":disabled" : ""}${next.getAttribute("aria-disabled") ? ":gated" : ""}` : "-"}`,
     `prev=${previous?.disabled ? "disabled" : "on"}`,
     `busy=${popover?.getAttribute("aria-busy") ?? "-"}`,
-    `overlays=${document.querySelectorAll(".driver-overlay").length}`,
-    `active=${Array.from(document.querySelectorAll(".driver-active-element")).map(idOf).join(",") || "-"}`,
+    `overlays=${document.querySelectorAll(".vt-overlay").length}`,
+    `active=${Array.from(document.querySelectorAll(".vt-target")).map(idOf).join(",") || "-"}`,
     `aria=${Array.from(document.querySelectorAll("[aria-haspopup=dialog]")).map(idOf).join(",") || "-"}`,
-    `dummy=${document.getElementById("driver-dummy-element") ? "y" : "n"}`,
-    `live=${document.querySelectorAll(".driver-live-region").length}`,
+    `dummy=${document.getElementById("vt-dummy-element") ? "y" : "n"}`,
+    `live=${document.querySelectorAll(".vt-live-region").length}`,
     `body=${document.body.className || "-"}`,
     `focus=${idOf(document.activeElement)}`,
   ].join(" ");
@@ -212,7 +212,7 @@ function rerender(selector: string, id: string) {
   const existing = $(selector);
   const copy = document.createElement("button");
   copy.id = id;
-  copy.className = existing?.className.replace(/driver-\S+/g, "").trim() ?? "";
+  copy.className = existing?.className.replace(/vt-\S+/g, "").trim() ?? "";
   if (existing) {
     existing.replaceWith(copy);
   } else {
@@ -322,11 +322,11 @@ const ACTIONS: Record<string, (d: Driver, stage: Stage) => unknown> = {
   Escape: () => key("Escape"),
   ArrowRight: () => key("ArrowRight"),
   ArrowLeft: () => key("ArrowLeft"),
-  "a click on Next": () => $(".driver-popover-next-btn")?.click(),
-  "a click on Previous": () => $(".driver-popover-prev-btn")?.click(),
-  "a click on Close": () => $(".driver-popover-close-btn")?.click(),
+  "a click on Next": () => $(".vt-popover-next-btn")?.click(),
+  "a click on Previous": () => $(".vt-popover-prev-btn")?.click(),
+  "a click on Close": () => $(".vt-popover-close-btn")?.click(),
   "a click on the overlay": () =>
-    $(".driver-overlay path")?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
+    $(".vt-overlay path")?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
   "another instance starts": () => {
     const other = create({ steps: [{ element: "#other", popover: { title: "Other" } }] }, {}, "other");
     other.drive();
@@ -390,7 +390,7 @@ async function walk(d: Driver) {
   d.drive(0);
   await settle();
   say("started");
-  $(".driver-popover-next-btn")?.click();
+  $(".vt-popover-next-btn")?.click();
   await settle();
   say("after Next");
   click("#card-1");
@@ -398,7 +398,7 @@ async function walk(d: Driver) {
   say("after the action, pausing");
   await settle();
   say("after the pause");
-  $(".driver-popover-prev-btn")?.click();
+  $(".vt-popover-prev-btn")?.click();
   await settle();
   say("after Previous");
   $("#card-1")?.remove();
@@ -407,7 +407,7 @@ async function walk(d: Driver) {
   key("Escape");
   await settle();
   say("after Escape");
-  $(".driver-popover-close-btn")?.click();
+  $(".vt-popover-close-btn")?.click();
   await settle();
   say("after Close");
   d.destroy();
@@ -628,7 +628,7 @@ describe("sequences", () => {
 
 describe("on a driver that is not running", () => {
   const pageIsClean = () =>
-    document.querySelector("[class*=driver-]") === null &&
+    document.querySelector("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]") === null &&
     document.body.className === "" &&
     document.querySelector("[aria-haspopup=dialog]") === null;
 
@@ -640,9 +640,9 @@ describe("on a driver that is not running", () => {
 
     expect(d.isActive()).toBe(true);
     expect(d.getActiveIndex()).toBe(1);
-    expect(document.body.classList.contains("driver-active")).toBe(true);
-    expect(document.querySelectorAll(".driver-overlay")).toHaveLength(1);
-    expect(document.querySelectorAll(".driver-live-region")).toHaveLength(1);
+    expect(document.body.hasAttribute("data-vt-active")).toBe(true);
+    expect(document.querySelectorAll(".vt-overlay")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-live-region")).toHaveLength(1);
     expect(marks()).toContain("title=S1");
 
     key("ArrowLeft");
@@ -724,7 +724,7 @@ describe("on a driver that is not running", () => {
     d.highlight({ element: "#other", popover: { title: "Solo" } });
     await settle();
     expect(d.isActive()).toBe(true);
-    expect(document.body.classList.contains("driver-active")).toBe(true);
+    expect(document.body.hasAttribute("data-vt-active")).toBe(true);
     expect(marks()).toContain("title=Solo");
 
     d.destroy();

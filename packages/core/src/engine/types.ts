@@ -75,6 +75,12 @@ export type ElementMissing = ElementMissingPreset | ElementMissingHook;
 export type Config = {
   steps?: DriveStep[];
 
+  /**
+   * Prefix for the styling classes and `data-<namespace>-*` attributes added to page elements.
+   * Defaults to `vt`. Must match `/^[a-zA-Z][\w-]*$/`. Read once when the engine is created.
+   */
+  namespace?: string;
+
   animate?: boolean;
   duration?: number;
   overlayColor?: string;

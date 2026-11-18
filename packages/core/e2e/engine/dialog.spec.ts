@@ -11,7 +11,7 @@ const hitAt = (page: Page, x: number, y: number) =>
         return "none";
       }
 
-      if (element.closest(".driver-overlay")) {
+      if (element.closest(".vt-overlay")) {
         return "overlay";
       }
 
@@ -22,7 +22,7 @@ const hitAt = (page: Page, x: number, y: number) =>
 
 const overlayHome = (page: Page) =>
   page.evaluate(() => {
-    const parent = document.querySelector(".driver-overlay")?.parentElement;
+    const parent = document.querySelector(".vt-overlay")?.parentElement;
     if (!parent) {
       return "none";
     }
@@ -30,7 +30,7 @@ const overlayHome = (page: Page) =>
     return parent === document.body ? "body" : parent.className || parent.tagName.toLowerCase();
   });
 
-const layers = (page: Page) => page.locator(".driver-layer");
+const layers = (page: Page) => page.locator(".vt-layer");
 
 async function start(page: Page, options: { modal?: boolean; index?: number; allowed?: boolean; animate?: boolean }) {
   await page.evaluate(options => {
@@ -75,7 +75,7 @@ test.describe("steps inside a modal dialog", () => {
   test("dim the dialog too, with the element cut out and the popover on top", async ({ page }) => {
     await start(page, {});
     await expect(title(page)).toHaveText("Field");
-    expect(await overlayHome(page)).toBe("driver-layer");
+    expect(await overlayHome(page)).toBe("vt-layer");
 
     const field = await box(page.locator("#dialog-field"));
     const cancel = await box(page.locator("#dialog-cancel"));
@@ -86,10 +86,10 @@ test.describe("steps inside a modal dialog", () => {
     expect(await hitAt(page, pop.x + pop.width / 2, pop.y + 8)).not.toBe("overlay");
 
     const order = await page.evaluate(() => {
-      const layer = document.querySelector(".driver-layer")!;
+      const layer = document.querySelector(".vt-layer")!;
       return Array.from(layer.children).map(child => child.getAttribute("class")!.split(" ")[0]);
     });
-    expect(order).toEqual(["driver-overlay", "driver-popover"]);
+    expect(order).toEqual(["vt-overlay", "vt-popover"]);
     await expect(overlay(page)).toHaveCount(1);
   });
 
@@ -118,7 +118,7 @@ test.describe("steps inside a modal dialog", () => {
     const cancel = await box(page.locator("#dialog-cancel"));
 
     await page.mouse.click(cancel.x + 4, cancel.y + cancel.height / 2);
-    await expect(popover(page)).toHaveClass(/driver-popover-nudge/);
+    await expect(popover(page)).toHaveClass(/vt-popover-nudge/);
     await expect(title(page)).toHaveText("Create");
 
     await page.locator("#dialog-create").click();
@@ -145,7 +145,7 @@ test.describe("steps inside a modal dialog", () => {
 
     const redraws = await page.evaluate(async () => {
       let count = 0;
-      const path = document.querySelector(".driver-overlay path")!;
+      const path = document.querySelector(".vt-overlay path")!;
       const observer = new MutationObserver(records => (count += records.length));
       observer.observe(path, { attributes: true, attributeFilter: ["d"] });
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -164,7 +164,7 @@ test.describe("steps inside a modal dialog", () => {
 
     await page.evaluate(() => window.tour.moveNext());
     await expect(title(page)).toHaveText("Field");
-    await expect.poll(() => overlayHome(page)).toBe("driver-layer");
+    await expect.poll(() => overlayHome(page)).toBe("vt-layer");
     const field = await box(page.locator("#dialog-field"));
     await expect.poll(() => hitAt(page, field.x + 5, field.y + 5)).toBe("dialog-field");
 
@@ -181,7 +181,7 @@ test.describe("steps inside a modal dialog", () => {
     await expect(title(page)).toHaveText("Field");
 
     const field = await box(page.locator("#dialog-field"));
-    await expect.poll(() => overlayHome(page)).toBe("driver-layer");
+    await expect.poll(() => overlayHome(page)).toBe("vt-layer");
     await expect.poll(() => hitAt(page, field.x + 5, field.y + 5)).toBe("dialog-field");
     const opacity = await overlay(page).evaluate(element => getComputedStyle(element).opacity);
     expect(opacity).toBe("1");
@@ -219,12 +219,12 @@ test.describe("steps inside a modal dialog", () => {
       copy.style.marginTop = "30px";
       field.replaceWith(copy);
     });
-    await expect(page.locator("#dialog-field")).toHaveClass(/driver-active-element/);
+    await expect(page.locator("#dialog-field")).toHaveAttribute("data-vt-target");
     await settle(page);
 
     const field = await box(page.locator("#dialog-field"));
     await expect.poll(() => hitAt(page, field.x + 5, field.y + 5)).toBe("dialog-field");
-    expect(await overlayHome(page)).toBe("driver-layer");
+    expect(await overlayHome(page)).toBe("vt-layer");
     await expect(layers(page)).toHaveCount(1);
   });
 
@@ -247,8 +247,8 @@ test.describe("steps inside a modal dialog", () => {
     await page.evaluate(() => document.querySelector("dialog")!.showModal());
 
     await expect
-      .poll(() => page.evaluate(() => document.querySelector(".driver-popover")?.parentElement?.className))
-      .toBe("driver-layer");
+      .poll(() => page.evaluate(() => document.querySelector(".vt-popover")?.parentElement?.className))
+      .toBe("vt-layer");
     const next = await box(nextButton(page));
     await expect.poll(() => hitAt(page, next.x + next.width / 2, next.y + next.height / 2)).not.toBe("overlay");
     const link = await box(page.locator("#late-link"));
@@ -282,8 +282,8 @@ test.describe("steps inside a modal dialog", () => {
     await expect(title(page)).toHaveText("Field");
 
     await expect
-      .poll(() => page.evaluate(() => document.querySelector(".driver-popover")?.parentElement?.className))
-      .toBe("driver-layer");
+      .poll(() => page.evaluate(() => document.querySelector(".vt-popover")?.parentElement?.className))
+      .toBe("vt-layer");
     const next = await box(nextButton(page));
     await expect.poll(() => hitAt(page, next.x + next.width / 2, next.y + next.height / 2)).not.toBe("overlay");
     const field = await box(page.locator("#late-field"));

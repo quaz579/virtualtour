@@ -284,7 +284,7 @@ test("an element replaced during an animated step change ends up highlighted, wi
     });
   });
   await expect(title(page)).toHaveText("Temp");
-  await expect(page.locator("#temp")).toHaveClass(/driver-active-element/);
+  await expect(page.locator("#temp")).toHaveAttribute("data-vt-target");
   await expect(page.locator("#temp")).toHaveText("Temp again");
 
   const target = await box(page.locator("#temp"));

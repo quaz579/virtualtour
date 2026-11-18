@@ -172,7 +172,7 @@ attributes).
 - `src/styles/base.css`: `@import "../engine/styles/engine.css";` followed by the content of
   `popover.css` with `driver-` → `vt-` (the file `engine/styles/popover.css` is deleted; its
   content now lives in `base.css` because it is visual, not functional).
-- Ported tests and specs (`test/engine/**`, `e2e/engine/**`): `driver-` strings →
+- Ported tests and specs (`test/engine/**`, `packages/core/e2e/engine/**`): `driver-` strings →
   `vt-`; `.driver-active` body checks → `[data-vt-active]`; element-state checks →
   the data attributes. Done by a reviewed search-and-replace plus hand fixes.
 - `test/fixtures/fork-point.sha256` regenerated; `test/engine/README.md` updated.
@@ -190,7 +190,7 @@ attributes).
   arguments that contain a quote and a hyphen).
 - Unit: the pointer-events rule in `engine.css` keys on `[data-vt-active][data-vt-dim]`
   (parse the stylesheet and assert the selector text).
-- e2e `e2e/namespace.spec.ts` (3 browsers): a tour with `namespace: 'abc'` puts
+- e2e `packages/core/e2e/namespace.spec.ts` (3 browsers): a tour with `namespace: 'abc'` puts
   `abc-target` on the target and `data-abc-step` on the popover, the overlay still blocks
   clicks outside the cut-out (mechanism attributes unaffected), and a stylesheet rule on
   `.abc-target` applies while `.vt-target` matches nothing.

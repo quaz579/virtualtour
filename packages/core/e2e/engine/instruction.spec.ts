@@ -17,10 +17,10 @@ import {
 
 test.beforeEach(skipWhenEdgeMissing);
 
-const indicator = (page: Page) => page.locator(".driver-popover-instruction-indicator");
-const NUDGE_CLASS = /driver-popover-nudge/;
+const indicator = (page: Page) => page.locator(".vt-popover-instruction-indicator");
+const NUDGE_CLASS = /vt-popover-nudge/;
 
-const instruction = (page: Page) => page.locator(".driver-popover-instruction");
+const instruction = (page: Page) => page.locator(".vt-popover-instruction");
 
 async function expectNudge(page: Page, act: () => Promise<void>) {
   await act();
@@ -75,7 +75,7 @@ test.describe("instruction steps", () => {
     });
     await expect(instruction(page)).toHaveText("Click One.");
     await page.evaluate(() => window.tour.moveNext());
-    await expect(popover(page)).toHaveClass(/driver-popover-waiting/);
+    await expect(popover(page)).toHaveClass(/vt-popover-waiting/);
 
     await nextButton(page).click({ force: true });
     await page.keyboard.press("ArrowRight");
@@ -108,7 +108,7 @@ test.describe("instruction steps", () => {
 
     await page.evaluate(() => window.tour.updatePopover({ instruction: "Now click Intro." }));
     await expect(instruction(page)).toHaveCount(0);
-    await expect(popover(page)).not.toHaveClass(/driver-popover-has-instruction/);
+    await expect(popover(page)).not.toHaveClass(/vt-popover-has-instruction/);
     await page.keyboard.press("ArrowRight");
     await expect(title(page)).toHaveText("Act");
     await settle(page);
@@ -132,8 +132,8 @@ test.describe("instruction steps", () => {
       window.tour.highlight({ element: "#one", popover: { title: "Hi", instruction: "Click it." } });
     });
     await expect(instruction(page)).toHaveText("Click it.");
-    await expect(page.locator(".driver-popover-instruction-indicator")).toBeHidden();
-    await expect(page.locator(".driver-popover-footer")).toBeHidden();
+    await expect(page.locator(".vt-popover-instruction-indicator")).toBeHidden();
+    await expect(page.locator(".vt-popover-footer")).toBeHidden();
     await expect(overlay(page)).toHaveCount(1);
 
     await page.mouse.click(5, 5);
@@ -210,7 +210,7 @@ test.describe("advanceDelay", () => {
       });
       window.tour.drive();
       new MutationObserver(() => {
-        if (document.querySelector(".driver-popover-nudge")) {
+        if (document.querySelector(".vt-popover-nudge")) {
           window.log.push("nudged");
         }
       }).observe(document.body, { attributes: true, attributeFilter: ["class"], subtree: true });
@@ -218,7 +218,7 @@ test.describe("advanceDelay", () => {
     await expect(instruction(page)).toHaveText("Click One.");
 
     await page.locator("#one").click();
-    await expect(popover(page)).toHaveClass(/driver-popover-instruction-done/);
+    await expect(popover(page)).toHaveClass(/vt-popover-instruction-done/);
     await nextButton(page).click({ force: true });
     await page.keyboard.press("ArrowRight");
     await page.mouse.click(5, 5);
@@ -253,7 +253,7 @@ test.describe("instruction steps as rendered", () => {
     await expect(overlay(page)).toHaveCount(1);
 
     await expect(instruction(page)).toHaveText("Click One.");
-    await expect(popover(page)).toHaveClass(/driver-popover-has-instruction/);
+    await expect(popover(page)).toHaveClass(/vt-popover-has-instruction/);
     await expect(nextButton(page)).toBeVisible();
     await expect(nextButton(page)).toHaveAttribute("aria-disabled", "true");
     expect(await nextButton(page).evaluate(button => (button as HTMLButtonElement).disabled)).toBe(false);
@@ -261,16 +261,16 @@ test.describe("instruction steps as rendered", () => {
 
     const row = await box(instruction(page));
     const dot = await box(indicator(page));
-    const text = await box(page.locator(".driver-popover-instruction-text"));
+    const text = await box(page.locator(".vt-popover-instruction-text"));
     expect(dot.x).toBeGreaterThanOrEqual(text.x + text.width);
     expect(dot.x + dot.width).toBeLessThanOrEqual(row.x + row.width);
-    await expect(indicator(page)).toHaveCSS("animation-name", "driver-instruction-pulse");
+    await expect(indicator(page)).toHaveCSS("animation-name", "vt-instruction-pulse");
     await expect(indicator(page)).toHaveAttribute("aria-hidden", "true");
 
     const nudged = async (act: () => Promise<void>) => {
       await act();
-      await expect(popover(page)).toHaveClass(/driver-popover-nudge/);
-      await expect(popover(page)).not.toHaveClass(/driver-popover-nudge/, { timeout: 2000 });
+      await expect(popover(page)).toHaveClass(/vt-popover-nudge/);
+      await expect(popover(page)).not.toHaveClass(/vt-popover-nudge/, { timeout: 2000 });
       await expect(title(page)).toHaveText("Act");
     };
     await nudged(() => nextButton(page).click({ force: true }));
@@ -300,7 +300,7 @@ test.describe("instruction steps as rendered", () => {
 
     await expect(instruction(page)).toBeVisible();
     await expect(indicator(page)).toBeVisible();
-    await expect(page.locator(".driver-popover-footer")).toBeHidden();
+    await expect(page.locator(".vt-popover-footer")).toBeHidden();
     const pop = await box(popover(page));
     const row = await box(instruction(page));
     expect(pop.y + pop.height - (row.y + row.height)).toBeLessThan(20);
@@ -354,7 +354,7 @@ test.describe("instruction steps as rendered", () => {
     await page.locator("#one").click({ button: "right" });
     await settle(page);
     expect(await log(page)).toEqual(["contextmenu@#one"]);
-    await expect(popover(page)).not.toHaveClass(/driver-popover-nudge/);
+    await expect(popover(page)).not.toHaveClass(/vt-popover-nudge/);
 
     await page.locator("#one").dblclick();
     await expect(title(page)).toHaveText("Strict");
@@ -362,7 +362,7 @@ test.describe("instruction steps as rendered", () => {
     await page.evaluate(() => window.log.splice(0));
 
     await page.locator("#two").click({ button: "right" });
-    await expect(popover(page)).toHaveClass(/driver-popover-nudge/);
+    await expect(popover(page)).toHaveClass(/vt-popover-nudge/);
     expect(await log(page)).toEqual([]);
     await expect(title(page)).toHaveText("Strict");
 
@@ -387,28 +387,28 @@ test.describe("instruction steps as rendered", () => {
     const waitingColor = await instruction(page).evaluate(element => getComputedStyle(element).backgroundColor);
 
     await page.locator("#one").click();
-    await expect(popover(page)).toHaveClass(/driver-popover-instruction-done/);
+    await expect(popover(page)).toHaveClass(/vt-popover-instruction-done/);
     await expect(indicator(page)).toHaveCSS("animation-name", "none");
     await expect(indicator(page)).toHaveCSS("border-bottom-width", "2px");
     await expect(instruction(page)).toHaveCSS("color", "rgb(21, 128, 61)");
     await expect(nextButton(page)).toHaveCSS("color", "rgb(255, 255, 255)");
     await expect(nextButton(page)).toHaveCSS("background-color", "rgb(21, 128, 61)");
     await expect(nextButton(page)).toHaveCSS("opacity", "1");
-    await expect(page.locator(".driver-live-region")).toHaveText("Done");
+    await expect(page.locator(".vt-live-region")).toHaveText("Done");
     const doneColor = await instruction(page).evaluate(element => getComputedStyle(element).backgroundColor);
     expect(doneColor).not.toBe(waitingColor);
 
     await nextButton(page).click({ force: true });
-    await expect(popover(page)).not.toHaveClass(/driver-popover-nudge/);
+    await expect(popover(page)).not.toHaveClass(/vt-popover-nudge/);
     await expect(title(page)).toHaveText("Act");
 
     await expect(title(page)).toHaveText("Again", { timeout: 10000 });
-    await expect(popover(page)).not.toHaveClass(/driver-popover-instruction-done/);
+    await expect(popover(page)).not.toHaveClass(/vt-popover-instruction-done/);
     await expect(nextButton(page)).toHaveText("Done");
     await expect(nextButton(page)).toHaveAttribute("aria-disabled", "true");
 
     await page.locator("#two").click();
-    await expect(popover(page)).toHaveClass(/driver-popover-instruction-done/);
+    await expect(popover(page)).toHaveClass(/vt-popover-instruction-done/);
     await expect(popover(page)).toHaveCount(0, { timeout: 10000 });
   });
 
@@ -443,22 +443,22 @@ test.describe("instruction CSS", () => {
   };
 
   test("a plain rule hides the dot on an action step", async ({ page }) => {
-    await startWithCss(page, ".driver-popover-instruction-indicator { display: none; }");
+    await startWithCss(page, ".vt-popover-instruction-indicator { display: none; }");
 
     await expect(instruction(page)).toBeVisible();
     await expect(indicator(page)).toBeHidden();
   });
 
   test("a row hidden by CSS stays hidden while the popover is nudged", async ({ page }) => {
-    await startWithCss(page, ".driver-popover-instruction { display: none; }");
+    await startWithCss(page, ".vt-popover-instruction { display: none; }");
     await expect(instruction(page)).toBeHidden();
 
     const duringNudge = await page.evaluate(() => {
       window.tour.nudge();
-      const popoverEl = document.querySelector(".driver-popover")!;
-      const row = document.querySelector(".driver-popover-instruction")!;
+      const popoverEl = document.querySelector(".vt-popover")!;
+      const row = document.querySelector(".vt-popover-instruction")!;
 
-      return { isNudged: popoverEl.classList.contains("driver-popover-nudge"), display: getComputedStyle(row).display };
+      return { isNudged: popoverEl.classList.contains("vt-popover-nudge"), display: getComputedStyle(row).display };
     });
     expect(duringNudge).toEqual({ isNudged: true, display: "none" });
   });

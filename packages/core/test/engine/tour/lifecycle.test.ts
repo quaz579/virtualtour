@@ -37,10 +37,10 @@ describe("lifecycle", () => {
     d.highlight({ element: "#intro", popover: { title: "Intro", description: "The intro paragraph" } });
 
     expect(d.isActive()).toBe(true);
-    expect(document.body.classList.contains("driver-active")).toBe(true);
+    expect(document.body.hasAttribute("data-vt-active")).toBe(true);
     expect(popoverTitle()).toBe("Intro");
     expect(popoverDescription()).toBe("The intro paragraph");
-    expect(document.querySelector("#intro")?.classList.contains("driver-active-element")).toBe(true);
+    expect(document.querySelector("#intro")?.hasAttribute("data-vt-target")).toBe(true);
     expect(d.getActiveElement()).toBe(document.querySelector("#intro"));
   });
 
@@ -50,7 +50,7 @@ describe("lifecycle", () => {
 
     expect(d.isActive()).toBe(true);
     expect(popoverTitle()).toBe("Modal");
-    expect(document.getElementById("driver-dummy-element")).not.toBeNull();
+    expect(document.getElementById("vt-dummy-element")).not.toBeNull();
   });
 
   it("resolves an element returned from a function", () => {
@@ -77,7 +77,7 @@ describe("lifecycle", () => {
     });
     d.drive();
 
-    expect(document.getElementById("driver-dummy-element")).not.toBeNull();
+    expect(document.getElementById("vt-dummy-element")).not.toBeNull();
     expect(popoverTitle()).toBe("Ghost");
   });
 
@@ -88,8 +88,8 @@ describe("lifecycle", () => {
 
     expect(d.isActive()).toBe(false);
     expect(popoverEl()).toBeNull();
-    expect(document.body.classList.contains("driver-active")).toBe(false);
-    expect(document.querySelector(".driver-active-element")).toBeNull();
+    expect(document.body.hasAttribute("data-vt-active")).toBe(false);
+    expect(document.querySelector(".vt-target")).toBeNull();
     expect(d.getActiveIndex()).toBeUndefined();
   });
 });
@@ -135,8 +135,8 @@ describe("dummy-element hooks", () => {
 describe("destroy on an inactive instance", () => {
   function expectTourIntact() {
     expect(popoverTitle()).toBe("Tour");
-    expect(document.body.classList.contains("driver-active")).toBe(true);
-    expect(document.querySelector("#card-1")?.classList.contains("driver-active-element")).toBe(true);
+    expect(document.body.hasAttribute("data-vt-active")).toBe(true);
+    expect(document.querySelector("#card-1")?.hasAttribute("data-vt-target")).toBe(true);
   }
 
   it("leaves another tour alone when destroyed twice", async () => {
@@ -173,7 +173,7 @@ describe("destroy on an inactive instance", () => {
 
     expect(d.isActive()).toBe(true);
     expect(popoverTitle()).toBe("Second");
-    expect(document.querySelector("#card-1")?.classList.contains("driver-active-element")).toBe(true);
+    expect(document.querySelector("#card-1")?.hasAttribute("data-vt-target")).toBe(true);
   });
 });
 
@@ -191,8 +191,8 @@ describe("one active instance at a time", () => {
     expect(hint.isActive()).toBe(false);
     expect(onDestroyed).toHaveBeenCalledTimes(1);
     expect(onDestroyStarted).not.toHaveBeenCalled();
-    expect(document.querySelectorAll(".driver-popover")).toHaveLength(1);
-    expect(document.querySelector("#intro")?.classList.contains("driver-active-element")).toBe(false);
+    expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
+    expect(document.querySelector("#intro")?.hasAttribute("data-vt-target")).toBe(false);
   });
 
   it("hands the screen back and forth without leftovers", async () => {
@@ -210,23 +210,23 @@ describe("one active instance at a time", () => {
     expect(a.d.isActive()).toBe(false);
     expect(b.d.isActive()).toBe(true);
     expect(a.trace.slice(-2)).toEqual(["onDeselected:Step 1:intro (replaced)", "onDestroyed:Step 1:intro (replaced)"]);
-    expect(document.querySelectorAll(".driver-popover")).toHaveLength(1);
-    expect(document.querySelectorAll(".driver-overlay")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-overlay")).toHaveLength(1);
     expect(popoverTitle()).toBe("B1");
 
     a.d.drive(1);
     await nextFrame();
     expect(b.d.isActive()).toBe(false);
     expect(b.trace.slice(-1)).toEqual(["onDestroyed:B1:card-1 (replaced)"]);
-    expect(document.querySelectorAll(".driver-popover")).toHaveLength(1);
-    expect(document.querySelectorAll(".driver-overlay")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-overlay")).toHaveLength(1);
     expect(popoverTitle()).toBe("Step 2");
 
     b.d.destroy();
     expect(a.d.isActive()).toBe(true);
     a.d.destroy();
-    expect(document.querySelector(".driver-overlay")).toBeNull();
-    expect(document.querySelector(".driver-live-region")).toBeNull();
+    expect(document.querySelector(".vt-overlay")).toBeNull();
+    expect(document.querySelector(".vt-live-region")).toBeNull();
     expect(document.body.className).toBe("");
   });
 });
@@ -243,10 +243,10 @@ describe("setSteps on an active tour", () => {
     expect(d.isActive()).toBe(false);
     expect(d.getActiveIndex()).toBeUndefined();
     expect(d.getState()).toEqual({});
-    expect(document.querySelector(".driver-overlay")).toBeNull();
+    expect(document.querySelector(".vt-overlay")).toBeNull();
     expect(popoverEl()).toBeNull();
-    expect(document.querySelector(".driver-live-region")).toBeNull();
-    expect(document.querySelector("[class*=driver-]")).toBeNull();
+    expect(document.querySelector(".vt-live-region")).toBeNull();
+    expect(document.querySelector("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]")).toBeNull();
     expect(document.querySelector("#intro")!.hasAttribute("aria-haspopup")).toBe(false);
     expect(document.body.className).toBe("");
     expect(hooks.onDestroyStarted).not.toHaveBeenCalled();
@@ -269,12 +269,12 @@ describe("setSteps on an active tour", () => {
     expect(popoverTitle()).toBe("New");
     expect(d.getPreviousStep()).toBeUndefined();
     expect(onDeselected).not.toHaveBeenCalled();
-    expect(document.querySelectorAll(".driver-overlay")).toHaveLength(1);
-    expect(document.querySelectorAll(".driver-popover")).toHaveLength(1);
-    expect(document.querySelectorAll(".driver-live-region")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-overlay")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
+    expect(document.querySelectorAll(".vt-live-region")).toHaveLength(1);
 
     d.destroy();
-    expect(document.querySelector("[class*=driver-]")).toBeNull();
+    expect(document.querySelector("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]")).toBeNull();
   });
 
   it("ends a tour that is still waiting for its first element", async () => {
@@ -289,7 +289,7 @@ describe("setSteps on an active tour", () => {
     d.setSteps(SAMPLE_STEPS);
 
     expect(popoverEl()).toBeNull();
-    expect(document.getElementById("driver-dummy-element")).toBeNull();
+    expect(document.getElementById("vt-dummy-element")).toBeNull();
     expect(d.isActive()).toBe(false);
   });
 
@@ -302,7 +302,7 @@ describe("setSteps on an active tour", () => {
     idle.setSteps(SAMPLE_STEPS);
 
     expect(active.isActive()).toBe(true);
-    expect(document.body.classList.contains("driver-active")).toBe(true);
+    expect(document.body.hasAttribute("data-vt-active")).toBe(true);
     expect(popoverEl()).not.toBeNull();
     active.destroy();
   });

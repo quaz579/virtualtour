@@ -13,7 +13,7 @@ const ARROW_INSET = 15;
 const ARROW_HALF = 5;
 
 const target = (page: Page) => page.locator("#target");
-const arrow = (page: Page) => page.locator(".driver-popover-arrow");
+const arrow = (page: Page) => page.locator(".vt-popover-arrow");
 
 async function placeTarget(page: Page, css: string, position = "fixed") {
   await page.evaluate(
@@ -62,7 +62,7 @@ async function arrowCenter(page: Page) {
 
 const sideClasses = (page: Page) =>
   popover(page).evaluate(element =>
-    [...element.classList].filter(name => name.startsWith("driver-popover-side-")).join(" ")
+    [...element.classList].filter(name => name.startsWith("vt-popover-side-")).join(" ")
   );
 
 const arrowOffsets = (page: Page) => arrow(page).evaluate(element => [element.style.top, element.style.left]);
@@ -108,8 +108,8 @@ test.describe("sides and alignment", () => {
         near(pop.y, element.y - 10);
       }
 
-      await expect(popover(page)).toHaveClass(new RegExp(`driver-popover-side-${side} driver-popover-align-start`));
-      await expect(arrow(page)).toHaveClass(`driver-popover-arrow driver-popover-arrow-side-${side}`);
+      await expect(popover(page)).toHaveClass(new RegExp(`vt-popover-side-${side} vt-popover-align-start`));
+      await expect(arrow(page)).toHaveClass(`vt-popover-arrow vt-popover-arrow-side-${side}`);
     }
   });
 
@@ -131,7 +131,7 @@ test.describe("sides and alignment", () => {
         near(above.pop.right, above.element.right + 10);
       }
 
-      await expect(popover(page)).toHaveClass(new RegExp(`driver-popover-side-top driver-popover-align-${align}`));
+      await expect(popover(page)).toHaveClass(new RegExp(`vt-popover-side-top vt-popover-align-${align}`));
 
       await highlightTarget(page, { side: "left", align });
       const beside = await boxes(page);
@@ -147,7 +147,7 @@ test.describe("sides and alignment", () => {
         near(beside.pop.bottom, beside.element.bottom + 10);
       }
 
-      await expect(popover(page)).toHaveClass(new RegExp(`driver-popover-side-left driver-popover-align-${align}`));
+      await expect(popover(page)).toHaveClass(new RegExp(`vt-popover-side-left vt-popover-align-${align}`));
     }
   });
 
@@ -177,19 +177,19 @@ test.describe("when the asked side has no room", () => {
     const { element, pop } = await boxes(page);
     near(pop.right, element.x - 20);
     near(pop.y, element.y - 10);
-    expect(await sideClasses(page)).toBe("driver-popover-side-left");
-    await expect(arrow(page)).toHaveClass(/driver-popover-arrow-side-left/);
+    expect(await sideClasses(page)).toBe("vt-popover-side-left");
+    await expect(arrow(page)).toHaveClass(/vt-popover-arrow-side-left/);
   });
 
   test("drops the old side class when a refresh moves the popover to another side", async ({ page }) => {
     await placeTarget(page, CENTERED);
     await highlightTarget(page, { side: "top" });
-    expect(await sideClasses(page)).toBe("driver-popover-side-top");
+    expect(await sideClasses(page)).toBe("vt-popover-side-top");
 
     await placeTarget(page, "left:5px;right:5px;top:0;height:5px");
     await refresh(page);
 
-    await expect.poll(() => sideClasses(page)).toBe("driver-popover-side-bottom");
+    await expect.poll(() => sideClasses(page)).toBe("vt-popover-side-bottom");
     const { element, pop } = await boxes(page);
     near(pop.y, element.bottom + 20);
   });
@@ -203,7 +203,7 @@ test.describe("when the asked side has no room", () => {
     await placeTarget(page, "inset:0");
     await refresh(page);
 
-    await expect(arrow(page)).toHaveClass("driver-popover-arrow driver-popover-arrow-none");
+    await expect(arrow(page)).toHaveClass("vt-popover-arrow vt-popover-arrow-none");
     await expect(arrow(page)).toBeHidden();
     expect(await arrowOffsets(page)).toEqual(["", ""]);
 
@@ -237,14 +237,14 @@ test.describe("arrow", () => {
     const low = await boxes(page);
     expect(low.element.y + low.element.height / 2).toBeGreaterThan(low.pop.bottom - ARROW_INSET);
     near((await arrowCenter(page)).y, low.pop.bottom - ARROW_INSET - ARROW_HALF);
-    await expect(arrow(page)).toHaveClass(/driver-popover-arrow-side-left/);
+    await expect(arrow(page)).toHaveClass(/vt-popover-arrow-side-left/);
 
     await placeTarget(page, "left:0;top:320px;width:20px;height:20px");
     await highlightTarget(page, { side: "bottom" });
     const early = await boxes(page);
     expect(early.element.x + early.element.width / 2).toBeLessThan(early.pop.x + ARROW_INSET);
     near((await arrowCenter(page)).x, early.pop.x + ARROW_INSET + ARROW_HALF);
-    await expect(arrow(page)).toHaveClass(/driver-popover-arrow-side-bottom/);
+    await expect(arrow(page)).toHaveClass(/vt-popover-arrow-side-bottom/);
   });
 
   test("aims at the middle of the part of the element the popover overlaps", async ({ page }) => {
@@ -277,10 +277,10 @@ test.describe("arrow", () => {
 
     for (const side of ["left", "right"] as const) {
       await highlightTarget(page, { side });
-      await expect(arrow(page)).toHaveClass(new RegExp(`driver-popover-arrow-side-${side}`));
+      await expect(arrow(page)).toHaveClass(new RegExp(`vt-popover-arrow-side-${side}`));
 
       await page.evaluate(() => window.scrollTo(0, 1050));
-      await expect(arrow(page)).toHaveClass(/driver-popover-arrow-side-bottom/);
+      await expect(arrow(page)).toHaveClass(/vt-popover-arrow-side-bottom/);
       const above = await boxes(page);
       const upTip = await box(arrow(page));
       expect(above.element.bottom).toBeLessThan(above.pop.y);
@@ -291,7 +291,7 @@ test.describe("arrow", () => {
       expect((await arrowOffsets(page))[0]).toBe("");
 
       await page.evaluate(() => window.scrollTo(0, 100));
-      await expect(arrow(page)).toHaveClass(/driver-popover-arrow-side-top/);
+      await expect(arrow(page)).toHaveClass(/vt-popover-arrow-side-top/);
       const below = await boxes(page);
       const downTip = await box(arrow(page));
       expect(below.element.y).toBeGreaterThan(below.pop.bottom);
@@ -305,8 +305,8 @@ test.describe("arrow", () => {
     await placeTarget(page, "left:calc(100vw - 8px);top:320px;width:40px;height:40px");
     for (const side of ["top", "bottom"] as const) {
       await highlightTarget(page, { side });
-      await expect(popover(page)).toHaveClass(new RegExp(`driver-popover-side-${side}`));
-      await expect(arrow(page)).toHaveClass(/driver-popover-arrow-side-left/);
+      await expect(popover(page)).toHaveClass(new RegExp(`vt-popover-side-${side}`));
+      await expect(arrow(page)).toHaveClass(/vt-popover-arrow-side-left/);
 
       const { element, pop } = await boxes(page);
       const tip = await box(arrow(page));
@@ -318,7 +318,7 @@ test.describe("arrow", () => {
 
     await placeTarget(page, "left:-30px;top:320px;width:38px;height:40px");
     await highlightTarget(page, { side: "bottom" });
-    await expect(arrow(page)).toHaveClass(/driver-popover-arrow-side-right/);
+    await expect(arrow(page)).toHaveClass(/vt-popover-arrow-side-right/);
 
     const { element, pop } = await boxes(page);
     const tip = await box(arrow(page));
@@ -331,8 +331,8 @@ test.describe("arrow", () => {
   }) => {
     await page.addStyleTag({
       content: `
-        .driver-popover.tiny { min-width: 0; width: 30px; padding: 0; }
-        .driver-popover.collapsed { display: none !important; }
+        .vt-popover.tiny { min-width: 0; width: 30px; padding: 0; }
+        .vt-popover.collapsed { display: none !important; }
       `,
     });
     await placeTarget(page, CENTERED);
@@ -354,7 +354,7 @@ test.describe("arrow", () => {
     });
 
     await expect(popover(page)).toBeVisible();
-    await expect(arrow(page)).toHaveClass("driver-popover-arrow driver-popover-arrow-none");
+    await expect(arrow(page)).toHaveClass("vt-popover-arrow vt-popover-arrow-none");
     await expect(arrow(page)).toBeHidden();
   });
 });

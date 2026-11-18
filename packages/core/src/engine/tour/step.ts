@@ -13,6 +13,7 @@ import { PositionOptions, repositionPopover } from "../popover/position";
 import { isDummyElement, resolveElement } from "../core/utils";
 import { isFocusWithinStep } from "./allowed";
 import { announce } from "../popover/live-region";
+import { fixedNames } from "../core/namespace";
 import { stepOption } from "../core/options";
 import { clearWait, isDone, isWaiting, setWait } from "./lifecycle";
 
@@ -254,10 +255,30 @@ export function renderStepPopover(ctx: Context, element: Element, step: DriveSte
     keepFocus,
   });
 
+  syncPopoverAttributes(ctx, popover);
   showStepPopoverState(ctx);
 
   if (keepFocus) {
     announce(ctx, popoverText(popover).filter(Boolean).join(". "));
+  }
+}
+
+function syncPopoverAttributes(ctx: Context, popover: PopoverDOM) {
+  const { wrapper } = popover;
+  const index = ctx.getState("activeIndex");
+  if (index === undefined) {
+    wrapper.removeAttribute(ctx.names.stepAttr);
+  } else {
+    wrapper.setAttribute(ctx.names.stepAttr, String(index));
+  }
+
+  const side = [...wrapper.classList]
+    .find(name => name.startsWith(fixedNames.popover.sidePrefix))
+    ?.slice(fixedNames.popover.sidePrefix.length);
+  if (side) {
+    wrapper.setAttribute(ctx.names.sideAttr, side);
+  } else {
+    wrapper.removeAttribute(ctx.names.sideAttr);
   }
 }
 
@@ -290,6 +311,7 @@ export function repositionStepPopover(ctx: Context, element: Element, step: Driv
   }
 
   repositionPopover(popover, element, resolveStepPosition(ctx, element, step));
+  syncPopoverAttributes(ctx, popover);
 }
 
 function showPopoverWaiting(ctx: Context) {
@@ -298,7 +320,7 @@ function showPopoverWaiting(ctx: Context) {
     return;
   }
 
-  popover.wrapper.classList.add("driver-popover-waiting");
+  popover.wrapper.classList.add(fixedNames.popover.waiting);
   popover.wrapper.setAttribute("aria-busy", "true");
   toggleButton(popover.nextButton, true);
   toggleButton(popover.previousButton, true);
@@ -319,7 +341,7 @@ export function clearStepPopoverWaiting(ctx: Context, element: Element | undefin
     return;
   }
 
-  popover.wrapper.classList.remove("driver-popover-waiting");
+  popover.wrapper.classList.remove(fixedNames.popover.waiting);
   popover.wrapper.removeAttribute("aria-busy");
   if (element && step) {
     updateStepPopover(ctx, element, step);

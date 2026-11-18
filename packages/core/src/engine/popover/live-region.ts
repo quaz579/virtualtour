@@ -1,4 +1,5 @@
 import type { Context } from "../core/context";
+import { fixedNames } from "../core/namespace";
 
 export function mountLiveRegion(ctx: Context) {
   if (ctx.getState("__liveRegion")) {
@@ -6,7 +7,7 @@ export function mountLiveRegion(ctx: Context) {
   }
 
   const region = document.createElement("div");
-  region.className = "driver-live-region";
+  region.className = fixedNames.liveRegion;
   region.setAttribute("aria-live", "polite");
   region.setAttribute("aria-atomic", "true");
 

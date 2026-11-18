@@ -1,4 +1,5 @@
 import { Context } from "../core/context";
+import { fixedNames, type Names } from "../core/namespace";
 import type { DriveStep } from "../types";
 import { refreshOverlay, trackActiveElement, transitionStage } from "../overlay/overlay";
 import { beginTransition, endTransition, isCurrent, isTransitioning, missRefresh, ownsTransition } from "./lifecycle";
@@ -12,32 +13,31 @@ import {
   isInsideAllowedElement,
   isScrollable,
   moveToLayerOf,
-  RAISED_CLASS,
   resolveElement,
 } from "../core/utils";
 
 const POPOVER_ARIA: Record<string, string> = {
   "aria-haspopup": "dialog",
   "aria-expanded": "true",
-  "aria-controls": "driver-popover-content",
+  "aria-controls": fixedNames.popover.contentId,
 };
 
-const driverAria = new WeakSet<Element>();
+const ariaOwned = new WeakSet<Element>();
 
 function setPopoverAria(element: Element) {
   const isAppOwned = Object.keys(POPOVER_ARIA).some(name => element.hasAttribute(name));
-  if (isAppOwned && !driverAria.has(element)) {
+  if (isAppOwned && !ariaOwned.has(element)) {
     return;
   }
 
   for (const [name, value] of Object.entries(POPOVER_ARIA)) {
     element.setAttribute(name, value);
   }
-  driverAria.add(element);
+  ariaOwned.add(element);
 }
 
 function restoreAria(element: Element) {
-  if (!driverAria.has(element)) {
+  if (!ariaOwned.has(element)) {
     return;
   }
 
@@ -47,7 +47,7 @@ function restoreAria(element: Element) {
     }
   }
 
-  driverAria.delete(element);
+  ariaOwned.delete(element);
 }
 
 export function mountDummyElement(): Element {
@@ -226,67 +226,93 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
 
 const classGuards = new WeakMap<Element, MutationObserver>();
 
-function guardClasses(element: Element, classesToKeep: () => string[]) {
+type Marker = { className: string; attribute: string };
+
+function targetMarkers(names: Names): { target: Marker; blocked: Marker; raised: Marker } {
+  return {
+    target: { className: names.target, attribute: names.attr.target },
+    blocked: { className: names.targetBlocked, attribute: names.attr.blocked },
+    raised: { className: names.targetRaised, attribute: names.attr.raised },
+  };
+}
+
+function setMarker(element: Element, marker: Marker, isOn: boolean) {
+  element.classList.toggle(marker.className, isOn);
+  element.toggleAttribute(marker.attribute, isOn);
+}
+
+function guardMarkers(element: Element, markersToKeep: () => Marker[]) {
   classGuards.get(element)?.disconnect();
 
   const observer = new MutationObserver(() => {
-    const missing = classesToKeep().filter(name => !element.classList.contains(name));
-    if (missing.length > 0) {
-      element.classList.add(...missing);
-    }
+    markersToKeep().forEach(marker => {
+      if (!element.classList.contains(marker.className) || !element.hasAttribute(marker.attribute)) {
+        setMarker(element, marker, true);
+      }
+    });
   });
-  observer.observe(element, { attributes: true, attributeFilter: ["class"] });
+  observer.observe(element, {
+    attributes: true,
+    attributeFilter: ["class", ...markersToKeep().map(marker => marker.attribute)],
+  });
   classGuards.set(element, observer);
 }
 
-function clearActiveElement(element: Element) {
+function clearActiveElement(ctx: Context, element: Element) {
   classGuards.get(element)?.disconnect();
   classGuards.delete(element);
-  element.classList.remove("driver-active-element", "driver-no-interaction", RAISED_CLASS);
+  const markers = targetMarkers(ctx.names);
+  setMarker(element, markers.target, false);
+  setMarker(element, markers.blocked, false);
+  setMarker(element, markers.raised, false);
   restoreAria(element);
 }
 
 function clearElementMarks(ctx: Context) {
   const marked = ctx.getState("__marked")?.element;
-  new Set([marked, ...document.querySelectorAll(".driver-active-element")]).forEach(element => {
+  new Set([marked, ...document.querySelectorAll(`[${ctx.names.attr.target}]`)]).forEach(element => {
     if (element) {
-      clearActiveElement(element);
+      clearActiveElement(ctx, element);
     }
   });
 }
 
 function clearParentMarks(ctx: Context) {
   const marked = ctx.getState("__marked")?.parent;
-  new Set([marked, ...document.querySelectorAll(".driver-active-element-parent")]).forEach(parent => {
-    parent?.classList.remove("driver-active-element-parent", "driver-active-element-parent-no-scroll");
+  new Set([marked, ...document.querySelectorAll(`[${ctx.names.attr.targetParent}]`)]).forEach(parent => {
+    parent?.classList.remove(ctx.names.targetParent);
+    parent?.removeAttribute(ctx.names.attr.targetParent);
+    parent?.removeAttribute(ctx.names.attr.lockScroll);
   });
 }
 
 function markActiveElement(ctx: Context, element: Element, step: DriveStep) {
+  const markers = targetMarkers(ctx.names);
   const isBlocked = stepOption(ctx, step, "disableActiveInteraction") === true;
   if (isBlocked) {
-    element.classList.add("driver-no-interaction");
+    setMarker(element, markers.blocked, true);
   }
 
   const parent = element.parentElement;
   const markedParent = parent && parent !== document.body ? parent : undefined;
   if (markedParent) {
-    markedParent.classList.add("driver-active-element-parent");
+    markedParent.classList.add(ctx.names.targetParent);
+    markedParent.setAttribute(ctx.names.attr.targetParent, "");
 
     if (isScrollable(markedParent)) {
-      markedParent.classList.add("driver-active-element-parent-no-scroll");
+      markedParent.setAttribute(ctx.names.attr.lockScroll, "");
     }
   }
 
   ctx.setState("__marked", { element, parent: markedParent });
-  element.classList.add("driver-active-element");
+  setMarker(element, markers.target, true);
   if (!isDummyElement(element)) {
     setPopoverAria(element);
-    element.classList.toggle(RAISED_CLASS, isInsideAllowedElement(element));
-    guardClasses(element, () => [
-      "driver-active-element",
-      ...(isBlocked ? ["driver-no-interaction"] : []),
-      ...(isInsideAllowedElement(element) ? [RAISED_CLASS] : []),
+    setMarker(element, markers.raised, isInsideAllowedElement(element));
+    guardMarkers(element, () => [
+      markers.target,
+      ...(isBlocked ? [markers.blocked] : []),
+      ...(isInsideAllowedElement(element) ? [markers.raised] : []),
     ]);
   }
 }
