@@ -72,6 +72,41 @@ describe("scroll capture", () => {
   });
 });
 
+describe("scroll listener wiring", () => {
+  it("registers and removes the scroll listener in the capture phase", () => {
+    const add = vi.spyOn(window, "addEventListener");
+    const remove = vi.spyOn(window, "removeEventListener");
+    const d = setup();
+    const added = add.mock.calls.find(call => call[0] === "scroll");
+    expect(added?.[2]).toBe(true);
+    d.destroy();
+    const removed = remove.mock.calls.find(call => call[0] === "scroll");
+    expect(removed?.[1]).toBe(added?.[1]);
+    expect(removed?.[2]).toBe(true);
+  });
+
+  it("schedules one animation frame per scroll burst by cancelling the previous request", async () => {
+    setup();
+    await nextFrame();
+    const raf = vi.spyOn(window, "requestAnimationFrame");
+    const cancel = vi.spyOn(window, "cancelAnimationFrame");
+    const other = document.querySelector("#other")!;
+    other.dispatchEvent(new Event("scroll"));
+    other.dispatchEvent(new Event("scroll"));
+    other.dispatchEvent(new Event("scroll"));
+    expect(raf).toHaveBeenCalledTimes(3);
+    expect(cancel).toHaveBeenCalledTimes(2);
+  });
+
+  it("ignores scrolling inside the popover", async () => {
+    setup();
+    await nextFrame();
+    const raf = vi.spyOn(window, "requestAnimationFrame");
+    document.querySelector(".vt-popover")!.dispatchEvent(new Event("scroll"));
+    expect(raf).not.toHaveBeenCalled();
+  });
+});
+
 describe("lockScrollParent", () => {
   const parentOf = () => document.querySelector("#scroller")!;
 
