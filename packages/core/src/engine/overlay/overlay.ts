@@ -1,4 +1,5 @@
 import {
+  clipRectByScrollParents,
   easeInOutQuad,
   isDummyElement,
   isInsideAllowedElement,
@@ -21,11 +22,20 @@ import {
   stageViewBox,
 } from "./stage";
 
+function stageRect(ctx: Context, element: Element): DOMRect {
+  const rect = element.getBoundingClientRect();
+  if (!stepOption(ctx, ctx.getState("activeStep"), "clipStageToScrollParents")) {
+    return rect;
+  }
+
+  return clipRectByScrollParents(element, rect);
+}
+
 export function transitionStage(ctx: Context, elapsed: number, duration: number, from: Element, to: Element) {
   let activeStagePosition = ctx.getState("__activeStagePosition");
 
   const fromDefinition = activeStagePosition ? activeStagePosition : from.getBoundingClientRect();
-  const toDefinition = to.getBoundingClientRect();
+  const toDefinition = stageRect(ctx, to);
 
   const x = easeInOutQuad(elapsed, fromDefinition.x, toDefinition.x - fromDefinition.x, duration);
   const y = easeInOutQuad(elapsed, fromDefinition.y, toDefinition.y - fromDefinition.y, duration);
@@ -48,7 +58,7 @@ export function trackActiveElement(ctx: Context, element: Element) {
     return;
   }
 
-  const definition = element.getBoundingClientRect();
+  const definition = stageRect(ctx, element);
 
   const activeStagePosition: StageDefinition = {
     x: definition.x,

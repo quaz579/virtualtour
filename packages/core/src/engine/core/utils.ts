@@ -105,38 +105,58 @@ function isElementInView(element: Element) {
 }
 
 function isClippedByScrollContainer(element: Element, rect: DOMRect) {
+  const clipped = clipRectByScrollParents(element, rect);
+
+  return (
+    clipped.left !== rect.left ||
+    clipped.top !== rect.top ||
+    clipped.right !== rect.right ||
+    clipped.bottom !== rect.bottom
+  );
+}
+
+export function clipRectByScrollParents(element: Element, rect: DOMRect): DOMRect {
+  let left = rect.left;
+  let top = rect.top;
+  let right = rect.right;
+  let bottom = rect.bottom;
   let current: Element | null = element;
 
   while (current) {
     if (getComputedStyle(current).position === "fixed") {
-      return false;
+      break;
     }
 
     const parent: HTMLElement | null = current.parentElement;
     if (!parent || parent === document.body || parent === document.documentElement) {
-      return false;
+      break;
     }
 
-    if (isScrollable(parent)) {
+    const style = getComputedStyle(parent);
+    const clipsX = !!style.overflowX && style.overflowX !== "visible";
+    const clipsY = !!style.overflowY && style.overflowY !== "visible";
+    if (clipsX || clipsY) {
       const box = parent.getBoundingClientRect();
-      const top = box.top + parent.clientTop;
-      const left = box.left + parent.clientLeft;
+      const boxLeft = box.left + parent.clientLeft;
+      const boxTop = box.top + parent.clientTop;
+      const boxRight = boxLeft + (parent.clientWidth || box.width);
+      const boxBottom = boxTop + (parent.clientHeight || box.height);
 
-      const isClipped =
-        rect.top < top ||
-        rect.left < left ||
-        rect.bottom > top + (parent.clientHeight || box.height) ||
-        rect.right > left + (parent.clientWidth || box.width);
+      if (clipsX) {
+        left = Math.min(Math.max(left, boxLeft), boxRight);
+        right = Math.max(Math.min(right, boxRight), left);
+      }
 
-      if (isClipped) {
-        return true;
+      if (clipsY) {
+        top = Math.min(Math.max(top, boxTop), boxBottom);
+        bottom = Math.max(Math.min(bottom, boxBottom), top);
       }
     }
 
     current = parent;
   }
 
-  return false;
+  return new DOMRect(left, top, right - left, bottom - top);
 }
 
 export function isElementVisible(el: HTMLElement) {

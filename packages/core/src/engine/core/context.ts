@@ -58,6 +58,7 @@ function createConfigStore() {
       showProgress: false,
       stagePadding: 10,
       stageRadius: 5,
+      clipStageToScrollParents: true,
       popoverOffset: 10,
       showButtons: ["next", "previous", "close"],
       disableButtons: [],

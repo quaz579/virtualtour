@@ -11,7 +11,6 @@ type ScrollIntoViewValue = false | ScrollIntoViewOptions;
 type FutureConfigKeys =
   | "mountIn"
   | "dimMountIn"
-  | "clipStageToScrollParents"
   | "lockScrollParent"
   | "stageRadius";
 
@@ -48,7 +47,6 @@ export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
 export type EngineConfig = Omit<Config, FutureConfigKeys> & {
   mountIn?: Element | (() => Element);
   dimMountIn?: Element | (() => Element);
-  clipStageToScrollParents?: boolean;
   lockScrollParent?: boolean;
   stageRadius?: number | Corners;
 };
