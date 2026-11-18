@@ -22,6 +22,7 @@ describe("SSR gate", () => {
     ["public entry", "../src/index.ts"],
     ["engine", "../src/engine/driver.ts"],
     ["avatar entry", "../src/avatar/index.ts"],
+    ["avatar pack module", "../src/avatar/pack.ts"],
     ["motion entry", "../src/motion/index.ts"],
   ])("imports the %s without throwing", async (_label, path) => {
     await expect(import(/* @vite-ignore */ path)).resolves.toBeDefined();
