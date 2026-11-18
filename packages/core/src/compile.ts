@@ -9,9 +9,6 @@ type Corners = Required<CornerRadius>;
 type ScrollIntoViewValue = false | ScrollIntoViewOptions;
 
 type FutureConfigKeys =
-  | "allowEscape"
-  | "allowArrowKeys"
-  | "overlay"
   | "mountIn"
   | "dimMountIn"
   | "clipStageToScrollParents"
@@ -20,9 +17,7 @@ type FutureConfigKeys =
 
 type FutureStepKeys =
   | "popover"
-  | "stagePadding"
   | "stageRadius"
-  | "popoverOffset"
   | "popoverCrossOffset"
   | "popoverPadding"
   | "scrollIntoView";
@@ -43,9 +38,7 @@ export type EnginePopover = Omit<Popover, FuturePopoverKeys> & {
 /** Engine step options, including the per-step fields the engine gains later. */
 export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
   popover?: EnginePopover;
-  stagePadding?: number;
   stageRadius?: number | Corners;
-  popoverOffset?: number;
   popoverCrossOffset?: number;
   popoverPadding?: number;
   scrollIntoView?: ScrollIntoViewValue;
@@ -53,9 +46,6 @@ export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
 
 /** Engine config, including the keys the engine gains later. */
 export type EngineConfig = Omit<Config, FutureConfigKeys> & {
-  allowEscape?: boolean;
-  allowArrowKeys?: boolean;
-  overlay?: boolean;
   mountIn?: Element | (() => Element);
   dimMountIn?: Element | (() => Element);
   clipStageToScrollParents?: boolean;

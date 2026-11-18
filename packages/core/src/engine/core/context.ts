@@ -63,6 +63,9 @@ function createConfigStore() {
       disableButtons: [],
       overlayColor: "#000",
       namespace: "vt",
+      allowEscape: true,
+      allowArrowKeys: true,
+      overlay: true,
       ...config,
     };
   }

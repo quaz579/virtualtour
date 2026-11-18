@@ -127,7 +127,8 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
   const isToDummyElement = isDummyElement(toElement);
   const isFromDummyElement = isDummyElement(fromElement);
 
-  const isAnimatedTour = ctx.getConfig("animate");
+  const hasOverlay = () => ctx.getConfig("overlay") !== false;
+  const isAnimatedTour = !!ctx.getConfig("animate") && hasOverlay();
   const highlightStartedHook = toStep.onHighlightStarted || ctx.getConfig("onHighlightStarted");
   const highlightedHook = toStep.onHighlighted || ctx.getConfig("onHighlighted");
   const deselectedHook = fromStep?.onDeselected || ctx.getConfig("onDeselected");
@@ -182,7 +183,7 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
       isPopoverRendered = true;
     }
 
-    if (ctx.getConfig("animate") && elapsed < duration) {
+    if (ctx.getConfig("animate") && hasOverlay() && elapsed < duration) {
       transitionStage(ctx, elapsed, duration, fromElement, targetElement);
     } else {
       trackActiveElement(ctx, targetElement);

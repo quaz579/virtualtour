@@ -56,11 +56,13 @@ export type {
   ElementMissingHook,
   ElementMissingOpts,
   ElementMissingPreset,
+  EnginePresenter,
   HookOpts,
   InteractionHook,
   InteractionOpts,
   InteractionRegion,
   PopoverPatch,
+  RepositionInfo,
   Driver,
   DriveStep,
   Popover,
@@ -388,7 +390,7 @@ export function createEngine(options: Config = {}): Driver {
     const isAnimated = !!ctx.getConfig("animate");
     document.body.classList.add(names.active, isAnimated ? names.fade : names.simple);
     document.body.setAttribute(names.attr.active, "");
-    document.body.setAttribute(names.attr.dim, "");
+    document.body.toggleAttribute(names.attr.dim, ctx.getConfig("overlay") !== false);
     document.body.toggleAttribute(names.attr.fade, isAnimated);
     if (!ctx.getConfig("allowScroll")) {
       document.body.classList.add(names.noScroll);

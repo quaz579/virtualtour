@@ -83,6 +83,8 @@ function onKeydownBubble(ctx: Context, e: KeyboardEvent) {
 
 function onKeyup(ctx: Context, e: KeyboardEvent) {
   const allowKeyboardControl = ctx.getConfig("allowKeyboardControl") ?? true;
+  const allowEscape = allowKeyboardControl && (ctx.getConfig("allowEscape") ?? true);
+  const allowArrowKeys = allowKeyboardControl && (ctx.getConfig("allowArrowKeys") ?? true);
   const wasHandledByApp = handledKeys(ctx).delete(keyId(e));
   const isCarriedOver = isKeyCarriedOverFromEarlierStep(ctx, e);
   ctx.getState("__pressedKeys")?.delete(keyId(e));
@@ -90,15 +92,15 @@ function onKeyup(ctx: Context, e: KeyboardEvent) {
     ctx.setState("__widgetKey", undefined);
   }
 
-  if (!allowKeyboardControl || wasHandledByApp || isCarriedOver || isFocusInPlay(ctx)) {
+  if (wasHandledByApp || isCarriedOver || isFocusInPlay(ctx)) {
     return;
   }
 
-  if (e.key === "Escape") {
+  if (e.key === "Escape" && allowEscape) {
     ctx.tour.escape();
-  } else if (e.key === "ArrowRight") {
+  } else if (e.key === "ArrowRight" && allowArrowKeys) {
     ctx.tour.arrowRight();
-  } else if (e.key === "ArrowLeft") {
+  } else if (e.key === "ArrowLeft" && allowArrowKeys) {
     ctx.tour.arrowLeft();
   }
 }
