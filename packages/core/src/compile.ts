@@ -115,7 +115,7 @@ function textOf(value: string | (() => string) | undefined, evaluate: boolean): 
 function compileStep(
   step: TourStepLike,
   base: Partial<StepConfig>,
-  dimRadius: number | Corners,
+  dimRadius: number | CornerRadius,
   evaluate: boolean
 ): EngineStep {
   const config = mergeStepConfig(base, step.config);
@@ -235,8 +235,9 @@ export function compileTour(c: NormalizedTourConfig, steps: readonly TourStepLik
 
 /**
  * Compiles one step with its function-valued title, label, instruction and body evaluated.
- * Tour-level fields (the progress text) are not included.
+ * Tour-level fields (the progress text) are not included. Pass the tour's `dimOptions.radius` as
+ * `dimRadius` so partial corner radii fall back exactly as in {@link compileTour}.
  */
-export function compileStepForShow(step: TourStepLike): EngineStep {
-  return compileStep(step, DEFAULT_STEP_CONFIG, DEFAULT_DIM.radius, true);
+export function compileStepForShow(step: TourStepLike, dimRadius: number | CornerRadius = DEFAULT_DIM.radius): EngineStep {
+  return compileStep(step, DEFAULT_STEP_CONFIG, dimRadius, true);
 }

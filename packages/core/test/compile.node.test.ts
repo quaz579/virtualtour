@@ -255,6 +255,24 @@ describe("03-schemas section 1.4 rows (step fields)", () => {
     expect(step.stageRadius).toEqual({ topLeft: 1, topRight: 5, bottomRight: 5, bottomLeft: 9 });
   });
 
+  it("row spotlight.radius: an unset topLeft falls back to the default radius", () => {
+    expect(compileOne({ spotlight: { radius: { topRight: 1 } } }).step.stageRadius).toEqual({
+      topLeft: 5,
+      topRight: 1,
+      bottomRight: 5,
+      bottomLeft: 5,
+    });
+  });
+
+  it("row spotlight.extra: allowedElements is a copy of the step's list", () => {
+    const n = normalizeTourConfig({});
+    const config = resolveStepConfig(n, { spotlight: { extra: ["#a"] } });
+    const step = makeStep(config);
+    const out = compileTour(n, [step]).steps[0]?.allowedElements as string[];
+    out.push("#z");
+    expect(config.spotlight?.extra).toEqual(["#a"]);
+  });
+
   it("row spotlight.extra: becomes allowedElements", () => {
     expect(compileOne({ spotlight: { extra: ["#a", "#b"] } }).step.allowedElements).toEqual(["#a", "#b"]);
     expect(compileOne({}).step.allowedElements).toBeUndefined();
@@ -460,6 +478,14 @@ describe("03-schemas section 1.4 rows (tour fields)", () => {
 });
 
 describe("compileStepForShow", () => {
+  it("uses the supplied dim radius for partial corner radii, matching compileTour", () => {
+    const n = normalizeTourConfig({ dim: { radius: 7 } });
+    const step = makeStep(resolveStepConfig(n, { spotlight: { radius: { topLeft: 1 } } }));
+    const fromTour = compileTour(n, [step]).steps[0]?.stageRadius;
+    expect(fromTour).toEqual({ topLeft: 1, topRight: 7, bottomRight: 7, bottomLeft: 7 });
+    expect(compileStepForShow(step, n.dimOptions.radius).stageRadius).toEqual(fromTour);
+  });
+
   it("matches the compileTour step when nothing is function-valued", () => {
     const n = normalizeTourConfig({});
     const step = makeStep(resolveStepConfig(n, { target: "#x", title: "T", body: "B", spotlight: { padding: 4 } }), fakeElement());
