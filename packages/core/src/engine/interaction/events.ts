@@ -3,7 +3,7 @@ import { refreshActiveHighlight } from "../tour/highlight";
 import { getFocusableElements } from "../core/utils";
 import { initGate } from "./gate";
 import { handledKeys, isFocusInPlay, isKeyCarriedOverFromEarlierStep, isKeyInPlay, keyId } from "./keys";
-import { EXTRA_SELECTOR } from "../tour/allowed";
+import { EXTRA_SELECTOR } from "../core/namespace";
 
 export function requireRefresh(ctx: Context) {
   const resizeTimeout = ctx.getState("__resizeTimeout");

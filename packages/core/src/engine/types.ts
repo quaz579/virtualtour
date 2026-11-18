@@ -76,8 +76,11 @@ export type Config = {
   steps?: DriveStep[];
 
   /**
-   * Prefix for the styling classes and `data-<namespace>-*` attributes added to page elements.
-   * Defaults to `vt`. Must match `/^[a-zA-Z][\w-]*$/`. Read once when the engine is created.
+   * Prefix for the styling classes (`<namespace>-target`, `<namespace>-active`, ...) and the
+   * `data-<namespace>-step` and `data-<namespace>-side` attributes added to page elements.
+   * Defaults to `vt`. Must match `/^[a-zA-Z][\w-]*$/`. Read once when the engine is created;
+   * later `setConfig` calls cannot change it. The mechanism attributes (`data-vt-*`), the popover
+   * classes (`vt-popover*`) and the popover ids stay fixed whatever the namespace.
    */
   namespace?: string;
 

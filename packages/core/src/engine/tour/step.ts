@@ -171,6 +171,7 @@ function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): P
     offset: stagePadding + (ctx.getConfig("popoverOffset") || 0),
     padding: stagePadding,
     centered: isDummyElement(element),
+    sideAttribute: ctx.names.sideAttr,
   };
 }
 
@@ -255,7 +256,7 @@ export function renderStepPopover(ctx: Context, element: Element, step: DriveSte
     keepFocus,
   });
 
-  syncPopoverAttributes(ctx, popover);
+  syncStepAttribute(ctx, popover);
   showStepPopoverState(ctx);
 
   if (keepFocus) {
@@ -263,22 +264,13 @@ export function renderStepPopover(ctx: Context, element: Element, step: DriveSte
   }
 }
 
-function syncPopoverAttributes(ctx: Context, popover: PopoverDOM) {
+function syncStepAttribute(ctx: Context, popover: PopoverDOM) {
   const { wrapper } = popover;
   const index = ctx.getState("activeIndex");
   if (index === undefined) {
     wrapper.removeAttribute(ctx.names.stepAttr);
   } else {
     wrapper.setAttribute(ctx.names.stepAttr, String(index));
-  }
-
-  const side = [...wrapper.classList]
-    .find(name => name.startsWith(fixedNames.popover.sidePrefix))
-    ?.slice(fixedNames.popover.sidePrefix.length);
-  if (side) {
-    wrapper.setAttribute(ctx.names.sideAttr, side);
-  } else {
-    wrapper.removeAttribute(ctx.names.sideAttr);
   }
 }
 
@@ -311,7 +303,6 @@ export function repositionStepPopover(ctx: Context, element: Element, step: Driv
   }
 
   repositionPopover(popover, element, resolveStepPosition(ctx, element, step));
-  syncPopoverAttributes(ctx, popover);
 }
 
 function showPopoverWaiting(ctx: Context) {

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { names } from "../../src/engine/core/namespace";
-import { createDriver, SAMPLE_STEPS, useDriverHarness } from "./utils";
+import { createDriver, nextFrame, SAMPLE_STEPS, useDriverHarness } from "./utils";
 
 const SRC = resolve(process.cwd(), "src");
 
@@ -127,6 +127,21 @@ describe("namespaced engines", () => {
     d.drive();
 
     expect(document.querySelector(".vt-popover")?.getAttribute("data-abc-side")).toMatch(/^(top|right|bottom|left)$/);
+  });
+
+  it("keeps data-abc-side in step with the popover side class after updatePopover", async () => {
+    const d = createDriver({ animate: false, namespace: "abc", steps: SAMPLE_STEPS });
+    d.drive();
+    await nextFrame();
+    const wrapper = document.querySelector(".vt-popover")!;
+    const sideFromClass = () =>
+      [...wrapper.classList].find(name => name.startsWith("vt-popover-side-"))!.slice("vt-popover-side-".length);
+
+    wrapper.removeAttribute("data-abc-side");
+    d.updatePopover({ description: "Changed" });
+
+    expect(wrapper.getAttribute("data-abc-side")).toBe(sideFromClass());
+    expect(wrapper.getAttribute("data-abc-step")).toBe("0");
   });
 
   it("leaves nothing behind once an engine with another namespace takes over", () => {

@@ -92,6 +92,49 @@ describe("disableActiveInteraction", () => {
   });
 });
 
+describe("marker guard", () => {
+  useDriverHarness();
+
+  it("restores a stripped data-vt-target attribute while the step is on the element", async () => {
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS });
+    d.drive();
+    const intro = document.querySelector("#intro")!;
+
+    intro.removeAttribute("data-vt-target");
+    await nextFrame();
+
+    expect(intro.hasAttribute("data-vt-target")).toBe(true);
+    expect(intro.classList.contains("vt-target")).toBe(true);
+  });
+
+  it("restores a stripped data-vt-blocked attribute", async () => {
+    const d = createDriver({ animate: false, disableActiveInteraction: true, steps: SAMPLE_STEPS });
+    d.drive();
+    const intro = document.querySelector("#intro")!;
+
+    intro.removeAttribute("data-vt-blocked");
+    await nextFrame();
+
+    expect(intro.hasAttribute("data-vt-blocked")).toBe(true);
+    expect(intro.classList.contains("vt-target-blocked")).toBe(true);
+  });
+
+  it("restores a stripped data-vt-raised attribute", async () => {
+    const d = createDriver({
+      animate: false,
+      steps: [{ element: "#card-1", allowedElements: "#card-1", popover: { title: "One" } }],
+    });
+    d.drive();
+    const card = document.querySelector("#card-1")!;
+    expect(card.hasAttribute("data-vt-raised")).toBe(true);
+
+    card.removeAttribute("data-vt-raised");
+    await nextFrame();
+
+    expect(card.hasAttribute("data-vt-raised")).toBe(true);
+  });
+});
+
 describe("single element highlight close button", () => {
   it("keeps the popover open on close click when allowClose is false", () => {
     const d = createDriver({ animate: false, allowClose: false });
@@ -283,11 +326,11 @@ describe("aria attributes on the dummy element", () => {
   });
 });
 
-const DRIVER_ATTRIBUTES = ["aria-haspopup", "aria-expanded", "aria-controls"];
+const ARIA_ATTRIBUTES = ["aria-haspopup", "aria-expanded", "aria-controls"];
 
 function leftovers(element: Element): string[] {
   return [
-    ...DRIVER_ATTRIBUTES.filter(name => element.hasAttribute(name)),
+    ...ARIA_ATTRIBUTES.filter(name => element.hasAttribute(name)),
     ...Array.from(element.classList).filter(name => name.startsWith("vt-")),
   ];
 }

@@ -11,6 +11,7 @@ export type PositionOptions = {
   offset: number;
   padding: number;
   centered?: boolean;
+  sideAttribute?: string;
 };
 
 type PopoverDimensions = {
@@ -173,6 +174,9 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   }
   if (!classList.contains(alignClass)) {
     classList.add(alignClass);
+  }
+  if (options.sideAttribute) {
+    popover.wrapper.setAttribute(options.sideAttribute, popoverRenderedSide);
   }
 }
 

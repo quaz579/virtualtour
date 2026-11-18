@@ -60,6 +60,8 @@ const fixed = Object.freeze({
   nudgeAnimationPrefix: `${FIXED_PREFIX}-nudge`,
 });
 
+export const EXTRA_SELECTOR = `[${attributes.extra}]`;
+
 export function isValidNamespace(ns: unknown): ns is string {
   return typeof ns === "string" && NAMESPACE_PATTERN.test(ns);
 }

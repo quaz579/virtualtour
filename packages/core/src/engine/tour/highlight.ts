@@ -241,7 +241,7 @@ function setMarker(element: Element, marker: Marker, isOn: boolean) {
   element.toggleAttribute(marker.attribute, isOn);
 }
 
-function guardMarkers(element: Element, markersToKeep: () => Marker[]) {
+function guardMarkers(element: Element, allAttributes: string[], markersToKeep: () => Marker[]) {
   classGuards.get(element)?.disconnect();
 
   const observer = new MutationObserver(() => {
@@ -253,7 +253,7 @@ function guardMarkers(element: Element, markersToKeep: () => Marker[]) {
   });
   observer.observe(element, {
     attributes: true,
-    attributeFilter: ["class", ...markersToKeep().map(marker => marker.attribute)],
+    attributeFilter: ["class", ...allAttributes],
   });
   classGuards.set(element, observer);
 }
@@ -309,7 +309,7 @@ function markActiveElement(ctx: Context, element: Element, step: DriveStep) {
   if (!isDummyElement(element)) {
     setPopoverAria(element);
     setMarker(element, markers.raised, isInsideAllowedElement(element));
-    guardMarkers(element, () => [
+    guardMarkers(element, Object.values(markers).map(marker => marker.attribute), () => [
       markers.target,
       ...(isBlocked ? [markers.blocked] : []),
       ...(isInsideAllowedElement(element) ? [markers.raised] : []),

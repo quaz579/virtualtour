@@ -1,5 +1,5 @@
 import type { DriveStep } from "../types";
-import { fixedNames } from "./namespace";
+import { EXTRA_SELECTOR, fixedNames } from "./namespace";
 
 export function resolveElement(element: DriveStep["element"]): Element | null | undefined {
   if (typeof element === "function") {
@@ -19,9 +19,8 @@ export function isDummyElement(element: Element | undefined): boolean {
   return !element || element.id === DUMMY_ELEMENT_ID;
 }
 
-
 export function isInsideAllowedElement(element: Element): boolean {
-  return !!element.closest(`[${fixedNames.attr.extra}]`);
+  return !!element.closest(EXTRA_SELECTOR);
 }
 
 export function isScrollable(element: Element) {

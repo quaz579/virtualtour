@@ -7,8 +7,6 @@ import { isDummyElement, isInsideAllowedElement } from "../core/utils";
 
 const ENGINE_UI = `[${fixedNames.attr.layer}], [${fixedNames.attr.overlay}], .${fixedNames.popover.root}`;
 
-export const EXTRA_SELECTOR = `[${fixedNames.attr.extra}]`;
-
 export function resolveAllowedSetting(ctx: Context, step: DriveStep): AllowedElements | undefined {
   return stepOption(ctx, step, "allowedElements");
 }

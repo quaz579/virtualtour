@@ -8,7 +8,7 @@ import {
   removeFromLayer,
 } from "../core/utils";
 import { destroyDriverClick, onDriverClick } from "../core/click";
-import { fixedNames } from "../core/namespace";
+import { EXTRA_SELECTOR } from "../core/namespace";
 import { Context } from "../core/context";
 import {
   createStageSvg,
@@ -107,7 +107,7 @@ function allowedCutouts(overlaySvg: SVGSVGElement, cutout: StageCutout): string 
     return "";
   }
 
-  const allowedRects = Array.from(dialog.querySelectorAll(`[${fixedNames.attr.extra}]`)).map(allowed =>
+  const allowedRects = Array.from(dialog.querySelectorAll(EXTRA_SELECTOR)).map(allowed =>
     allowed.getBoundingClientRect()
   );
 

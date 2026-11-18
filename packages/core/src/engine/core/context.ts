@@ -157,7 +157,8 @@ export type Context = {
 export function createContext(options: Config = {}): Omit<Context, "tour"> {
   const resolvedNames = names(options.namespace);
   const config = createConfigStore();
-  config.configure(options);
+  const configure = (next: Config = {}) => config.configure({ ...next, namespace: resolvedNames.namespace });
+  configure(options);
 
   const state = createStateStore();
 
@@ -168,7 +169,7 @@ export function createContext(options: Config = {}): Omit<Context, "tour"> {
     names: resolvedNames,
 
     getConfig: config.getConfig,
-    setConfig: config.configure,
+    setConfig: configure,
 
     getState: state.getState,
     setState: state.setState,

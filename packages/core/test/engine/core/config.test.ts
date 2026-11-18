@@ -25,6 +25,28 @@ describe("configuration", () => {
     expect(config.duration).toBe(400);
   });
 
+  it("keeps the creation-time namespace through setConfig", () => {
+    const d = createDriver({ namespace: "abc", steps: SAMPLE_STEPS });
+
+    d.setConfig({ animate: false, namespace: "other", steps: SAMPLE_STEPS });
+    expect(d.getConfig().namespace).toBe("abc");
+
+    d.setConfig({ animate: false, steps: SAMPLE_STEPS });
+    expect(d.getConfig().namespace).toBe("abc");
+
+    d.drive();
+    expect(document.body.classList.contains("abc-active")).toBe(true);
+    expect(document.body.classList.contains("other-active")).toBe(false);
+  });
+
+  it("defaults the namespace to vt and keeps it after setConfig", () => {
+    const d = createDriver({ namespace: undefined as never });
+    expect(d.getConfig().namespace).toBe("vt");
+
+    d.setConfig({ animate: false });
+    expect(d.getConfig().namespace).toBe("vt");
+  });
+
   it("replaces the config wholesale on setConfig, re-applying defaults", () => {
     const d = createDriver({ animate: false, stagePadding: 25, popoverClass: "mine", steps: SAMPLE_STEPS });
 

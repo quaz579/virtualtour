@@ -1,4 +1,4 @@
-import { fixedNames } from "../core/namespace";
+import { EXTRA_SELECTOR } from "../core/namespace";
 import type { Context } from "../core/context";
 import type { InteractionRegion } from "../types";
 import { isDummyElement } from "../core/utils";
@@ -16,7 +16,7 @@ export function regionOf(ctx: Context, path: EventTarget[]): Region {
     return "element";
   }
 
-  const isAllowed = path.some(node => node instanceof Element && node.hasAttribute(fixedNames.attr.extra));
+  const isAllowed = path.some(node => node instanceof Element && node.matches(EXTRA_SELECTOR));
 
   return isAllowed ? "allowed" : "outside";
 }
