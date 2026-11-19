@@ -316,22 +316,63 @@ export function normalizePack(pack: AvatarPack, baseUrl: string): NormalizedPack
   return { ...pack, frames, sheetUrl: resolveSheetUrl(pack.sheet.src, baseUrl), stillOf };
 }
 
+/** Options for {@link preloadSheet}. */
+export interface PreloadSheetOptions {
+  /** Rejects with an {@link AvatarPackError} and releases the image request when the signal aborts. */
+  signal?: AbortSignal;
+  /** Rejects with an {@link AvatarPackError} and releases the image request after this many milliseconds. No limit when omitted. */
+  timeoutMs?: number;
+}
+
 /**
- * Loads and decodes the sheet image so the first frame paints without a flash.
- * Rejects with an {@link AvatarPackError} when the image fails to load; a decode failure after a
- * successful load still resolves because the browser will decode on paint. Has no timeout of its own.
+ * Loads and decodes the sheet image so the first frame paints without a flash, and resolves with its natural size.
+ * Rejects with an {@link AvatarPackError} when the image fails to load, the signal aborts or `timeoutMs` passes; a
+ * decode failure after a successful load still resolves because the browser will decode on paint.
  */
-export function preloadSheet(url: string): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+export function loadSheetImage(url: string, options: PreloadSheetOptions = {}): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
     const image = new Image();
-    const failed = (): void => reject(new AvatarPackError("sheet.src", `could not load ${url}`));
-    image.onload = () => {
-      if (typeof image.decode === "function") image.decode().then(() => resolve(), () => resolve());
-      else resolve();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const finish = (settle: () => void): void => {
+      if (timer !== null) clearTimeout(timer);
+      options.signal?.removeEventListener("abort", onAbort);
+      image.onload = null;
+      image.onerror = null;
+      settle();
     };
-    image.onerror = failed;
+    const release = (): void => {
+      image.src = "";
+    };
+    const fail = (message: string): void =>
+      finish(() => {
+        release();
+        reject(new AvatarPackError("sheet.src", message));
+      });
+    const onAbort = (): void => fail(`loading ${url} was cancelled`);
+    if (options.signal?.aborted) {
+      reject(new AvatarPackError("sheet.src", `loading ${url} was cancelled`));
+      return;
+    }
+    options.signal?.addEventListener("abort", onAbort, { once: true });
+    const timeoutMs = options.timeoutMs;
+    if (typeof timeoutMs === "number" && Number.isFinite(timeoutMs) && timeoutMs >= 0) {
+      timer = setTimeout(() => fail(`${url} did not load within ${timeoutMs} ms`), timeoutMs);
+    }
+    image.onload = () => {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      const size = { width: image.naturalWidth, height: image.naturalHeight };
+      if (typeof image.decode === "function") image.decode().then(() => finish(() => resolve(size)), () => finish(() => resolve(size)));
+      else finish(() => resolve(size));
+    };
+    image.onerror = () => fail(`could not load ${url}`);
     image.src = url;
   });
+}
+
+/** Loads and decodes the sheet image; see {@link loadSheetImage}. */
+export function preloadSheet(url: string, options: PreloadSheetOptions = {}): Promise<void> {
+  return loadSheetImage(url, options).then(() => undefined);
 }
 
 function candidates(names: string | string[] | undefined, pack: NormalizedPack): string[] {

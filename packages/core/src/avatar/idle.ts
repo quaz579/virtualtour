@@ -5,7 +5,7 @@ import type { SpritePlayer } from "./player";
 
 /** Options for {@link IdleScheduler}. */
 export interface IdleSchedulerOptions {
-  /** Milliseconds of quiet before an idle animation plays. Default 6000. */
+  /** Milliseconds of quiet before an idle animation plays. Default 6000; values below 50 count as 50, and zero or negative values use the default. */
   quietMs?: number;
   /** Read each time the scheduler arms and fires; defaults to the library-wide `prefers-reduced-motion` check. */
   reducedMotion?: () => boolean;
@@ -14,6 +14,7 @@ export interface IdleSchedulerOptions {
 }
 
 const DEFAULT_QUIET_MS = 6000;
+const MIN_QUIET_MS = 50;
 
 /**
  * Plays a random `idle` animation after a quiet period, then returns the avatar to `rest` and waits again. It never
@@ -35,7 +36,7 @@ export class IdleScheduler {
     this.player = player;
     this.pack = pack;
     const quiet = opts.quietMs;
-    this.quietMs = typeof quiet === "number" && Number.isFinite(quiet) && quiet >= 0 ? quiet : DEFAULT_QUIET_MS;
+    this.quietMs = typeof quiet === "number" && Number.isFinite(quiet) && quiet > 0 ? Math.max(quiet, MIN_QUIET_MS) : DEFAULT_QUIET_MS;
     this.reducedMotion = opts.reducedMotion ?? prefersReducedMotion;
     this.random = opts.random ?? Math.random;
   }

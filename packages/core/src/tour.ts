@@ -709,15 +709,17 @@ function ensureEngine(tour: Tour): Driver {
   return self;
 }
 
+const PRESENTER_READY_TIMEOUT_MS = 10_000;
+
 async function showStep(tour: Tour, index: number): Promise<void> {
   const state = internalsOf(tour);
   const step = state.steps[index];
   if (!state.running || state.ending || !step) return;
   if (step.isShown() && state.engine?.isActive()) return;
   if (!state.engine) {
-    const ready = guardedReady(presenterOf(tour));
+    const runId = state.runId;
+    const ready = guardedReady(presenterOf(tour), () => isLive(state, runId));
     if (ready) {
-      const runId = state.runId;
       await ready;
       if (!isLive(state, runId)) return;
     }
@@ -732,16 +734,36 @@ async function showStep(tour: Tour, index: number): Promise<void> {
   await shown;
 }
 
-function guardedReady(presenter: Presenter): Promise<void> | undefined {
-  const failed = (error: unknown): undefined => {
+function guardedReady(presenter: Presenter, live: () => boolean): Promise<void> | undefined {
+  const failed = (error: unknown): void => {
     console.warn("[virtualtour] presenter.ready failed", error);
-    return undefined;
   };
+  let pending: Promise<void> | undefined;
   try {
-    return presenter.ready?.().catch(failed);
+    pending = presenter.ready?.();
   } catch (error) {
-    return failed(error) ?? undefined;
+    failed(error);
+    return undefined;
   }
+  if (!pending) return undefined;
+  const ready = pending;
+  return new Promise<void>((resolve) => {
+    const timer = setTimeout(() => {
+      if (live()) console.warn(`[virtualtour] presenter.ready did not settle within ${PRESENTER_READY_TIMEOUT_MS} ms; showing the first step without it`);
+      resolve();
+    }, PRESENTER_READY_TIMEOUT_MS);
+    ready.then(
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        failed(error);
+        resolve();
+      },
+    );
+  });
 }
 
 function attachAdvance(tour: Tour, step: TourStep): void {

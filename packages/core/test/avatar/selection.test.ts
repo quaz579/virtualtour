@@ -67,6 +67,16 @@ beforeEach(() => {
   reduced = false;
   avatarRect = new DOMRect(100, 100, 32, 32);
   targetRect = new DOMRect(500, 100, 100, 32);
+  vi.stubGlobal(
+    "Image",
+    class {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) {
+        queueMicrotask(() => this.onload?.());
+      }
+    },
+  );
   vi.spyOn(performance, "now").mockImplementation(() => clock);
   vi.stubGlobal("matchMedia", (query: string) => ({ matches: reduced && query.includes("reduce"), addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }));
   const target = document.createElement("button");
