@@ -13,7 +13,7 @@ import { listenForAdvance } from "./advance/auto-advance";
 import { resolveTarget, waitForTarget } from "./dom/target";
 import { chain, NavigationQueue, raceAbort, resolveStepIndex, selectEligible } from "./navigator";
 import type { NavigationOutcome } from "./navigator";
-import { applyStateClasses, classList, dedupeExtras, removeStateClasses, resolveExtras, spotlitClass } from "./spotlight/options";
+import { applyStateClasses, classList, dedupeExtras, parsableSelectors, removeStateClasses, resolveExtras, spotlitClass } from "./spotlight/options";
 import { ProgressTracker } from "./persist/progress";
 import { DialogPresenter } from "./presenter";
 import { memoizeSanitizer } from "./render/content";
@@ -54,6 +54,7 @@ interface TourInternals {
   starting: boolean;
   clearSanitized: () => void;
   spotlit: Map<Element, { wanted: string[]; added: string[] }>;
+  spotlitStep: TourStep | null;
 }
 
 const internals = new WeakMap<object, TourInternals>();
@@ -104,6 +105,7 @@ export class Tour {
       starting: false,
       clearSanitized,
       spotlit: new Map(),
+      spotlitStep: null,
     };
     internals.set(this, state);
     if (normalized.progress && config.id === undefined && (typeof __DEV__ === "undefined" || __DEV__)) {
@@ -377,16 +379,18 @@ function detachAdvance(state: TourInternals, only?: TourStep): void {
 function releaseSpotlit(tour: Tour, state: TourInternals): void {
   for (const [element, held] of state.spotlit) removeStateClasses(element, held.added, tour);
   state.spotlit.clear();
+  state.spotlitStep = null;
 }
 
 function markSpotlit(tour: Tour, step: TourStep, target: Element | undefined): void {
   const state = internalsOf(tour);
+  state.spotlitStep = step;
   const spotlight = step.config.spotlight;
   const marker = spotlitClass(state.normalized.namespace);
   const wanted = [marker, ...classList(spotlight?.class)];
   const desired = new Set<Element>();
   if (target) desired.add(target);
-  for (const extra of dedupeExtras(resolveExtras(spotlight?.extra), target)) desired.add(extra);
+  for (const extra of dedupeExtras(resolveExtras(parsableSelectors(spotlight?.extra)), target)) desired.add(extra);
   for (const [element, held] of state.spotlit) {
     if (desired.has(element) && held.wanted.join(" ") === wanted.join(" ")) continue;
     removeStateClasses(element, held.added, tour);
@@ -399,7 +403,7 @@ function markSpotlit(tour: Tour, step: TourStep, target: Element | undefined): v
 }
 
 function remarkSpotlit(tour: Tour, state: TourInternals): void {
-  const step = state.steps[state.anchorIndex];
+  const step = state.spotlitStep;
   const active = state.engine?.getState("activeElement");
   if (!step || state.ending) return;
   markSpotlit(tour, step, active && !isDummyElement(active) ? active : undefined);

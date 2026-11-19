@@ -5,6 +5,19 @@ export function spotlitClass(namespace: string): string {
   return `${namespace}-spotlit`;
 }
 
+/** The selectors `querySelectorAll` accepts, in order; the rest are dropped so one bad entry cannot break a step. */
+export function parsableSelectors(selectors: readonly string[] | undefined): string[] {
+  if (typeof document === "undefined") return [...(selectors ?? [])];
+  return (selectors ?? []).filter((selector) => {
+    try {
+      document.createDocumentFragment().querySelector(selector);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
 /**
  * Resolves every selector with `querySelectorAll` and returns the matches in selector-list order without
  * duplicates. A selector that does not parse throws, as it does for the engine's `allowedElements`.

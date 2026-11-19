@@ -349,6 +349,40 @@ describe("state classes", () => {
     }
   });
 
+  it("after dropping the displayed step a reposition does not re-mark the active element with the previous step's classes", async () => {
+    const tour = await started({
+      dim: true,
+      steps: [
+        { id: "zero", target: "#b", spotlight: { class: "zero" } },
+        { id: "one", target: "#a", spotlight: { class: "one" } },
+        { id: "two", target: "#late", waitFor: 2000, spotlight: { class: "two" } },
+      ],
+    });
+    await tour.forward();
+    await nextFrame();
+    const engine = engineOf(tour)!;
+    tour.dropStep("one");
+    engine.getConfig().onReposition!({} as never, {} as never);
+    expect(el("a").classList.contains("zero")).toBe(false);
+    expect(el("b").classList.contains("zero")).toBe(false);
+  });
+
+  it("a bad extra selector neither breaks navigation nor reposition, and the target is still marked", async () => {
+    const tour = make({
+      dim: true,
+      steps: [{ target: "#a", spotlight: { extra: ["[[bad"], class: "mark" } }, { target: "#b" }],
+    });
+    await tour.start().catch(() => undefined);
+    await nextFrame();
+    expect(el("a").classList.contains("vt-spotlit")).toBe(true);
+    expect(el("a").classList.contains("mark")).toBe(true);
+    expect(() => tour.refresh()).not.toThrow();
+    await nextFrame();
+    await tour.forward();
+    await nextFrame();
+    expect(el("b").classList.contains("vt-spotlit")).toBe(true);
+  });
+
   it("releases the classes when the current step is hidden", async () => {
     const tour = await started({ dim: true, steps: [{ target: "#a" }, { target: "#b" }] });
     expect(el("a").classList.contains("vt-spotlit")).toBe(true);
