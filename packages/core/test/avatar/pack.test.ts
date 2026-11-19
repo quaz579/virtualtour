@@ -327,6 +327,59 @@ describe("preloadSheet", () => {
     });
   });
 
+  function hangingImage(): { released: string[] } {
+    const released: string[] = [];
+    class FakeImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(value: string) {
+        if (value === "") released.push("released");
+      }
+    }
+    globalThis.Image = FakeImage as unknown as typeof Image;
+    return { released };
+  }
+
+  it("rejects and releases the request when timeoutMs passes", async () => {
+    vi.useFakeTimers();
+    const { released } = hangingImage();
+    const result = preloadSheet("https://x.test/slow.png", { timeoutMs: 500 });
+    const caught = result.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(await caught).toMatchObject({ name: "AvatarPackError", path: "sheet.src" });
+    expect(released).toEqual(["released"]);
+    vi.useRealTimers();
+  });
+
+  it("rejects and releases the request when the signal aborts, and at once when already aborted", async () => {
+    const { released } = hangingImage();
+    const controller = new AbortController();
+    const result = preloadSheet("https://x.test/slow.png", { signal: controller.signal });
+    controller.abort();
+    await expect(result).rejects.toMatchObject({ name: "AvatarPackError", path: "sheet.src" });
+    expect(released).toEqual(["released"]);
+    await expect(preloadSheet("https://x.test/slow.png", { signal: controller.signal })).rejects.toMatchObject({ path: "sheet.src" });
+  });
+
+  it("does not time out an image that loaded in time", async () => {
+    vi.useFakeTimers();
+    stubImage("load");
+    const result = preloadSheet("https://x.test/sheet.png", { timeoutMs: 500 });
+    await vi.advanceTimersByTimeAsync(0);
+    await expect(result).resolves.toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1000);
+    vi.useRealTimers();
+  });
+
+  it("does not time out while a slow decode is in progress", async () => {
+    vi.useFakeTimers();
+    stubImage("load", () => new Promise<void>((resolve) => setTimeout(resolve, 2000)));
+    const result = preloadSheet("https://x.test/sheet.png", { timeoutMs: 500 });
+    await vi.advanceTimersByTimeAsync(2000);
+    await expect(result).resolves.toBeUndefined();
+    vi.useRealTimers();
+  });
+
   it("still resolves when decode rejects after a successful load", async () => {
     stubImage("load", () => Promise.reject(new Error("bad image")));
     await expect(preloadSheet("https://x.test/odd.png")).resolves.toBeUndefined();

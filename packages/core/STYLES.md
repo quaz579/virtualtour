@@ -49,6 +49,7 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 
 | Variable | Default | Used for |
 |---|---|---|
+| `--vt-avatar-base` | `1` | Marker the missing-stylesheet check reads. Do not override. |
 | `--vt-avatar-gap` | `8px` | Space between the bubble and the avatar. The presenter sets it from the pack's `bubble.gap` when the pack has one. |
 
 The bubble reads `--vt-bg`, `--vt-space`, `--vt-radius` and `--vt-shadow` from the theme and falls back to the `base.css` look without it.

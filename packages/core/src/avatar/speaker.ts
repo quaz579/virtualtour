@@ -25,11 +25,11 @@ export interface AvatarOptions {
   defaultAnimation?: string;
   /** Plays a random idle animation after a quiet period. Default true; a step can override it with `extensions.avatar.idle`. */
   idle?: boolean;
-  /** Milliseconds of quiet before an idle animation plays. Default 6000. */
+  /** Milliseconds of quiet before an idle animation plays. Default 6000. Values below 50 count as 50; zero or negative values use the default. */
   idleQuietMs?: number;
-  /** Read by `withAvatar`: how long a run waits for the pack before it starts in dialog mode. Default 3000. */
+  /** How long a run waits for the pack, and for its sheet image, before it starts in dialog mode. Default 3000, at most 9000. Used by `withAvatar`; `SpeakerPresenter` is given a loaded pack and has nothing to wait for. */
   loadTimeoutMs?: number;
-  /** Read by `withAvatar`: called once when the pack fails to load or arrives too late. */
+  /** Called once when the pack or its sheet fails to load or arrives too late. Used by `withAvatar`. */
   onError?: (error: AvatarPackError) => void;
 }
 
@@ -45,7 +45,7 @@ export interface AvatarStepOptions {
 }
 
 /** Options for {@link SpeakerPresenter}. */
-export interface SpeakerPresenterOptions extends AvatarOptions {
+export interface SpeakerPresenterOptions extends Omit<AvatarOptions, "loadTimeoutMs" | "onError"> {
   /** The tour's `namespace`. Default `vt`. */
   namespace?: string;
   /** The tour's `sanitize` hook, applied to custom footer buttons. */
@@ -126,6 +126,8 @@ export class SpeakerPresenter implements Presenter {
   private waiting = false;
   private pointing: AvatarDirection | null = null;
   private deferred: TourStep | null = null;
+  private opening: TourStep | null = null;
+  private warnedStyles = false;
 
   constructor(tour: Tour, pack: NormalizedPack, options: SpeakerPresenterOptions = {}) {
     this.tour = tour;
@@ -153,8 +155,10 @@ export class SpeakerPresenter implements Presenter {
     this.info = null;
     this.shown = false;
     this.deferred = null;
+    this.opening ??= step;
     this.base.mount(popover, step, parts);
     this.configure(popover, step);
+    this.warnIfStylesMissing(popover);
     this.watchWaiting(popover);
     const dock = this.dockSetting === "auto" ? "end" : this.dockSetting;
     this.write(popover, { side: requestedSide(step), dock });
@@ -331,8 +335,7 @@ export class SpeakerPresenter implements Presenter {
     }
     if (name === undefined) {
       if (dir === null) {
-        const first = this.tour.steps.indexOf(step) === 0;
-        name = first ? resolveRole(this.pack, "greet") : this.defaultName();
+        name = step === this.opening ? resolveRole(this.pack, "greet") : this.defaultName();
       } else {
         name = resolveRole(this.pack, "point", dir);
         this.pointing = dir;
@@ -344,6 +347,13 @@ export class SpeakerPresenter implements Presenter {
     } else {
       this.start(name, false, () => this.armIdle());
     }
+  }
+
+  private warnIfStylesMissing(popover: PopoverDOM): void {
+    if (this.warnedStyles || (typeof __DEV__ !== "undefined" && !__DEV__)) return;
+    this.warnedStyles = true;
+    if (getComputedStyle(popover.wrapper).getPropertyValue("--vt-avatar-base").trim() !== "") return;
+    console.warn("[virtualtour] avatar.css is not loaded, so the speech bubble and avatar are unstyled. Import `virtualtour/avatar.css`.");
   }
 
   private armIdle(): void {

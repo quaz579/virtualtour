@@ -1,6 +1,6 @@
 import { createTour } from "../../packages/core/src/index";
-import type { Tour } from "../../packages/core/src/index";
-import { loadAvatarPack, loadClassicAvatarPack, SpeakerPresenter, thumbtackPack } from "../../packages/core/src/avatar/index";
+import type { StepConfig, Tour } from "../../packages/core/src/index";
+import { loadAvatarPack, loadClassicAvatarPack, thumbtackPack, withAvatar } from "../../packages/core/src/avatar/index";
 import type { NormalizedPack } from "../../packages/core/src/avatar/pack";
 import "../../packages/core/src/styles/avatar.css";
 
@@ -22,7 +22,6 @@ interface Sample {
 declare global {
   interface Window {
     vtClassicTour?: Tour;
-    vtClassicPresenter?: SpeakerPresenter;
     vtClassicPack?: NormalizedPack;
     vtClassicRun: (kind: Kind) => Promise<void>;
     vtClassicSample: (animation: string) => Promise<Sample[]>;
@@ -48,57 +47,46 @@ function load(kind: Kind): Promise<NormalizedPack> {
   }
 }
 
+function buildTour(pack: NormalizedPack, steps: StepConfig[]): Tour {
+  return createTour({ animate: false, dim: false, presenter: withAvatar(pack, { scale: 1, idle: false }), steps });
+}
+
 window.vtClassicRun = async (kind) => {
   window.vtClassicTour?.finish();
   const pack = await load(kind);
   window.vtClassicPack = pack;
-  const tour = createTour({
-    animate: false,
-    dim: false,
-    presenter: (t) => {
-      window.vtClassicPresenter = new SpeakerPresenter(t, pack, { scale: 1 });
-      return window.vtClassicPresenter;
-    },
-    steps: [
-      { id: "one", title: "First", body: "Hello.", target: "#first", placement: { side: "bottom" } },
-      { id: "two", title: "Second", body: "Bye.", target: "#second", placement: { side: "bottom" } },
-    ],
-  });
+  const tour = buildTour(pack, [
+    { id: "one", title: "First", body: "Hello.", target: "#first", placement: { side: "bottom" } },
+    { id: "two", title: "Second", body: "Bye.", target: "#second", placement: { side: "bottom" } },
+  ]);
   window.vtClassicTour = tour;
   await tour.start();
 };
 
 window.vtClassicSample = async (animation) => {
-  const presenter = window.vtClassicPresenter;
-  const el = presenter?.avatar;
-  if (!presenter || !el) throw new Error("no presenter");
+  window.vtClassicTour?.finish();
+  const pack = window.vtClassicPack;
+  if (!pack) throw new Error("no pack");
+  const frames = pack.frames[animation];
+  if (!frames) throw new Error(`no animation ${animation}`);
+  const duration = frames.reduce((total, frame) => total + frame.ms, 0);
   const samples: Sample[] = [];
   const startedAt = performance.now();
-  const positionOf = (style: string | null): string => /background-position:\s*([^;]+)/.exec(style ?? "")?.[1]?.trim() ?? "";
-  const push = (pos: string): void => {
-    samples.push({ t: performance.now() - startedAt, pos });
+  let sampling = true;
+  const loop = (): void => {
+    if (!sampling) return;
+    const el = document.querySelector<HTMLElement>(".vt-avatar");
+    if (el) samples.push({ t: performance.now() - startedAt, pos: el.style.backgroundPosition });
+    requestAnimationFrame(loop);
   };
-  let started = false;
-  let skipOld = false;
-  const take = (records: MutationRecord[]): void => {
-    for (const rec of records) {
-      if (rec.attributeName === "data-vt-anim") {
-        if (!started && el.getAttribute("data-vt-anim") === animation) {
-          started = true;
-          skipOld = true;
-        }
-      } else if (started) {
-        if (skipOld) skipOld = false;
-        else push(positionOf(rec.oldValue));
-      }
-    }
-  };
-  const observer = new MutationObserver(take);
-  observer.observe(el, { attributes: true, attributeOldValue: true, attributeFilter: ["style", "data-vt-anim"] });
-  await presenter.player.play(animation);
-  take(observer.takeRecords());
-  observer.disconnect();
-  push(el.style.backgroundPosition);
+  requestAnimationFrame(loop);
+  const tour = buildTour(pack, [{ id: "sample", title: "Sample", body: "Watch.", extensions: { avatar: { animation } } }]);
+  window.vtClassicTour = tour;
+  await tour.start();
+  await new Promise((resolve) => setTimeout(resolve, duration + 400));
+  const el = document.querySelector<HTMLElement>(".vt-avatar");
+  if (el) samples.push({ t: performance.now() - startedAt, pos: el.style.backgroundPosition });
+  sampling = false;
   return samples;
 };
 

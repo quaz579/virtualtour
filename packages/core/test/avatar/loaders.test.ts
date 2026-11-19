@@ -175,10 +175,20 @@ describe("loadClassicAvatarPack", () => {
     imageFails = true;
     await expect(
       loadClassicAvatarPack({ sheetUrl: "https://x.test/s.png", mapUrl: "https://x.test/m/a.json", fetch: respond(files) as never }),
-    ).rejects.toMatchObject({ path: "sheetUrl" });
+    ).rejects.toMatchObject({ path: "sheet.src" });
     await expect(
       loadClassicAvatarPack({ sheetUrl: "https://x.test/s.png", mapUrl: "https://x.test/m/b.json", fetch: respond(files) as never }),
     ).rejects.toMatchObject({ path: "sheet.src" });
+  });
+
+  it("requests the sheet once for a column and row map that needs measuring", async () => {
+    await loadClassicAvatarPack({ sheetUrl: "https://x.test/s.png", mapUrl: "https://x.test/m/a.json", fetch: respond(files) as never });
+    expect(requested).toEqual(["https://x.test/s.png"]);
+  });
+
+  it("requests the sheet once for a pixel position map", async () => {
+    await loadClassicAvatarPack({ sheetUrl: "https://x.test/s.png", mapUrl: "https://x.test/m/b.json", fetch: respond(files) as never });
+    expect(requested).toEqual(["https://x.test/s.png"]);
   });
 
   it("reports a map that cannot be fetched", async () => {
