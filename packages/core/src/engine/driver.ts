@@ -217,7 +217,7 @@ export function createEngine(options: Config = {}): Driver {
     }
   }
 
-  function next(): void | PromiseLike<unknown> {
+  function next(): unknown {
     const { element, step } = popoverTarget(ctx);
     const onNextClick = resolveNextHook(ctx, step);
     if (!step || !onNextClick) {

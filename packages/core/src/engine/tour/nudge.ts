@@ -2,7 +2,7 @@ import type { Context } from "../core/context";
 import { fixedNames } from "../core/namespace";
 
 const POPOVER_CLASS = fixedNames.popover.nudge;
-const timers = new WeakMap<Element, number>();
+const timers = new WeakMap<Element, ReturnType<typeof globalThis.setTimeout>>();
 
 function nudgeDuration(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(fixedNames.nudgeDurationVar).trim();

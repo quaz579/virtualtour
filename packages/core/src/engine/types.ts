@@ -32,7 +32,7 @@ export type EnginePresenter = {
   afterReposition?(info: RepositionInfo): void;
 };
 
-export type DriverHook = (element: Element | undefined, step: DriveStep, opts: HookOpts) => void | PromiseLike<unknown>;
+export type DriverHook = (element: Element | undefined, step: DriveStep, opts: HookOpts) => void;
 
 export type AdvanceOnOpts = HookOpts & {
   event: Event;

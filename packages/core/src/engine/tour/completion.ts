@@ -12,8 +12,9 @@ function moveOn(ctx: Context, activation: Activation) {
     }
   };
   const moving = ctx.tour.next();
-  if (moving && typeof moving.then === "function") {
-    moving.then(settled, settled);
+  const then = (moving as PromiseLike<unknown> | undefined)?.then;
+  if (typeof then === "function") {
+    then.call(moving, settled, settled);
     return;
   }
 
