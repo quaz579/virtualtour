@@ -61,10 +61,6 @@ function isFile(path) {
   return existsSync(path) && statSync(path).isFile();
 }
 
-/**
- * Resolves a relative target to a file, or returns null. With `pages`, an extension-less target may name `<target>.md`
- * or `<target>/index.md`, the way VitePress resolves it; without it only exact files count.
- */
 function resolveTarget(base, pages) {
   if (isFile(base)) return base;
   if (!pages) return null;
@@ -91,7 +87,13 @@ export function checkLinks({ root }) {
   for (const { file, pages, base } of files) {
     for (const { line, target, kind } of extractLinks(readFileSync(file, "utf8"))) {
       if (kind === "link" && (external.test(target) || target.startsWith("#"))) continue;
-      const path = decodeURI(target.split(/[?#]/)[0]);
+      let path;
+      try {
+        path = decodeURI(target.split(/[?#]/)[0]);
+      } catch {
+        problems.push({ file: relative(root, file), line, target, reason: "malformed link" });
+        continue;
+      }
       if (path === "") continue;
       let absolute;
       if (kind === "include" && path.startsWith("@/")) absolute = join(docsDir, path.slice(2));

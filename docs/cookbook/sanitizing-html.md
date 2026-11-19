@@ -12,9 +12,9 @@ Titles, bodies and several other strings are HTML. Set `sanitize` on the tour to
 | Counter text, and the `next`, `back` and `done` labels | |
 | Custom button `text` | |
 
-Strings with no `<` skip the hook. The hook runs once per distinct string for the life of a run; a string the hook already produced is not cleaned again.
+For `title`, `body` and `instruction`, the hook runs on every string, including plain text. Button labels and strings the engine inserts itself skip the hook when they contain no `<`. Check the result of your hook for plain text too.
 
-If the hook throws, or returns something that is not a string, the original text is shown as plain text, not as HTML.
+If the hook throws while a step's `title`, `body` or `instruction` is built, `tour.start()` rejects with that error and no popover is shown, so catch errors inside your hook. Strings the engine inserts itself fall back to plain text when the hook throws or returns a non-string.
 
 ## Without a hook
 

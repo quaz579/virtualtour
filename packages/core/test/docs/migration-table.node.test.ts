@@ -11,13 +11,6 @@ const coreDir = join(repoRoot, "packages/core");
 const forkPoint = "0163642dc532417ea401684bd26690e2f3283d63";
 const page = readFileSync(join(repoRoot, "docs/migration/from-driverjs.md"), "utf8");
 
-/*
- * Authority for the driver.js side: the upstream sources at the fork point, vendored as test fixtures
- * (`driverjs-1.12.1-types.txt` is `packages/driver/src/types.ts`, `driverjs-1.12.1-classes.txt` lists the class names
- * used by the stylesheets and the code). `src/engine/types.ts` is not used for this: the fork added keys to it, so a name
- * could pass that check and still not exist in driver.js. The fixture is compared with the upstream commit whenever the
- * `upstream` remote has it locally.
- */
 const upstreamTypes = readFileSync(join(coreDir, "test/fixtures/driverjs-1.12.1-types.txt"), "utf8");
 const upstreamClasses = readFileSync(join(coreDir, "test/fixtures/driverjs-1.12.1-classes.txt"), "utf8")
   .split("\n")
@@ -144,9 +137,10 @@ describe("migration page tables", () => {
     expect(classRows.length).toBeGreaterThan(10);
   });
 
-  it("the vendored upstream types are the fork-point file", () => {
+  const forkPointAvailable = spawnSync("git", ["cat-file", "-e", `${forkPoint}^{commit}`], { cwd: repoRoot }).status === 0;
+
+  it.skipIf(!forkPointAvailable)("the vendored upstream types are the fork-point file", () => {
     const shown = spawnSync("git", ["show", `${forkPoint}:packages/driver/src/types.ts`], { cwd: repoRoot, encoding: "utf8" });
-    if (shown.status !== 0) return;
     expect(upstreamTypes).toBe(shown.stdout);
   });
 

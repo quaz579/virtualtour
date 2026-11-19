@@ -40,7 +40,7 @@ The target is looked up when the tour moves to the step, before `prepare` runs. 
 
 | Option | Type | Default | Meaning |
 |---|---|---|---|
-| `waitFor` | `number` (ms) | none | How long to wait for the target to appear. The tour watches the document for changes and also polls every 250 ms. |
+| `waitFor` | `number` (ms) | `0` | How long to wait for the target to appear. The tour watches the document for changes and also polls every 250 ms. |
 | `whenMissing` | `"center" \| "skip"` | `"center"` | What to do when the target never appears. `center` shows the step centered with no highlight. `skip` moves on to the next eligible step. |
 
 While the tour waits, the step on screen stays visible with `aria-busy="true"` and the `vt-waiting` class on the popover. Calling `exit()` or `finish()` ends the wait.

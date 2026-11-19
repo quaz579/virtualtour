@@ -6,7 +6,7 @@ What the two share:
 
 - The provider creates the tour while it renders (React) or sets up (Vue), so server rendering works. A tour only starts in the browser, after mount.
 - `config` is read once. A new config object does not change a running provider.
-- `autoStart` starts the tour once after mount. It does nothing when a run is already active, does not restart a tour that finished, and does not stop a running tour if you turn it off.
+- `autoStart` starts the tour after mount. It does nothing when a run is already active and does not stop a running tour if you turn it off. Vue reads the prop once on mount. React watches it: turning it off and on again starts the tour again, even if it finished.
 - Unmounting the provider ends a running tour without asking the exit prompt.
 - `useTour()` throws outside a provider.
 - `start`, `forward`, `backward`, `exit` and `finish` are the tour's own methods, bound. They are stable between renders.

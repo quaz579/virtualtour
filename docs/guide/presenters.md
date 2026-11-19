@@ -64,7 +64,7 @@ The factory receives the tour and a `PresenterContext`.
 - The tour stops waiting after 10 seconds, logs a warning and shows the first step with whatever the presenter has by then.
 - If the run ends while `ready()` is pending, nothing is shown and no warning is logged.
 
-`ready()` is not called again for later steps of the same run.
+`ready()` runs whenever the tour has no popover to reuse: at the first step, and again if you call `hideCurrent()` and then `goTo()` in the same run.
 
 ## RepositionInfo
 
