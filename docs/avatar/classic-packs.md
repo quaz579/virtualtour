@@ -37,7 +37,7 @@ Here are tiny made-up maps in each shape. They only show the structure.
 
 <<< @/snippets/avatar/classic-position.json
 
-Anything else throws `AvatarPackError` with the reason: `is not a recognized classic map`.
+Anything else throws `AvatarPackError` with the reason, such as `is not a recognized classic map`, or `an array map needs items shaped { Name, Frames }` for an array of the wrong shape.
 
 ## Host them yourself
 
@@ -54,7 +54,7 @@ The call takes only addresses you supply. These are placeholders:
 | `sheetUrl`, `mapUrl` | Addresses of the sheet and the map. Required. |
 | `frameSize` | `{ w, h }` in CSS pixels. See the table above. |
 | `name` | The pack's display name. Defaults to "Classic avatar pack". |
-| `roles` | Replaces individual default role mappings, such as `{ greet: "Greeting" }`. A role you do not name keeps its default. |
+| `roles` | Replaces individual default role mappings, such as `{ greet: "Show" }`. Each value must name an animation that exists in the map, or the load fails. A role you do not name keeps its default. |
 | `fetch`, `signal` | Your own `fetch`, and an `AbortSignal`. |
 
 The function returns a promise, so you can hand it straight to `withAvatar` as above. It throws `AvatarPackError` when a file cannot be fetched, the map is not a classic shape or the sheet does not load. The loader keeps the converted pack in memory. It does not write files or use storage.

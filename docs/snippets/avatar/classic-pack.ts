@@ -5,7 +5,7 @@ const pack = loadClassicAvatarPack({
   sheetUrl: "https://assets.your-company.example/avatars/classic/map.png",
   mapUrl: "https://assets.your-company.example/avatars/classic/animations.json",
   frameSize: { w: 124, h: 93 },
-  roles: { greet: "Greeting" },
+  roles: { greet: "Wave" },
 });
 
 export const tour = createTour({

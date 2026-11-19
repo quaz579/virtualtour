@@ -22,7 +22,7 @@ With a `scale` other than 1, give `columns`. The presenter then sizes the sheet 
 
 <<< @/snippets/avatar/blob-pack.json
 
-The file takes only the fields listed here. An unknown field, including `$schema`, fails validation, so leave `$schema` out of pack files even though editors use the schema to complete them.
+The top level, `sheet`, each animation and `roles` take only the fields listed here. An unknown field there, including `$schema`, fails validation, so leave `$schema` out of pack files even though editors use the schema to complete them.
 
 | Field | Meaning |
 |---|---|
@@ -69,7 +69,7 @@ With `prefers-reduced-motion: reduce` the avatar shows one frame per animation. 
 
 ## Tips
 
-- **Keep the first frame of `rest` calm.** It is what people see most, and what the avatar returns to after every animation.
+- **Keep the first frame of `rest` calm.** It is what people see most, and what the avatar returns to after an idle animation, when a step is left and after a nudge reaction.
 - **Do not loop step animations.** An animation with `loop: true` runs until something interrupts it, so a step that plays one never starts the idle timer. Loop only `rest` or the `think` animation.
 - **Give `point` four directions.** One `any` animation works but looks the same whichever way the target lies.
 - **Give `idle` two or more animations.** The picker never plays the same one twice in a row when it has another choice.
@@ -87,7 +87,7 @@ A pack object passed straight to `withAvatar` is validated and normalized when t
 
 ## How Thumbtack is made
 
-Thumbtack has no hand-drawn art. `src/avatar/thumbtack/frames.mjs` lists each pose as a few numbers (tilt, nod, squash, pupil position, brows, mouth), and `tools/build-thumbtack-pack.mjs` writes an SVG for each frame, draws them onto one sheet and writes `pack.json`. That approach suits a character that is easy to describe with numbers. A character drawn by hand only needs the sheet and the file above. See [Thumbtack](./thumbtack).
+Thumbtack has no hand-drawn art. `packages/core/src/avatar/thumbtack/frames.mjs` lists each pose as a few numbers (tilt, nod, squash, pupil position, brows, mouth), and `packages/core/tools/build-thumbtack-pack.mjs` writes an SVG for each frame, draws them onto one sheet and writes `pack.json`. That approach suits a character that is easy to describe with numbers. A character drawn by hand only needs the sheet and the file above. See [Thumbtack](./thumbtack).
 
 ## Before you publish a pack
 

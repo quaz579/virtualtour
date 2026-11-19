@@ -45,6 +45,8 @@ describe("avatar docs", () => {
     expect(classic).not.toMatch(/!\[/);
     expect(classic).not.toMatch(/\.(png|gif|webp|jpe?g|svg)\b/i);
     const urls = [...classic.matchAll(/https?:\/\/[^\s"'`)]+/g)].map((match) => match[0]);
+    const snippet = read("docs/snippets/avatar/classic-pack.ts");
+    urls.push(...[...snippet.matchAll(/https?:\/\/[^\s"'`)]+/g)].map((match) => match[0]));
     for (const url of urls) {
       expect(url.startsWith("https://assets.your-company.example/") || url === "https://github.com/felixrieseberg/clippy/blob/main/LICENSE.md").toBe(true);
     }
@@ -78,7 +80,7 @@ describe("avatar docs", () => {
         expect(match[0], `${relative(repoRoot, file)} image`).not.toMatch(banned);
       }
     }
-    const images = readdirSync(docs, { recursive: true, withFileTypes: false }) as string[];
+    const images = (readdirSync(docs, { recursive: true }) as string[]).filter((path) => !/(^|\/)(node_modules|\.vitepress)(\/|$)/.test(path));
     expect(images.filter((path) => /\.(png|gif|webp)$/i.test(path) && banned.test(path))).toEqual([]);
   });
 

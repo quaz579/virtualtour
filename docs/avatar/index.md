@@ -51,7 +51,7 @@ A step sets avatar behavior under `extensions.avatar`. A value of the wrong type
 
 ## Idle
 
-When a step's animation ends, the avatar returns to rest and a timer starts. When it fires, the avatar plays a random animation from the pack's `idle` role, never the same one twice in a row, then waits again.
+When a step's animation ends, the avatar holds that animation's still frame and a timer starts. When it fires, the avatar plays a random animation from the pack's `idle` role, never the same one twice in a row, then returns to rest and waits again.
 
 - `idleQuietMs` defaults to 6000. A value of zero or less, or one that is not a finite number, uses 6000. A smaller positive value is raised to 50.
 - Any step animation, a nudge reaction or leaving the step cancels the timer.
@@ -78,7 +78,7 @@ A switch between layouts can make the engine reposition once or twice. The prese
 
 ## Reduced motion
 
-With `prefers-reduced-motion: reduce`, the avatar does not animate. A step's animation shows its still frame instead: the frame the pack names, or the first frame for a looping animation and the last frame for any other. The idle loop never starts, and the avatar's entrance fade is skipped.
+With `prefers-reduced-motion: reduce`, the avatar does not animate. A step's animation shows its still frame instead: the frame the pack names, or the first frame for a looping animation and the last frame for any other. The idle loop never starts, and the wait for the engine's entrance fade is skipped.
 
 ## Styles
 
