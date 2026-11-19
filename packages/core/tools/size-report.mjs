@@ -10,7 +10,7 @@ const sizeFile = resolve(root, "../../SIZE.md");
 const entries = [
   { name: "core", file: "dist/index.js", target: 21, chunks: true },
   { name: "engine", file: "src/engine/driver.ts", target: 21, engine: true },
-  { name: "avatar", file: "dist/avatar.js", target: 6 },
+  { name: "avatar", file: "dist/avatar.js", target: 6, chunks: true },
   { name: "motion", file: "dist/motion.js", target: 2 },
   { name: "base.css", file: "dist/base.css", target: null },
   { name: "theme.css", file: "dist/theme.css", target: null },

@@ -248,6 +248,37 @@ describe("SpeakerPresenter dock", () => {
     expect(refresh).toHaveBeenCalledTimes(3);
   });
 
+  it("spends no budget once the layout has settled, so a later flip is re-measured", async () => {
+    const tour = createTour({ animate: false, steps: steps(bottom) });
+    created.push(tour);
+    const refresh = vi.spyOn(tour, "refresh").mockImplementation(() => undefined);
+    const presenter = new SpeakerPresenter(tour, pack(), { dock: "auto" });
+    const popover = fakePopover();
+    const step = tour.steps[0] as (typeof tour.steps)[number];
+    presenter.mount(popover, step, { buttons: [] });
+    const at = (left: number) => info({ side: "bottom", targetRect: new DOMRect(left, 300, 60, 30) });
+    for (const left of [900, 100, 100, 900, 900, 100]) {
+      presenter.afterReposition(popover, step, at(left));
+      await Promise.resolve();
+    }
+    expect(refresh).toHaveBeenCalledTimes(4);
+  });
+
+  it("keeps the avatar below when neither above nor below has room", async () => {
+    const tour = createTour({ animate: false, steps: steps(bottom) });
+    created.push(tour);
+    const presenter = new SpeakerPresenter(tour, pack(), { dock: "auto" });
+    const popover = fakePopover();
+    const step = tour.steps[0] as (typeof tour.steps)[number];
+    presenter.mount(popover, step, { buttons: [] });
+    presenter.afterReposition(
+      popover,
+      step,
+      info({ side: "right", targetRect: new DOMRect(10, 380, 60, 30), wrapperRect: new DOMRect(0, 0, 200, 900), bubbleRect: new DOMRect(0, 0, 200, 300) }),
+    );
+    expect(popover.wrapper.getAttribute("data-vt-dock")).toBe("end");
+  });
+
   it("does not refresh a step that has already been left", async () => {
     const tour = createTour({ animate: false, steps: steps(bottom) });
     created.push(tour);

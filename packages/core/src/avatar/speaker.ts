@@ -117,7 +117,6 @@ export class SpeakerPresenter implements Presenter {
     this.base.mount(popover, step, parts);
     this.configure(popover, step);
     const dock = this.dockSetting === "auto" ? "end" : this.dockSetting;
-    this.applied = null;
     this.write(popover, { side: requestedSide(step), dock });
   }
 
@@ -131,7 +130,8 @@ export class SpeakerPresenter implements Presenter {
     const next: Layout = { side, dock: this.resolveDock(info, side) };
     const previous = this.applied;
     this.write(popover, next);
-    if (previous && (previous.side !== next.side || previous.dock !== next.dock)) this.queueRefresh(popover, step);
+    if (!previous || (previous.side === next.side && previous.dock === next.dock)) this.refreshes = 0;
+    else this.queueRefresh(popover, step);
   }
 
   update(popover: PopoverDOM, step: TourStep, parts: StepParts): void {
@@ -179,7 +179,9 @@ export class SpeakerPresenter implements Presenter {
     }
     const needed = info.wrapperRect.height - info.bubbleRect.height;
     const centre = info.targetRect.top + info.targetRect.height / 2;
-    return centre + info.bubbleRect.height / 2 + needed <= window.innerHeight ? "end" : "start";
+    const half = info.bubbleRect.height / 2;
+    if (centre + half + needed <= window.innerHeight) return "end";
+    return centre - half - needed >= 0 ? "start" : "end";
   }
 
   private write(popover: PopoverDOM, layout: Layout): void {

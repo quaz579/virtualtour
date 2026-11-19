@@ -65,6 +65,19 @@
   left: 0;
 }
 
+.vt-popover.vt-speaker:focus-visible {
+  outline: none;
+}
+
+.vt-speaker:focus-visible .vt-bubble {
+  outline: 2px solid var(--vt-accent, #2d2d2d);
+  outline-offset: 2px;
+}
+
+.vt-popover.vt-speaker[data-vt-progress-bar]::after {
+  display: none;
+}
+
 .vt-speaker--no-avatar .vt-avatar-slot {
   display: none;
 }
