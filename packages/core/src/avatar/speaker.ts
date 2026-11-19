@@ -153,6 +153,11 @@ export class SpeakerPresenter implements Presenter {
     this.base.afterShow(popover, step);
     this.shown = true;
     if (this.hidden) return;
+    if (this.waiting) {
+      this.deferred = step;
+      this.start(this.resolveRoleName("think"), true);
+      return;
+    }
     const delay = prefersReducedMotion() ? 0 : Math.max(0, this.options.fadeMs ?? 0);
     const seq = this.interrupt();
     if (delay === 0) {
@@ -258,10 +263,19 @@ export class SpeakerPresenter implements Presenter {
 
   private react(role: "alert" | "celebrate"): void {
     if (this.hidden || !this.shown) return;
+    if (this.timer !== null) this.deferred = this.step;
     const seq = this.interrupt();
     this.pointing = null;
     this.start(this.resolveRoleName(role), false, () => {
-      if (this.seq === seq) this.player.stop();
+      if (this.seq !== seq) return;
+      if (this.waiting) {
+        this.start(this.resolveRoleName("think"), true);
+        return;
+      }
+      this.player.stop();
+      const resume = this.deferred;
+      this.deferred = null;
+      if (resume && resume === this.step) this.perform(resume);
     });
   }
 

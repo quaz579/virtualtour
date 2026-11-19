@@ -464,6 +464,32 @@ describe("pack failure", () => {
     expect(anim()).toBe("point-right");
   });
 
+  it("resumes the step animation after a nudge that landed during the fade", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const tour = fading([{ ...pointing, instruction: "Click it" }]);
+    await tour.start();
+    tour.nudge();
+    expect(anim()).toBe("boing");
+    advance(300);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(anim()).toBe("point-right");
+  });
+
+  it("does not wait the load timeout again on a second run", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const never = new Promise<AvatarPack>(() => {});
+    const tour = make([plain], { loadTimeoutMs: 200 }, {}, never);
+    const first = tour.start();
+    await vi.advanceTimersByTimeAsync(200);
+    await first;
+    tour.finish();
+    const second = tour.start();
+    await vi.advanceTimersByTimeAsync(0);
+    await second;
+    expect(wrapper().classList.contains("vt-dialog")).toBe(true);
+  });
+
   it("does not build the engine when the tour ends while the pack loads", async () => {
     const slow = new Promise<AvatarPack>(() => {});
     const tour = make([plain], { loadTimeoutMs: 10_000 }, {}, slow);
