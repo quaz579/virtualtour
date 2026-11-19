@@ -11,9 +11,9 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "build": "npm run build --workspace virtualtour",
-    "typecheck": "npm run typecheck --workspace virtualtour",
-    "test": "npm test --workspace virtualtour",
+    "build": "npm run build --workspace virtualtour && npm run build --workspace virtualtour-react",
+    "typecheck": "npm run typecheck --workspace virtualtour --workspace virtualtour-react",
+    "test": "npm test --workspace virtualtour --workspace virtualtour-react",
     "e2e": "npm run e2e --workspace virtualtour",
     "size": "node packages/core/tools/size-report.mjs",
     "lint:prose": "node tools/lint-prose.mjs"
