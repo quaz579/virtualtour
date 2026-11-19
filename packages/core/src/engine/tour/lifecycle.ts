@@ -31,7 +31,7 @@ export function isCurrent(ctx: Context, activation: Activation | undefined): boo
 }
 
 export function enterStep(ctx: Context, stepIndex: number, keepReturnFocus: boolean) {
-  if (!ctx.getState("__keepReturnFocus")) {
+  if (!ctx.getState("__keepReturnFocus") && ctx.getState("activeIndex") === undefined) {
     ctx.setState("__activeOnDestroyed", document.activeElement as HTMLElement);
   }
   ctx.setState("__keepReturnFocus", keepReturnFocus);

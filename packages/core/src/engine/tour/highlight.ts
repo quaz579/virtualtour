@@ -24,9 +24,19 @@ const POPOVER_ARIA: Record<string, string> = {
   "aria-controls": fixedNames.popover.contentId,
 };
 
+const POPUP_CAPABLE = [
+  "button",
+  "a[href]",
+  ...["button", "link", "menuitem", "tab", "combobox", "switch", "checkbox", "treeitem"].map(role => `[role="${role}"]`),
+].join(", ");
+
 const ariaOwned = new WeakSet<Element>();
 
 function setPopoverAria(element: Element) {
+  if (!element.matches(POPUP_CAPABLE)) {
+    return;
+  }
+
   const isAppOwned = Object.keys(POPOVER_ARIA).some(name => element.hasAttribute(name));
   if (isAppOwned && !ariaOwned.has(element)) {
     return;
