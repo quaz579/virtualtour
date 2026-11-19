@@ -5,6 +5,7 @@ declare global {
   interface Window {
     vtTour: Tour;
     vtLog: string[];
+    vtTimes: Record<string, number>;
   }
 }
 
@@ -50,8 +51,18 @@ const tour = createTour({
 
 window.vtTour = tour;
 window.vtLog = [];
-tour.on("step-shown", (p) => window.vtLog.push(`shown:${p.step.id}`));
-tour.on("step-completed", (p) => window.vtLog.push(`completed:${p.step.id}`));
+window.vtTimes = {};
+tour.on("step-shown", (p) => {
+  window.vtLog.push(`shown:${p.step.id}`);
+  window.vtTimes[`shown:${p.step.id}`] = performance.now();
+});
+tour.on("step-completed", (p) => {
+  window.vtLog.push(`completed:${p.step.id}`);
+  window.vtTimes[`completed:${p.step.id}`] = performance.now();
+  queueMicrotask(() => {
+    if (document.querySelector(".vt-popover-instruction-done")) window.vtLog.push(`done-state:${p.step.id}`);
+  });
+});
 tour.on("finished", () => window.vtLog.push("finished"));
 
 document.querySelector<HTMLButtonElement>("#start")?.addEventListener("click", () => {

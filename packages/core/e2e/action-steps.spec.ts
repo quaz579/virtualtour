@@ -31,13 +31,10 @@ test("Next on the gated step shakes the popover and does not move", async ({ pag
 test("clicking the real target completes and the next step shows after the delay", async ({ page }) => {
   await open(page);
   await page.locator("#save").click();
-  await expect.poll(() => log(page)).toContain("completed:save");
-  await expect(popover(page)).toHaveClass(/vt-popover-instruction-done/);
-  expect(await log(page)).not.toContain("shown:after");
-  const completedAt = Date.now();
   await expect.poll(() => log(page)).toContain("shown:after");
-  expect(Date.now() - completedAt).toBeGreaterThanOrEqual(400);
-  expect(await log(page)).toEqual(["shown:save", "completed:save", "shown:after"]);
+  expect(await log(page)).toEqual(["shown:save", "completed:save", "done-state:save", "shown:after"]);
+  const times = await page.evaluate(() => (window as unknown as { vtTimes: Record<string, number> }).vtTimes);
+  expect((times["shown:after"] ?? 0) - (times["completed:save"] ?? 0)).toBeGreaterThanOrEqual(550);
 });
 
 test.describe("reduced motion", () => {
