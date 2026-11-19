@@ -118,7 +118,10 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   const requiredSide: Placement = options.centered ? "over" : side;
   const popoverPadding = options.padding;
   const { style, classList } = popover.wrapper;
-  popover.wrapper.removeAttribute(fixedNames.attr.strategy);
+  if (popover.wrapper.hasAttribute(fixedNames.attr.strategy)) {
+    popover.wrapper.removeAttribute(fixedNames.attr.strategy);
+    style.left = style.top = style.right = style.bottom = "";
+  }
 
   const popoverDimensions = getPopoverDimensions(popover, options.offset);
   const popoverArrowDimensions = popover.arrow.getBoundingClientRect();

@@ -98,4 +98,20 @@ describe("popover strategy", () => {
     d.moveNext();
     expect(popoverEl()!.hasAttribute("data-vt-strategy")).toBe(false);
   });
+
+  it("measures a repositioned absolute popover without its earlier offsets", () => {
+    const wrapper = place("absolute");
+    const seen: string[] = [];
+    const base = Element.prototype.getBoundingClientRect;
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      if (this === wrapper) {
+        seen.push(`${wrapper.style.left}|${wrapper.style.top}`);
+      }
+      return base.call(this);
+    });
+
+    wrapper.driver.updatePopover({ title: "Changed" });
+
+    expect(seen[0]).toBe("|");
+  });
 });
