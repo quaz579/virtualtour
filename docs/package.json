@@ -1,0 +1,17 @@
+{
+  "name": "virtualtour-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "~5.9.3",
+    "vitepress": "1.6.4",
+    "vue": "^3.5.0"
+  }
+}

@@ -4,12 +4,87 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VirtualTour demo</title>
+    <style>
+      :root {
+        --page-bg: #f6f7f9;
+        --page-fg: #1b1f24;
+        --panel-bg: #fff;
+        --panel-border: #d0d5dd;
+        --accent: #2f6fed;
+      }
+      :root[data-vt-theme="dark"] {
+        --page-bg: #14171c;
+        --page-fg: #e8ebef;
+        --panel-bg: #1d222a;
+        --panel-border: #343b46;
+        --accent: #7aa2ff;
+      }
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--page-fg);
+        font: 15px/1.45 system-ui, sans-serif;
+      }
+      a { color: var(--accent); }
+      .picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 12px 20px;
+        background: var(--panel-bg);
+        border-bottom: 1px solid var(--panel-border);
+      }
+      .picker h1 { font-size: 18px; margin: 0 12px 0 0; }
+      .picker button, .picker select, .picker a.link {
+        font: inherit;
+        padding: 6px 10px;
+        border: 1px solid var(--panel-border);
+        border-radius: 6px;
+        background: var(--page-bg);
+        color: var(--page-fg);
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .picker button[aria-pressed="true"] { border-color: var(--accent); outline: 2px solid var(--accent); }
+      #scenario-info { padding: 8px 20px; margin: 0; min-height: 1.5em; }
+      .app-header { display: flex; gap: 16px; align-items: center; padding: 10px 20px; border-bottom: 1px solid var(--panel-border); }
+      .app-header nav { margin-inline-start: auto; display: flex; gap: 12px; align-items: center; }
+      .app-body { display: flex; gap: 20px; padding: 20px; }
+      .app-side { display: flex; flex-direction: column; gap: 10px; width: 140px; }
+      .app-main { flex: 1; }
+      .cards { display: flex; gap: 16px; margin-bottom: 20px; }
+      .card { flex: 1; padding: 14px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; }
+      .card h3 { margin: 0 0 6px; font-size: 14px; }
+      .card p { margin: 0; font-size: 22px; }
+      #form label { display: block; margin-bottom: 10px; }
+      #form button, #profile { font: inherit; padding: 6px 12px; }
+      input, #form button, #profile { background: var(--panel-bg); color: var(--page-fg); border: 1px solid var(--panel-border); border-radius: 4px; }
+      .note { margin-top: 40px; opacity: 0.7; }
+    </style>
   </head>
   <body>
-    <main>
+    <div class="picker" role="toolbar" aria-label="Demo scenarios">
       <h1 id="title">VirtualTour demo</h1>
-      <p><a href="/e2e.html">Engine fixture page</a></p>
-    </main>
+      <span id="scenario-buttons"></span>
+      <label>Theme
+        <select id="theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
+      <label>Direction
+        <select id="dir">
+          <option value="ltr">Left to right</option>
+          <option value="rtl">Right to left</option>
+        </select>
+      </label>
+      <a class="link" href="/fixtures/react.html">React wrapper</a>
+      <a class="link" href="/fixtures/vue.html">Vue wrapper</a>
+      <a class="link" href="/e2e.html">Engine fixture page</a>
+    </div>
+    <p id="scenario-info" aria-live="polite">Pick a scenario to start its tour.</p>
+    <div id="app"></div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

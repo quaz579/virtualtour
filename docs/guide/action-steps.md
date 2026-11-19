@@ -1,26 +1,8 @@
 # Action steps
 
-Stub: the full guide arrives with the docs work. This page lists every public member of the action-step API.
+An action step asks the user to do something before the tour moves on. Give a step an `instruction` and it becomes gated: Next looks disabled and nudges when pressed until the step completes. This page lists every public member of the action-step API.
 
-An action step asks the user to do something before the tour moves on. Give a step an `instruction` and it becomes gated: Next looks disabled and nudges when pressed until the step completes.
-
-```ts
-import { createTour } from "virtualtour";
-
-const tour = createTour({
-  steps: [
-    {
-      id: "save",
-      target: "#save",
-      title: "Save your work",
-      instruction: "Click <b>Save</b>.",
-      advanceDelay: 600,
-      autoAdvance: { event: "click", strict: true },
-    },
-    { id: "done", title: "Saved" },
-  ],
-});
-```
+<<< @/snippets/guide/action-step-basic.ts
 
 ## Step options
 
@@ -36,7 +18,7 @@ A selector `autoAdvance` on an action step completes the step the same way, so `
 
 | Member | What it does |
 |---|---|
-| `Tour.advance()` | Completes the action step on screen as if the user had done the thing. On a plain step it only moves forward and emits no events. No effect when no step is on screen or the step still waits for its target. |
+| `Tour.advance()` | Completes the action step on screen as if the user had done the thing. Returns nothing. On a plain step it only moves forward and emits no events. No effect when no step is on screen or the step still waits for its target. |
 | `Tour.nudge(message?)` | Shakes the popover (a flash under reduced motion). `message` goes in the feedback row as HTML that passes through `sanitize`; no message clears the row. |
 | `Tour.forward()` | On an unmet action step it nudges instead of moving, whoever calls it: the engine's Next button, a custom `forward` button, the page. Once the step is complete, `forward()` moves on at once without waiting out `advanceDelay`. |
 
@@ -68,4 +50,9 @@ Custom `buttons` hide the engine's Next and Back. When a button has a `forward` 
 
 ## Engine hooks
 
-The engine itself gains `Config.onStepCompleted` and `Config.onNudge`, plus `Driver.nudgeIfGated()` and the per-step `popover.navigateWithKeys` (`true`, or `{ next, prev }` for one direction). The public layer wires them to the members above.
+Most code never touches the engine directly, but these are the members the public layer is built on:
+
+- `Config.onStepCompleted` and `Config.onNudge` are the engine hooks behind `Presenter.onCompleted`, `Presenter.onNudge` and the completion events. The completion hook only produces events for a step that has an instruction.
+- `Driver.nudgeIfGated()` returns `true` when the step on screen is an unmet action step, and nudges. `Tour.forward()` calls it first.
+- `Driver.advance()` returns a boolean: `false` when no step is active or the step still waits for its target. `Tour.advance()` wraps it and returns nothing.
+- The per-step `popover.navigateWithKeys` is `true`, or `{ next, prev }` to allow one arrow direction. The public layer sets it for steps with custom `forward` or `backward` buttons.

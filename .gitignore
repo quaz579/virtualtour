@@ -5,3 +5,5 @@ tools/banned-words.local.txt
 test-results
 playwright-report
 .dts-tmp
+docs/.vitepress/dist
+docs/.vitepress/.temp
