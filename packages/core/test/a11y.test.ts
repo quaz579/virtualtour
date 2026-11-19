@@ -193,6 +193,17 @@ describe("focus", () => {
     tour.finish();
     expect(document.activeElement?.id).toBe("r");
   });
+
+  it("leaves focus where the user put it on the page when the tour ends", async () => {
+    document.body.innerHTML = PAGE;
+    document.querySelector<HTMLElement>("#a")!.focus();
+    const tour = createTour({ animate: false, steps: [{ title: "A", target: "#t" }] });
+    created.push(tour);
+    await tour.start();
+    document.querySelector<HTMLElement>("#r")!.focus();
+    tour.finish();
+    expect(document.activeElement?.id).toBe("r");
+  });
 });
 
 describe("focus return when steps change mid-tour", () => {

@@ -1,0 +1,26 @@
+{
+  "format": "virtualtour-avatar/1",
+  "name": "Blob",
+  "version": "1.0.0",
+  "sheet": { "src": "./blob.png", "frameWidth": 64, "frameHeight": 64, "columns": 4, "scale": 2 },
+  "animations": {
+    "rest": { "frames": [{ "col": 0, "row": 0, "ms": 100 }], "still": 0 },
+    "wave": {
+      "frames": [
+        { "col": 1, "row": 0, "ms": 90 },
+        { "col": 2, "row": 0, "ms": 90 },
+        { "col": 3, "row": 0, "ms": 90 }
+      ]
+    },
+    "blink": {
+      "frames": [
+        { "col": 0, "row": 1, "ms": 60 },
+        { "col": 1, "row": 1, "ms": 60 }
+      ],
+      "still": 0
+    }
+  },
+  "roles": { "rest": "rest", "greet": "wave", "idle": ["blink"] },
+  "bubble": { "dock": "end", "gap": 8 },
+  "license": { "name": "CC0-1.0", "url": "https://creativecommons.org/publicdomain/zero/1.0/" }
+}

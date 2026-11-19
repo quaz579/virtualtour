@@ -1,0 +1,11 @@
+[
+  { "Name": "RestPose", "Frames": [{ "Duration": 100, "ImagesOffsets": { "Column": 0, "Row": 0 } }] },
+  {
+    "Name": "Wave",
+    "Frames": [
+      { "Duration": 100, "ImagesOffsets": { "Column": 1, "Row": 0 } },
+      { "Duration": 100, "ImagesOffsets": { "Column": 2, "Row": 0 } },
+      { "Duration": 100, "ImagesOffsets": null }
+    ]
+  }
+]

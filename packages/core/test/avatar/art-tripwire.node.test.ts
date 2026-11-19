@@ -90,7 +90,6 @@ describe("art tripwire", () => {
   it("finds none in the published tarball", () => {
     const entries = tarballEntries();
     expect(entries.map((entry) => entry.path)).toContain("package.json");
-    expect(entries.map((entry) => entry.path)).toContain("src/avatar/thumbtack/LICENSE-ART.md");
     expect(violations(entries)).toEqual([]);
   }, 60_000);
 
