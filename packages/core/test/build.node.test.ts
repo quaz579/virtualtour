@@ -50,7 +50,7 @@ function bareSpecifiers(source: string): string[] {
 
 describe("build output", () => {
   beforeAll(() => {
-    execFileSync("npm", ["run", "build"], { cwd: root, stdio: "ignore" });
+    execFileSync("npm", ["run", "build"], { cwd: join(root, "../.."), stdio: "ignore" });
   }, 180_000);
 
   it.each(builtToday)("emits %s", (file) => {
@@ -128,7 +128,8 @@ export type Types = [TourProviderProps, UseTourResult];
 `,
   "vue.ts": `import * as vue from "virtualtour-vue";
 export const names = Object.keys(vue);
-export const provider: unknown = vue.TourProvider;
+export const provider: typeof vue.TourProvider = vue.TourProvider;
+export const hook: () => vue.UseTourResult = vue.useTour;
 `,
 };
 
@@ -142,7 +143,6 @@ describe("published declarations", () => {
   let scratch = "";
 
   beforeAll(() => {
-    execFileSync("npm", ["run", "build"], { cwd: repoRoot, stdio: "ignore" });
     scratch = mkdtempSync(join(tmpdir(), "vt-consumer-"));
     consumer = join(scratch, "consumer");
     const modules = join(consumer, "node_modules");
