@@ -16,3 +16,7 @@ environment variable instead.
 
 With zero words loaded the lint passes trivially. Set `REQUIRE_BANNED_WORDS=1` to make that case exit
 non-zero. When `CI` is set and zero words load, the lint prints a loud warning instead.
+
+## Upstream apply
+
+`node tools/upstream-apply.mjs <sha> [--dry-run]` applies one driver.js commit to this fork with the path and class-name rewrites described in `UPSTREAM.md`. It never commits, and refuses patches that touch removed or moved files (exit code 2).
