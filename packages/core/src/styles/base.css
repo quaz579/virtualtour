@@ -251,7 +251,3 @@
   cursor: default;
   pointer-events: none;
 }
-
-[data-vt-fade] .vt-popover.vt-glide:not(.vt-popover-nudge) {
-  animation: none;
-}

@@ -29,9 +29,9 @@ function isCentered(step: TourStep): boolean {
 
 /**
  * Slides the popover from where the previous step left it to where the next step puts it, instead of fading the new
- * popover in. Does nothing under reduced motion, when the tour's `animate` is off, when one step is centered and the
+ * popover in: the engine's entrance animations on the new popover are finished at once. Does nothing under reduced motion, when the tour's `animate` is off, when one step is centered and the
  * other is not, or when the two steps use different popover layouts. Returns a function that stops listening and
- * cancels a glide in progress. The wrapper keeps `vt-glide` for as long as it lives, so the engine's fade does not restart when the glide ends.
+ * cancels a glide in progress.
  */
 export function glide(tour: Tour, options: GlideOptions = {}): () => void {
   const durationMs = options.durationMs ?? 250;
@@ -82,6 +82,7 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
     const dy = from.top - rect.top;
     if (dx === 0 && dy === 0) return;
     element.classList.add(GLIDE_CLASS);
+    for (const entering of element.getAnimations?.() ?? []) entering.finish();
     const animation = element.animate(
       [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0px, 0px)" }],
       { duration: durationMs, easing },

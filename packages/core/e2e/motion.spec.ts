@@ -8,7 +8,7 @@ test.beforeEach(({}, testInfo) => {
   );
 });
 
-type Win = { vtTour: { forward(): Promise<void>; backward(): Promise<void> } };
+type Win = { vtTour: { forward(): Promise<void>; backward(): Promise<void>; nudge(message?: string): void } };
 
 async function open(page: Page, query = ""): Promise<void> {
   await page.goto(`/fixtures/motion.html${query}`);
@@ -35,7 +35,6 @@ test("the popover is between the two positions part way through a glide and land
     return { left: r.left, top: r.top, glide: el.classList.contains("vt-glide"), title: el.querySelector(".vt-popover-title")?.textContent };
   });
   await expect(page.locator(".vt-popover-title")).toHaveText("Two");
-  await page.waitForTimeout(900);
   const settledState = await page.locator(".vt-popover").evaluate((el) => ({
     animations: el.getAnimations().length,
     opacity: getComputedStyle(el).opacity,
@@ -109,4 +108,38 @@ test("the cookbook counter renders the right text from step-shown and progressIn
   await page.evaluate(() => (window as unknown as Win).vtTour.forward());
   await expect(page.locator("#counter")).toHaveText("2/3");
   await expect(page.locator(".vt-popover-progress-text")).toHaveText("Step 2 of 3");
+});
+
+async function sampleOpacity(page: Page, run: () => Promise<void>, ms: number): Promise<number[]> {
+  const pending = page.evaluate(async (span) => {
+    const out: number[] = [];
+    const t0 = performance.now();
+    await new Promise<void>((resolve) => {
+      const tick = (): void => {
+        const el = document.querySelector<HTMLElement>(".vt-popover");
+        if (el) out.push(Number(getComputedStyle(el).opacity));
+        if (performance.now() - t0 < span) requestAnimationFrame(tick);
+        else resolve();
+      };
+      requestAnimationFrame(tick);
+    });
+    return out;
+  }, ms);
+  await run();
+  return pending;
+}
+
+test("the popover never dips in opacity through a glide and after it ends", async ({ page }) => {
+  await open(page, "?duration=300");
+  const samples = await sampleOpacity(page, () => page.evaluate(() => (window as unknown as Win).vtTour.forward()), 1200);
+  expect(samples.length).toBeGreaterThan(20);
+  expect(Math.min(...samples)).toBe(1);
+});
+
+test("a nudge after a glide does not blank the popover", async ({ page }) => {
+  await open(page, "?duration=300");
+  await page.evaluate(() => (window as unknown as Win).vtTour.forward());
+  await page.waitForTimeout(1000);
+  const samples = await sampleOpacity(page, () => page.evaluate(() => (window as unknown as Win).vtTour.nudge("again")), 700);
+  expect(Math.min(...samples)).toBe(1);
 });

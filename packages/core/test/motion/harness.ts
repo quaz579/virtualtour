@@ -12,11 +12,13 @@ export interface FakeAnimation extends EventTarget {
 }
 
 export const animations: FakeAnimation[] = [];
+export const entering: { finish: ReturnType<typeof vi.fn> }[] = [];
 const created: Tour[] = [];
 export let positions: Record<string, { left: number; top: number }> = {};
 
 export function install(): void {
   animations.length = 0;
+  entering.length = 0;
   positions = {};
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
     const index = this.getAttribute("data-vt-step");
@@ -39,6 +41,18 @@ export function install(): void {
   });
 }
 
+export function stubEntering(): void {
+  Object.defineProperty(HTMLElement.prototype, "getAnimations", {
+    configurable: true,
+    writable: true,
+    value: () => {
+      const fade = { finish: vi.fn() };
+      entering.push(fade);
+      return [fade];
+    },
+  });
+}
+
 export function uninstall(): void {
   for (const tour of created.splice(0)) if (tour.isRunning()) tour.finish();
   tours.off();
@@ -46,6 +60,7 @@ export function uninstall(): void {
   document.body.innerHTML = "";
   document.body.removeAttribute("data-vt-fade");
   delete (HTMLElement.prototype as unknown as { animate?: unknown }).animate;
+  delete (HTMLElement.prototype as unknown as { getAnimations?: unknown }).getAnimations;
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 }

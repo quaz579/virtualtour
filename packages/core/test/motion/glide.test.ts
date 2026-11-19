@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { glide } from "../../src/motion";
-import { animations, install, positions, start, uninstall, wrapper } from "./harness";
+import { animations, entering, install, positions, start, stubEntering, uninstall, wrapper } from "./harness";
 
 const steps = [
   { id: "one", title: "One", target: "#a" },
@@ -43,13 +43,22 @@ describe("glide", () => {
     expect(animations[0]!.options).toMatchObject({ duration: 250, easing: "cubic-bezier(.2,.8,.2,1)" });
   });
 
-  it("marks the wrapper vt-glide and keeps it after the animation ends so the fade does not restart", async () => {
+  it("marks the wrapper vt-glide and finishes the engine's entrance animations instead of cancelling them", async () => {
+    stubEntering();
     const tour = await start({ steps });
     glide(tour);
     await tour.forward();
     expect(wrapper().classList.contains("vt-glide")).toBe(true);
-    animations[0]!.finish();
-    expect(wrapper().classList.contains("vt-glide")).toBe(true);
+    expect(entering).toHaveLength(1);
+    expect(entering[0]!.finish).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the entrance animations alone when it does not glide", async () => {
+    stubEntering();
+    const tour = await start({ steps, animate: false });
+    glide(tour);
+    await tour.forward();
+    expect(entering).toHaveLength(0);
   });
 
   it("does not glide to the first step", async () => {
