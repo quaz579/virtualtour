@@ -8,13 +8,21 @@ declare global {
   }
 }
 
-const createMode = new URLSearchParams(location.search).get("mode") === "create";
+const mode = new URLSearchParams(location.search).get("mode");
+const createMode = mode === "create";
+const doubleMode = mode === "double";
 
 const tour = createTour({
   name: "auto-advance",
   animate: false,
   dim: false,
-  steps: createMode
+  steps: doubleMode
+    ? [
+        { id: "save", title: "Save", body: "Click Save.", target: "#save", autoAdvance: { event: "click", selector: "#save" } },
+        { id: "slow", title: "Slow", body: "Prepares slowly.", prepare: () => new Promise<void>((resolve) => setTimeout(resolve, 300)) },
+        { id: "third", title: "Third", body: "Must not be reached by one click." },
+      ]
+    : createMode
     ? [
         { id: "save", title: "Save", body: "Click Save.", target: "#save", autoAdvance: { event: "click", selector: "#save" } },
         { id: "created", title: "Created", body: "Points at what Save made.", target: "#created" },
@@ -37,6 +45,7 @@ document.querySelector<HTMLButtonElement>("#start")?.addEventListener("click", (
 });
 document.querySelector<HTMLButtonElement>("#save")?.addEventListener("click", () => {
   window.vtLog.push("save-clicked");
+  if (doubleMode) void tours.current?.forward();
   if (!createMode || document.querySelector("#created")) return;
   const created = document.createElement("p");
   created.id = "created";
