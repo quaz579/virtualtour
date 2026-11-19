@@ -57,13 +57,27 @@ test.describe("reduced motion", () => {
 
   test("the nudge flashes and does not shake", async ({ page }) => {
     await open(page);
+    await page.evaluate(() => {
+      const w = window as unknown as { vtAnims: { name: string; transform: boolean }[] };
+      w.vtAnims = [];
+      new MutationObserver((records) => {
+        for (const r of records) {
+          if (!(r.target as Element).classList?.contains("vt-popover-nudge")) continue;
+          for (const a of document.getAnimations()) {
+            w.vtAnims.push({
+              name: (a as CSSAnimation).animationName ?? "",
+              transform: (a.effect as KeyframeEffect | null)?.getKeyframes().some((k) => "transform" in k) ?? false,
+            });
+          }
+        }
+      }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+    });
     await page.locator(".vt-popover-next-btn").click({ force: true });
-    await expect(popover(page)).toHaveClass(NUDGE);
-    const animations = await page.evaluate(() =>
-      document.getAnimations().map((a) => ({
-        name: (a as CSSAnimation).animationName ?? "",
-        transform: (a.effect as KeyframeEffect | null)?.getKeyframes().some((k) => "transform" in k) ?? false,
-      })),
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { vtAnims: unknown[] }).vtAnims.length))
+      .toBeGreaterThan(0);
+    const animations = await page.evaluate(
+      () => (window as unknown as { vtAnims: { name: string; transform: boolean }[] }).vtAnims,
     );
     expect(animations.some((a) => a.name === "vt-nudge-flash")).toBe(true);
     expect(animations.filter((a) => a.transform)).toEqual([]);
