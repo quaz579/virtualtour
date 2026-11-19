@@ -319,7 +319,9 @@ export function repositionStepPopover(ctx: Context, element: Element, step: Driv
     return;
   }
 
-  notifyRepositioned(ctx, repositionPopover(popover, element, resolveStepPosition(ctx, element, step, currentPopover(ctx, step).popover)));
+  const effective: Popover = { ...step.popover, ...activePatch(ctx, step) };
+
+  notifyRepositioned(ctx, repositionPopover(popover, element, resolveStepPosition(ctx, element, step, effective)));
 }
 
 function showPopoverWaiting(ctx: Context) {

@@ -65,6 +65,19 @@ function show(targetRect: DOMRect, { side = "bottom", align = "start", flip, shi
   return { wrapper: popoverEl()!, info: infos.at(-1)! };
 }
 
+function stubScroller(targetRect: DOMRect, scrollerRect = rect(50, 100, 300, 200), popoverSize = POPOVER) {
+  document.body.innerHTML = `<div id="scroller" style="overflow:auto"><button id="target" type="button">T</button></div>`;
+  const scroller = document.getElementById("scroller")!;
+  vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+    if (this.id === "target") return targetRect;
+    if (this.id === "scroller") return scrollerRect;
+    if (this.classList.contains("vt-popover")) return rect(0, 0, popoverSize.width, popoverSize.height);
+    return rect(0, 0, 10, 10);
+  });
+  Object.defineProperty(scroller, "clientWidth", { configurable: true, value: scrollerRect.width });
+  Object.defineProperty(scroller, "clientHeight", { configurable: true, value: scrollerRect.height });
+}
+
 describe("side auto", () => {
   const W = window.innerWidth;
   const H = window.innerHeight;
@@ -121,6 +134,21 @@ describe("side auto", () => {
     const { info } = show(target, { side: "auto" });
 
     expect(info.side).toBe("bottom");
+  });
+
+  it("recomputes the free-space order against the viewport when only the viewport fits", () => {
+    stubScroller(rect(400, 150, 200, 100), rect(380, 100, 300, 200));
+    const infos: RepositionInfo[] = [];
+    const d = createDriver({
+      animate: false,
+      stagePadding: 0,
+      popoverOffset: 0,
+      onReposition: info => infos.push(info),
+      steps: [{ element: "#target", popover: { title: "T", side: "auto" } }],
+    });
+    d.drive();
+
+    expect(infos.at(-1)!.side).toBe("bottom");
   });
 
   it("keeps the fixed left, right, top, bottom chain for an explicit side", () => {
@@ -274,6 +302,72 @@ describe("runtime patches", () => {
     d.updatePopover({ flip: true, side: "auto" } as never);
     window.dispatchEvent(new Event("resize"));
     expect(infos.at(-1)!.side).toBe("right");
+  });
+
+  it("reads side from the patched popover", () => {
+    stubTarget(rect(300, 300, 100, 40));
+    const infos: RepositionInfo[] = [];
+    const d = createDriver({
+      animate: false,
+      stagePadding: 0,
+      popoverOffset: 0,
+      onReposition: info => infos.push(info),
+      steps: [{ element: "#target", popover: { title: "T", side: "bottom" } }],
+    });
+    d.drive();
+    expect(infos.at(-1)!.side).toBe("bottom");
+
+    d.updatePopover({ side: "top" } as never);
+    window.dispatchEvent(new Event("resize"));
+    expect(infos.at(-1)!.side).toBe("top");
+  });
+
+  it("reads align from the patched popover", () => {
+    stubTarget(rect(300, 300, 100, 40));
+    const d = createDriver({
+      animate: false,
+      stagePadding: 0,
+      popoverOffset: 0,
+      steps: [{ element: "#target", popover: { title: "T", side: "bottom", align: "start" } }],
+    });
+    d.drive();
+    const start = parseFloat(popoverEl()!.style.left);
+
+    d.updatePopover({ align: "center" } as never);
+    window.dispatchEvent(new Event("resize"));
+    expect(parseFloat(popoverEl()!.style.left)).not.toBe(start);
+    expect(parseFloat(popoverEl()!.style.left)).toBe(start - 50);
+  });
+
+  it("reads shift from the patched popover", () => {
+    stubTarget(rect(-40, 400, 100, 40));
+    const d = createDriver({
+      animate: false,
+      stagePadding: 0,
+      popoverOffset: 0,
+      steps: [{ element: "#target", popover: { title: "T", side: "bottom", align: "start" } }],
+    });
+    d.drive();
+    expect(parseFloat(popoverEl()!.style.left)).toBeGreaterThanOrEqual(0);
+
+    d.updatePopover({ shift: false } as never);
+    window.dispatchEvent(new Event("resize"));
+    expect(parseFloat(popoverEl()!.style.left)).toBeLessThan(0);
+  });
+});
+
+describe("no-fit fallback", () => {
+  it("centers within the viewport, not the scroller, when nothing fits anywhere", () => {
+    stubScroller(rect(0, 0, window.innerWidth, window.innerHeight));
+    const d = createDriver({
+      animate: false,
+      stagePadding: 0,
+      popoverOffset: 0,
+      steps: [{ element: "#target", popover: { title: "T", side: "bottom" } }],
+    });
+    d.drive();
+
+    expect(parseFloat(popoverEl()!.style.left)).toBeGreaterThan(350);
   });
 });
 

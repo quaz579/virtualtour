@@ -160,7 +160,6 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   });
 
   const autoOrder = options.side === "auto" && !centered ? sidesByFreeSpace(elementDimensions, scroller) : undefined;
-  const fallbackChain = autoOrder ?? EXPLICIT_FALLBACK;
   const requestedSide: Placement = centered ? "over" : (autoOrder?.[0] ?? (options.side as Placement));
 
   let bounds = scroller;
@@ -170,14 +169,21 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   if (requestedSide !== "over") {
     const fitScroller = fitsIn(scroller);
     const fitViewport = scroller === viewport ? fitScroller : fitsIn(viewport);
-    const pick = (fit: Record<Side, boolean>): Side | undefined =>
-      fit[requestedSide] ? requestedSide : fallbackChain.find(candidate => fit[candidate]);
+    const viewportOrder =
+      autoOrder && scroller !== viewport ? sidesByFreeSpace(elementDimensions, viewport) : autoOrder;
+    const pick = (fit: Record<Side, boolean>, order: Side[] | undefined): Side | undefined => {
+      const preferred = order?.[0] ?? requestedSide;
+      const chain = order ?? EXPLICIT_FALLBACK;
+
+      return fit[preferred] ? preferred : chain.find(candidate => fit[candidate]);
+    };
 
     if (!flip) {
       bounds = fitScroller[requestedSide] || !fitViewport[requestedSide] ? scroller : viewport;
     } else {
-      const inScroller = pick(fitScroller);
-      const inViewport = inScroller === undefined && scroller !== viewport ? pick(fitViewport) : undefined;
+      const inScroller = pick(fitScroller, autoOrder);
+      const inViewport =
+        inScroller === undefined && scroller !== viewport ? pick(fitViewport, viewportOrder) : undefined;
       if (inScroller !== undefined) {
         renderedSide = inScroller;
       } else if (inViewport !== undefined) {
