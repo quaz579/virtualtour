@@ -17,6 +17,7 @@ export default defineConfig({
         prepare: resolve(__dirname, "fixtures/prepare.html"),
         autoAdvance: resolve(__dirname, "fixtures/auto-advance.html"),
         content: resolve(__dirname, "fixtures/content.html"),
+        sanitize: resolve(__dirname, "fixtures/sanitize.html"),
       },
     },
   },

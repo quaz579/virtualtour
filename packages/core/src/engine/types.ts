@@ -158,6 +158,9 @@ export type Config = {
    */
   dimMountIn?: Element | (() => Element);
 
+  /** Cleans every HTML string the popover renders: title, description, instruction, feedback, progress text and button text. */
+  sanitize?: (html: string) => string;
+
   presenter?: EnginePresenter;
   onReposition?: (info: RepositionInfo, opts: HookOpts) => void;
 

@@ -6,7 +6,7 @@ export type Sanitizer = ((html: string) => string) | undefined;
 /** A body resolved for the engine: HTML for its description, or an element for the layer's body part. */
 export interface ResolvedBody {
   description?: string;
-  element?: Element;
+  element?: Element | DocumentFragment;
 }
 
 /** Runs `html` through the sanitizer when there is one. */
@@ -32,7 +32,7 @@ export function resolveTitle(
 
 /**
  * Resolves a body by its type: a string is one sanitized HTML string, a string array becomes one sanitized
- * `<p>` per entry, an element is passed through untouched, and a function is called (only when `evaluate` is
+ * `<p>` per entry, an element or fragment is passed through untouched, and a function is called (only when `evaluate` is
  * true) and handled by what it returns.
  */
 export function resolveBody(body: BodyContent | undefined, evaluate: boolean, sanitize: Sanitizer): ResolvedBody {
@@ -40,26 +40,35 @@ export function resolveBody(body: BodyContent | undefined, evaluate: boolean, sa
   if (typeof value === "string") return { description: cleanHtml(value, sanitize) };
   if (Array.isArray(value)) return { description: value.map((p) => `<p>${cleanHtml(p, sanitize)}</p>`).join("") };
   if (value !== undefined && value !== null && typeof (value as Element).nodeType === "number") {
-    return { element: value as Element };
+    return { element: value as Element | DocumentFragment };
   }
   return {};
 }
 
-/** Wraps a sanitizer so each distinct HTML string is cleaned once until `clear` is called. */
+/**
+ * Wraps a sanitizer so each distinct HTML string is cleaned once until `clear` is called, and a string the
+ * wrapper itself produced is returned as is, so passing sanitized HTML through again never cleans it twice.
+ */
 export function memoizeSanitizer(sanitize: (html: string) => string): {
   sanitize: (html: string) => string;
   clear: () => void;
 } {
   const cache = new Map<string, string>();
+  const produced = new Set<string>();
   return {
     sanitize(html) {
+      if (produced.has(html)) return html;
       let out = cache.get(html);
       if (out === undefined) {
         out = sanitize(html);
         cache.set(html, out);
+        produced.add(out);
       }
       return out;
     },
-    clear: () => cache.clear(),
+    clear: () => {
+      cache.clear();
+      produced.clear();
+    },
   };
 }

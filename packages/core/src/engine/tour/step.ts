@@ -222,6 +222,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
 
     doneButton: isEndStep(ctx, 1),
     smoothScroll: ctx.getConfig("smoothScroll"),
+    sanitize: ctx.getConfig("sanitize"),
 
     onNextClick: ctx.tour.pressNext,
     onPrevClick: ctx.tour.previous,
@@ -286,7 +287,7 @@ function syncStepAttribute(ctx: Context, popover: PopoverDOM) {
 }
 
 export function popoverText(popover: PopoverDOM): string[] {
-  return [popover.title, popover.description, popover.instruction].map(part =>
+  return [popover.title, popover.description, popover.body, popover.instruction].map(part =>
     !part || part.style.display === "none" ? "" : part.textContent || ""
   );
 }

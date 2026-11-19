@@ -54,15 +54,19 @@ function repointDescribedBy(wrapper: HTMLElement, from: string, to: string): voi
 }
 
 /**
- * Builds `.vt-body` holding `content` (moved, not cloned), inserts it after the engine's description and
- * points `aria-describedby` at it. The engine's own elements stay in place.
+ * Builds `.vt-body` holding a deep clone of `content`, inserts it after the engine's description and
+ * points `aria-describedby` at it. The element or fragment the caller passed is never moved or emptied, so
+ * closing the popover leaves it intact and every later mount gets the same content. The clone does not carry
+ * event listeners, form state or properties set from script, and an `id` inside it repeats the original's.
+ * The engine's own elements stay in place.
  */
-export function mountBody(popover: PopoverDOM, content: Element): HTMLElement {
+export function mountBody(popover: PopoverDOM, content: Element | DocumentFragment): HTMLElement {
   const body = document.createElement("div");
   body.className = BODY_CLASS;
   body.id = BODY_ID;
-  body.appendChild(content);
+  body.appendChild(content.cloneNode(true));
   popover.description.after(body);
+  popover.body = body;
   repointDescribedBy(popover.wrapper, P.descriptionId, BODY_ID);
   return body;
 }
