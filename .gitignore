@@ -4,3 +4,4 @@ dist
 tools/banned-words.local.txt
 test-results
 playwright-report
+.dts-tmp
