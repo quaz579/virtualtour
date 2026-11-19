@@ -203,7 +203,10 @@ export class SpeakerPresenter implements Presenter {
 
   update(popover: PopoverDOM, step: TourStep, parts: StepParts): void {
     this.base.update(popover, step, parts);
+    const wasIdle = this.idleEnabled && !this.hidden;
     this.configure(popover, step);
+    const current = this.player.current;
+    if (!wasIdle && this.idleEnabled && !this.hidden && (current === null || current === this.pack.roles.rest)) this.armIdle();
   }
 
   beforeLeave(step: TourStep): void {
@@ -365,7 +368,7 @@ export class SpeakerPresenter implements Presenter {
     const options = stepOptions(step);
     this.hidden = options.hidden === true;
     this.idleEnabled = options.idle ?? this.options.idle ?? true;
-    if (!this.idleEnabled) this.idle.disarm();
+    if (!this.idleEnabled || this.hidden) this.idle.disarm();
     this.dockSetting = options.dock ?? this.options.dock ?? this.pack.bubble?.dock ?? "end";
     const wrapper = popover.wrapper;
     wrapper.classList.toggle(NO_AVATAR_CLASS, this.hidden);

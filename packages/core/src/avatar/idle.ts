@@ -28,6 +28,7 @@ export class IdleScheduler {
   private readonly random: () => number;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private token = 0;
+  private playing = false;
   private last: string | undefined;
 
   constructor(player: SpritePlayer, pack: NormalizedPack, opts: IdleSchedulerOptions = {}) {
@@ -51,25 +52,33 @@ export class IdleScheduler {
     }, this.quietMs);
   }
 
-  /** Cancels the quiet period and abandons an idle animation that is playing; the caller moves the avatar next. */
+  /** Cancels the quiet period and, if an idle animation is playing, stops it so the avatar returns to `rest`. */
   disarm(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
     this.token += 1;
+    if (this.playing) {
+      this.playing = false;
+      this.player.stop();
+    }
   }
 
   private fire(token: number): void {
     if (token !== this.token || this.reducedMotion()) return;
     const name = resolveRole(this.pack, "idle", undefined, this.last, this.random);
     this.last = name;
+    this.playing = true;
     this.player.play(name, { loop: false }).then(
       () => {
         if (token !== this.token) return;
+        this.playing = false;
         this.player.stop();
         this.arm();
       },
       () => {
-        if (token === this.token) this.arm();
+        if (token !== this.token) return;
+        this.playing = false;
+        this.arm();
       },
     );
   }

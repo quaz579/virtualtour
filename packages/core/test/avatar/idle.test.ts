@@ -149,12 +149,13 @@ describe("IdleScheduler", () => {
     expect(name()).toBe("rest");
   });
 
-  it("disarm during playback stops it from re-arming", async () => {
-    const { idle, player, name } = scheduler();
+  it("disarm during playback returns the avatar to rest and stops it from re-arming", async () => {
+    const { idle, name } = scheduler();
     idle.arm();
     await run(300);
+    expect(name()).not.toBe("rest");
     idle.disarm();
-    player.stop();
+    expect(name()).toBe("rest");
     await run(2000);
     expect(name()).toBe("rest");
   });
@@ -172,19 +173,23 @@ describe("IdleScheduler", () => {
 
   it("never arms under reduced motion", async () => {
     reduced = true;
-    const { idle, name } = scheduler();
+    const { idle, name, player } = scheduler();
+    const play = vi.spyOn(player, "play");
     idle.arm();
     await run(5000);
     expect(name()).toBe("rest");
+    expect(play).not.toHaveBeenCalled();
   });
 
   it("does not fire when reduced motion turns on during the quiet period", async () => {
-    const { idle, name } = scheduler();
+    const { idle, name, player } = scheduler();
+    const play = vi.spyOn(player, "play");
     idle.arm();
     await run(100);
     reduced = true;
     await run(500);
     expect(name()).toBe("rest");
+    expect(play).not.toHaveBeenCalled();
   });
 
   it("never arms for a pack with no idle role", async () => {
@@ -297,6 +302,20 @@ describe("idle loop in the avatar presenter", () => {
   it("is on for a step with idle true when the tour turns it off", async () => {
     const tour = make([restStep("q", { idle: true })], { idleQuietMs: 50, idle: false });
     await tour.start();
+    await run(50);
+    expect(IDLE).toContain(anim());
+  });
+
+  it("returns to rest when an update turns idle off during an idle animation, and arms again when it is turned on", async () => {
+    const tour = make([restStep("q")], { idleQuietMs: 50 });
+    await tour.start();
+    await run(50);
+    expect(IDLE).toContain(anim());
+    tour.currentStep?.configure({ extensions: { avatar: { animation: "rest", idle: false } } });
+    expect(anim()).toBe("rest");
+    await run(500);
+    expect(anim()).toBe("rest");
+    tour.currentStep?.configure({ extensions: { avatar: { animation: "rest", idle: true } } });
     await run(50);
     expect(IDLE).toContain(anim());
   });
