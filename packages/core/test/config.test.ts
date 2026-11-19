@@ -140,6 +140,7 @@ describe("normalizeTourConfig", () => {
       position: {
         offset: { main: 10, cross: 0 },
         viewportPadding: 0,
+        boundary: "scrollParents",
         flip: true,
         shift: true,
         strategy: "fixed",

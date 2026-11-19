@@ -70,7 +70,7 @@ describe("presenter seam", () => {
     expect(afterReposition).toHaveBeenCalledTimes(1);
     const info = onReposition.mock.calls[0]![0];
     expect(info.side).toBe(popoverEl()?.getAttribute("data-vt-side"));
-    expect(info.align).toBe("start");
+    expect(popoverEl()?.classList.contains(`vt-popover-align-${info.align}`)).toBe(true);
     expect(info.targetRect).not.toBeNull();
     expect(info.wrapperRect).toBeDefined();
 

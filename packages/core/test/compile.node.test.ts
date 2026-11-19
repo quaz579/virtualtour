@@ -220,6 +220,15 @@ describe("03-schemas section 1.4 rows (step fields)", () => {
     expect(compileOne({ position: { viewportPadding: 8 } }).step.popoverPadding).toBe(8);
   });
 
+  it("row position.boundary: becomes popoverBoundary on the step", () => {
+    expect(compileOne({}).step.popoverBoundary).toBe("scrollParents");
+    expect(compileOne({ position: { boundary: "viewport" } }).step.popoverBoundary).toBe("viewport");
+    const tour = { stepDefaults: { position: { boundary: "viewport" as const } } };
+    const out = compileOne({}, tour);
+    expect(out.step.popoverBoundary).toBe("viewport");
+    expect(compileOne({ position: { boundary: "scrollParents" } }, tour).step.popoverBoundary).toBe("scrollParents");
+  });
+
   it("row position.flip and shift: become popover.flip and popover.shift", () => {
     expect(compileOne({}).step.popover).toMatchObject({ flip: true, shift: true });
     expect(compileOne({ position: { flip: false, shift: false } }).step.popover).toMatchObject({ flip: false, shift: false });
@@ -299,7 +308,7 @@ describe("03-schemas section 1.4 rows (step fields)", () => {
     const { step } = compileOne({ waitFor: 3000, shouldShow: () => true, prepare: () => undefined });
     expect(step.waitForElement).toBeUndefined();
     expect(Object.keys(step).sort()).toEqual(
-      ["data", "popover", "popoverCrossOffset", "popoverOffset", "popoverPadding"].sort()
+      ["data", "popover", "popoverBoundary", "popoverCrossOffset", "popoverOffset", "popoverPadding"].sort()
     );
   });
 

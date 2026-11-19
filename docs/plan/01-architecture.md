@@ -231,6 +231,7 @@ type PlacementRef = 'auto' | { side: Side | 'auto' | 'over'; align?: Align };
 interface PositionOptions {
   offset?: number | { main?: number; cross?: number }; // P-2; main default 10 (engine popoverOffset); cross default 0, mirrored in RTL
   viewportPadding?: number;          // P-3, default 0; distance from the boundary (viewport ∩ scroll parents)
+  boundary?: 'viewport' | 'scrollParents'; // P-3, default 'scrollParents'; 'viewport' ignores the target's scroll parents
   flip?: boolean;                    // P-4, default true (side fallback, then alignment flip)
   shift?: boolean;                   // P-5, default true (slide along the edge to stay inside the boundary)
   strategy?: 'fixed' | 'absolute';   // P-6, default 'fixed' (12-risks-open-questions.md question #1)

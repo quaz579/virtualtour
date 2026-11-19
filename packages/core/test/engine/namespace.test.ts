@@ -75,6 +75,7 @@ describe("names", () => {
       lockScroll: "data-vt-lock-scroll",
       overlay: "data-vt-overlay",
       layer: "data-vt-layer",
+      strategy: "data-vt-strategy",
     });
     expect(n.popover.root).toBe("vt-popover");
     expect(n.popover.contentId).toBe("vt-popover-content");

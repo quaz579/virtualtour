@@ -4,6 +4,7 @@ import { DEFAULT_HOOK_TIMEOUT_MS, normalizeTourConfig, resolveStepConfig } from 
 import type { NormalizedTourConfig } from "./config";
 import { createEngine } from "./engine/driver";
 import type { Config, DriveStep, Driver, EnginePresenter, PopoverPatch, RepositionInfo as EngineRepositionInfo } from "./engine/driver";
+import { isDummyElement } from "./engine/core/utils";
 import type { PopoverDOM } from "./engine/popover/popover";
 import { TourEnvironmentError, TourNavigationError } from "./errors";
 import { Emitter } from "./events";
@@ -12,11 +13,13 @@ import { listenForAdvance } from "./advance/auto-advance";
 import { resolveTarget, waitForTarget } from "./dom/target";
 import { chain, NavigationQueue, raceAbort, resolveStepIndex, selectEligible } from "./navigator";
 import type { NavigationOutcome } from "./navigator";
+import { applyStateClasses, classList, dedupeExtras, parsableSelectors, removeStateClasses, resolveExtras, spotlitClass } from "./spotlight/options";
+import { ProgressTracker } from "./persist/progress";
 import { DialogPresenter } from "./presenter";
 import { memoizeSanitizer } from "./render/content";
 import { relayTourEvent, setCurrentTour, tours } from "./registry";
 import { emitStep, lookupTarget, markHidden, markShown, resetStep, retireStep, setConfiguredHook, setResolvedTarget, TourStep } from "./step";
-import type { Presenter, ProgressInfo, RepositionInfo, StepConfig, StepParts, TourConfig } from "./types";
+import type { Presenter, ProgressInfo, ProgressRecord, RepositionInfo, StepConfig, StepParts, TourConfig } from "./types";
 
 declare const __DEV__: boolean | undefined;
 
@@ -48,7 +51,11 @@ interface TourInternals {
   waits: Map<TourStep, AbortController>;
   warnedUnnamed: boolean;
   completing: TourStep | null;
+  progress: ProgressTracker | null;
+  starting: boolean;
   clearSanitized: () => void;
+  spotlit: Map<Element, { wanted: string[]; added: string[] }>;
+  spotlitStep: TourStep | null;
 }
 
 const internals = new WeakMap<object, TourInternals>();
@@ -96,9 +103,16 @@ export class Tour {
       waits: new Map(),
       warnedUnnamed: false,
       completing: null,
+      progress: normalized.progress ? new ProgressTracker(normalized.id, normalized.progress) : null,
+      starting: false,
       clearSanitized,
+      spotlit: new Map(),
+      spotlitStep: null,
     };
     internals.set(this, state);
+    if (normalized.progress && config.id === undefined && (typeof __DEV__ === "undefined" || __DEV__)) {
+      console.warn("[virtualtour] A tour with `progress` has no `id`, so its saved progress cannot match across page loads. Set a stable `id`.");
+    }
     const reserved = new Set<string>();
     for (const def of normalized.steps) if (def.id !== undefined) reserved.add(def.id);
     for (const def of normalized.steps) state.steps.push(this.createStep(def, reserved));
@@ -206,8 +220,36 @@ export class Tour {
    */
   async start(): Promise<void> {
     requireDocument("start");
+    const state = internalsOf(this);
+    if (state.running || state.starting) return;
+    let resumeAt = -1;
+    const progress = state.progress;
+    if (progress) {
+      state.starting = true;
+      let record: ProgressRecord | null;
+      try {
+        record = await progress.load();
+      } finally {
+        state.starting = false;
+      }
+      if (state.running) return;
+      if (record?.completedAt !== undefined && progress.skipCompleted) {
+        emitTour(this, "bypassed", { tour: this, reason: "completed" });
+        return;
+      }
+      if (progress.resume && record?.lastStepId !== undefined) resumeAt = state.steps.findIndex((s) => s.id === record.lastStepId);
+    }
     if (!beginRun(this)) return;
-    await navigateGuarded(this, () => runNavigation(this, "forward"));
+    if (resumeAt <= 0) {
+      await navigateGuarded(this, () => runNavigation(this, "forward"));
+      return;
+    }
+    const runId = state.runId;
+    await navigateGuarded(this, () => {
+      if (!state.running || state.ending || state.runId !== runId) return Promise.resolve();
+      const outcome = advanceFrom(this, resumeAt - 1, "forward");
+      return Promise.resolve(chain(outcome, (o) => concludeNavigation(this, runId, o)));
+    });
   }
 
   /**
@@ -298,6 +340,7 @@ export class Tour {
     state.engine = null;
     state.mounted = null;
     for (const step of state.steps) leaveStep(this, step);
+    releaseSpotlit(this, state);
     settle(state);
   }
 
@@ -360,6 +403,39 @@ function detachAdvance(state: TourInternals, only?: TourStep): void {
   state.advance = null;
   if (advance.timer !== null) clearTimeout(advance.timer);
   advance.detach();
+}
+
+function releaseSpotlit(tour: Tour, state: TourInternals): void {
+  for (const [element, held] of state.spotlit) removeStateClasses(element, held.added, tour);
+  state.spotlit.clear();
+  state.spotlitStep = null;
+}
+
+function markSpotlit(tour: Tour, step: TourStep, target: Element | undefined): void {
+  const state = internalsOf(tour);
+  state.spotlitStep = step;
+  const spotlight = step.config.spotlight;
+  const marker = spotlitClass(state.normalized.namespace);
+  const wanted = [marker, ...classList(spotlight?.class)];
+  const desired = new Set<Element>();
+  if (target) desired.add(target);
+  for (const extra of dedupeExtras(resolveExtras(parsableSelectors(spotlight?.extra)), target)) desired.add(extra);
+  for (const [element, held] of state.spotlit) {
+    if (desired.has(element) && held.wanted.join(" ") === wanted.join(" ")) continue;
+    removeStateClasses(element, held.added, tour);
+    state.spotlit.delete(element);
+  }
+  for (const element of desired) {
+    if (state.spotlit.has(element)) continue;
+    state.spotlit.set(element, { wanted, added: applyStateClasses(element, wanted, tour) });
+  }
+}
+
+function remarkSpotlit(tour: Tour, state: TourInternals): void {
+  const step = state.spotlitStep;
+  const active = state.engine?.getState("activeElement");
+  if (!step || state.ending) return;
+  markSpotlit(tour, step, active && !isDummyElement(active) ? active : undefined);
 }
 
 function stepOf(tour: Tour, driveStep: DriveStep | undefined): TourStep | undefined {
@@ -535,11 +611,12 @@ function ensureEngine(tour: Tour): Driver {
     ...compiled.base,
     steps: compiled.steps,
     presenter: enginePresenterFor(tour, presenter),
-    onHighlightStarted(_element: Element | undefined, driveStep: DriveStep) {
+    onHighlightStarted(element: Element | undefined, driveStep: DriveStep) {
       if (!owns()) return;
       const step = stepOf(tour, driveStep);
       if (!step) return;
       state.anchorIndex = state.steps.indexOf(step);
+      markSpotlit(tour, step, element);
       emitStep(step, "will-show", { step });
     },
     onHighlighted(element: Element | undefined, driveStep: DriveStep) {
@@ -558,11 +635,13 @@ function ensureEngine(tour: Tour): Driver {
       guarded("presenter.afterShow", () => presenter.afterShow(popover, step));
       attachAdvance(tour, step);
       emitStep(step, "shown", { step });
+      state.progress?.stepShown(step.id);
       emitTour(tour, "step-shown", { tour, step, previous: state.previousStep });
       settle(state);
     },
-    onDeselected(_element: Element | undefined, driveStep: DriveStep) {
+    onDeselected(_element: Element | undefined, driveStep: DriveStep, opts: { reason?: string | undefined }) {
       if (!owns()) return;
+      if (opts.reason !== undefined) releaseSpotlit(tour, state);
       const step = stepOf(tour, driveStep);
       if (step) leaveStep(tour, step);
     },
@@ -577,6 +656,9 @@ function ensureEngine(tour: Tour): Driver {
       guarded("presenter.onCompleted", () => presenter.onCompleted?.(step));
       emitStep(step, "completed", { step });
       emitTour(tour, "step-completed", { tour, step });
+    },
+    onReposition() {
+      if (owns()) remarkSpotlit(tour, state);
     },
     onNudge(driveStep: DriveStep) {
       if (!owns()) return;
@@ -928,10 +1010,13 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
   detachAdvance(state);
   const endStep = hookStep ?? state.steps[state.currentIndex] ?? state.steps[state.anchorIndex];
   for (const step of state.steps) leaveStep(tour, step);
+  releaseSpotlit(tour, state);
   if (kind === "finished") {
+    state.progress?.finished();
     if (endStep) emitStep(endStep, "finished", { step: endStep });
     emitTour(tour, "finished", { tour });
   } else {
+    if (kind !== "replaced") state.progress?.exited(endStep?.id);
     if (endStep) emitStep(endStep, "exited", { step: endStep });
     emitTour(tour, "exited", { tour, reason: kind });
   }

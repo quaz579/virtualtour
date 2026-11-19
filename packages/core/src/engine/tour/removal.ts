@@ -4,7 +4,7 @@ import { stepOption } from "../core/options";
 import { isBusy, isLeaving } from "./lifecycle";
 import { isActionStep, markStepPopoverWaiting } from "./step";
 import type { DriveStep, ElementMissing, ElementMissingPreset } from "../types";
-import { isDummyElement, resolveElement } from "../core/utils";
+import { isDummyElement, resolveElement, timerDelay } from "../core/utils";
 import { clearWaiting } from "./wait";
 
 export function resolveMissing(ctx: Context, step: DriveStep): ElementMissing {
@@ -112,7 +112,7 @@ export function watchForRemoval(ctx: Context, activation: Activation) {
       }
 
       report(element);
-    }, grace);
+    }, timerDelay(grace));
   };
 
   const schedule = () => {

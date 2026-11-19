@@ -40,8 +40,11 @@ Rules:
   elements contained in the target or in another extra (H-4) for the state classes; the
   full list goes to `allowedElements` (the engine dedupes the cut-outs itself, F-05).
 - State classes: `<ns>-spotlit` + `spotlight.class` on target and extras in
-  `onHighlightStarted`; removed in `onDeselected` unless the next step uses the same element
-  (no flicker; the navigator resolved the next target before `moveTo`). A MutationObserver
+  `onHighlightStarted`; extras are re-resolved and the classes follow a re-bound target on
+  `onReposition`; a class the element already had is left alone on removal. Released in
+  `onDeselected` unless the next step uses the same element (no flicker; the navigator
+  resolved the next target before `moveTo`), and on `hideCurrent` and at run end. A
+  selector that does not parse skips the extras and still marks the target. A MutationObserver
   re-adds `<ns>-spotlit` if the app's framework rewrites `className` (same reason the
   engine guards its own markers, `tour/highlight.ts:227-240`).
 - `targetInteractive: false` → `disableActiveInteraction: true`; `'hover-only'` →

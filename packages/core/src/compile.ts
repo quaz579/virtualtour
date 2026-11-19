@@ -2,9 +2,10 @@ import { DEFAULT_DIM, DEFAULT_POSITION, DEFAULT_STEP_CONFIG, mergeStepConfig } f
 import type { NormalizedTourConfig } from "./config";
 import { lookupTarget } from "./step";
 import type { Config, DriveStep, Popover } from "./engine/types";
-import type { AllowedButtons, Alignment, Side } from "./engine/popover/popover";
+import type { AllowedButtons, Alignment } from "./engine/popover/popover";
 import { resolveBody, resolveText, resolveTitle } from "./render/content";
 import type { Sanitizer } from "./render/content";
+import { parsableSelectors } from "./spotlight/options";
 import type { CornerRadius, StepConfig, TourStepLike } from "./types";
 
 type Corners = Required<CornerRadius>;
@@ -17,16 +18,12 @@ type FutureStepKeys =
   | "popover"
   | "popoverCrossOffset";
 
-type FuturePopoverKeys = "side" | "arrow" | "arrowMinInset" | "flip" | "shift" | "strategy";
+type FuturePopoverKeys = "arrow" | "arrowMinInset";
 
 /** Engine popover options, including the ones the engine reads once the matching milestone-two task lands. */
 export type EnginePopover = Omit<Popover, FuturePopoverKeys> & {
-  side?: Side | "auto" | "over";
   arrow?: boolean;
   arrowMinInset?: number;
-  flip?: boolean;
-  shift?: boolean;
-  strategy?: "fixed" | "absolute";
 };
 
 /** Engine step options, including the per-step fields the engine gains later. */
@@ -137,10 +134,12 @@ function compileStep(
   out.popoverOffset = typeof offset === "number" ? offset : (offset?.main ?? DEFAULT_POSITION.offset.main);
   out.popoverCrossOffset = typeof offset === "number" ? 0 : (offset?.cross ?? DEFAULT_POSITION.offset.cross);
   out.popoverPadding = position.viewportPadding ?? DEFAULT_POSITION.viewportPadding;
+  out.popoverBoundary = position.boundary ?? DEFAULT_POSITION.boundary;
 
   if (spotlight.padding !== undefined) out.stagePadding = spotlight.padding;
   if (spotlight.radius !== undefined) out.stageRadius = toCorners(spotlight.radius, dimRadius);
-  if (spotlight.extra && spotlight.extra.length > 0) out.allowedElements = spotlight.extra.slice();
+  const extras = parsableSelectors(spotlight.extra);
+  if (extras.length > 0) out.allowedElements = extras;
   if (spotlight.targetInteractive === false) out.disableActiveInteraction = true;
   else if (spotlight.targetInteractive === "hover-only") out.disableActiveInteraction = "clicks";
 

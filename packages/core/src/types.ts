@@ -66,6 +66,11 @@ export interface PositionOptions {
   offset?: number | { main?: number; cross?: number };
   /** Distance kept from the boundary. Default 0. */
   viewportPadding?: number;
+  /**
+   * What the popover must stay inside. `scrollParents` is the viewport narrowed by the target's scrolling ancestors, so
+   * a target inside a scroller keeps its popover inside that scroller; `viewport` ignores scrollers. Default `scrollParents`.
+   */
+  boundary?: "viewport" | "scrollParents";
   /** Fall back to another side or alignment when the popover does not fit. Default true. */
   flip?: boolean;
   /** Slide along the edge to stay inside the boundary. Default true. */
@@ -82,7 +87,11 @@ export interface SpotlightOptions {
   padding?: number;
   /** Overrides `dim.radius` for this step. */
   radius?: number | CornerRadius;
-  /** Extra selectors to cut out and keep interactive. */
+  /**
+   * Extra selectors to cut out and keep interactive. They also receive the state classes; the matches are
+   * re-resolved when the popover repositions (resize, scroll, `refresh()`, a re-bound target), so an extra rendered
+   * later is classed only after the next reposition, while the engine cut-out picks it up on its own.
+   */
   extra?: string[];
   /** Class added to the target and the extras. */
   class?: string;

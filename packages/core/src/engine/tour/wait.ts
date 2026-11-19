@@ -14,7 +14,7 @@ import { destroyPopover } from "../popover/popover";
 import { resolveMissing } from "./removal";
 import { clearStepPopoverWaiting, markStepPopoverWaiting, renderStepPopover, resolveTourStep } from "./step";
 import type { DriveStep } from "../types";
-import { resolveElement } from "../core/utils";
+import { resolveElement, timerDelay } from "../core/utils";
 
 export function popoverTarget(ctx: Context) {
   const placeholder = placeholderOf(ctx);
@@ -68,7 +68,7 @@ export function waitForStepElement(
     frame ??= window.requestAnimationFrame(check);
   });
 
-  const timer = window.setTimeout(() => settle(false), timeout);
+  const timer = window.setTimeout(() => settle(false), timerDelay(timeout));
 
   setElementWait(ctx, stop);
 

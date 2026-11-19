@@ -551,7 +551,9 @@ export function createEngine(options: Config = {}): Driver {
 
     const activeElement = ctx.getState("__activeElement");
     const activeStep = ctx.getState("__activeStep") ?? placeholderOf(ctx)?.step;
-    const hookElement = isDummyElement(activeElement) ? undefined : activeElement;
+    const pendingStep = activeStep ? undefined : (ctx.getState("activeStep") ?? ctx.getState("__activation")?.step);
+    const settledElement = activeElement ?? (pendingStep ? ctx.getState("activeElement") : undefined);
+    const hookElement = isDummyElement(settledElement) ? undefined : settledElement;
 
     const activeOnDestroyed = ctx.getState("__activeOnDestroyed");
 
@@ -567,12 +569,13 @@ export function createEngine(options: Config = {}): Driver {
     const onDestroyed = ctx.getConfig("onDestroyed");
     const stateBeforeDestroy = removeTour();
 
-    if (activeStep) {
-      if (activeElement && onDeselected) {
-        onDeselected(hookElement, activeStep, ctx.getHookOpts(stateBeforeDestroy, reason));
-      }
+    if (activeStep && activeElement && onDeselected) {
+      onDeselected(hookElement, activeStep, ctx.getHookOpts(stateBeforeDestroy, reason));
+    }
 
-      onDestroyed?.(hookElement, activeStep, ctx.getHookOpts(stateBeforeDestroy, reason));
+    const finishedStep = activeStep ?? pendingStep;
+    if (finishedStep) {
+      onDestroyed?.(hookElement, finishedStep, ctx.getHookOpts(stateBeforeDestroy, reason));
     }
 
     if (activeOnDestroyed) {

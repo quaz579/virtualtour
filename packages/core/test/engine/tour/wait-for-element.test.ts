@@ -195,4 +195,24 @@ describe("waitForElement", () => {
 
     expect(popoverTitle()).toBe("Highlighted");
   });
+
+  it("treats a wait too long for a timer as endless rather than over at once", async () => {
+    const d = createDriver({
+      animate: false,
+      steps: [
+        { element: "#intro", popover: { title: "Step 1" } },
+        { element: "#late", waitForElement: 3e9, popover: { title: "Step 2" } },
+      ],
+    });
+    d.drive();
+    d.moveNext();
+    await tick(30);
+
+    expect(d.getActiveIndex()).toBe(0);
+    expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
+
+    appendElement("late");
+    await tick(30);
+    expect(d.getActiveIndex()).toBe(1);
+  });
 });
