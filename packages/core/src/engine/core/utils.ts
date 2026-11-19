@@ -77,7 +77,7 @@ export function bringInView(element: Element, scrollIntoView?: false | ScrollInt
 
   const options: ScrollIntoViewOptions = scrollIntoView ?? defaultScrollOptions(element, shouldSmoothScroll);
 
-  element.scrollIntoView(prefersReducedMotion() && options.behavior === "smooth" ? { ...options, behavior: "auto" } : options);
+  element.scrollIntoView(prefersReducedMotion() && options.behavior !== "auto" && options.behavior !== "instant" ? { ...options, behavior: "instant" } : options);
 }
 
 function defaultScrollOptions(element: Element, shouldSmoothScroll?: boolean): ScrollIntoViewOptions {

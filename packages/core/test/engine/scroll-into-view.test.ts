@@ -60,13 +60,19 @@ describe("bringInView", () => {
   it("falls back to an instant scroll under reduced motion for the smoothScroll default", () => {
     reduceMotion(true);
     bringInView(farAway("intro"), undefined, true);
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", inline: "center", block: "center" });
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "instant", inline: "center", block: "center" });
   });
 
   it("falls back to an instant scroll under reduced motion for explicit smooth options", () => {
     reduceMotion(true);
     bringInView(farAway("intro"), { block: "start", behavior: "smooth" });
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "auto" });
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "instant" });
+  });
+
+  it("forces an instant scroll under reduced motion when behavior is unset", () => {
+    reduceMotion(true);
+    bringInView(farAway("intro"), { block: "start" });
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "instant" });
   });
 
   it("keeps smooth scrolling when reduced motion is not requested", () => {
@@ -90,6 +96,23 @@ describe("scrollIntoView step and config options", () => {
     const d = createDriver({ animate: false });
     d.highlight({ element: "#card-1", scrollIntoView: false, popover: { title: "A" } });
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it("does not scroll an off-screen popover wrapper when the step says false", () => {
+    const d = createDriver({ animate: false });
+    const original = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      return this.classList.contains("vt-popover-wrapper") || this.classList.contains("vt-popover") ? farAway("intro").getBoundingClientRect() : original.call(this);
+    };
+    try {
+      d.highlight({ element: "#card-1", scrollIntoView: false, popover: { title: "A" } });
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      scrollIntoView.mockClear();
+      d.highlight({ element: "#card-1", popover: { title: "B" } });
+      expect(scrollIntoView).toHaveBeenCalled();
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = original;
+    }
   });
 
   it("uses Config.scrollIntoView when the step has none, and the step wins over it", () => {
@@ -122,6 +145,6 @@ describe("scrollIntoView step and config options", () => {
     farAway("card-1");
     const d = createDriver({ animate: false, smoothScroll: true });
     d.highlight({ element: "#card-1", popover: { title: "A" } });
-    expect(scrollIntoView.mock.calls[0]![0].behavior).toBe("auto");
+    expect(scrollIntoView.mock.calls[0]![0].behavior).toBe("instant");
   });
 });
