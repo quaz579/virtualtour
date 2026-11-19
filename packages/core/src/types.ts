@@ -41,7 +41,10 @@ export interface DimConfig {
   clipToScrollParents?: boolean;
 }
 
-/** Text content of a body: HTML string, list of paragraphs, element, or a function returning one of them. */
+/**
+ * Content of a body: HTML string, list of paragraphs (one `<p>` each), element, or a function returning one of
+ * them, evaluated each time the step is shown. An element is moved into the popover, not cloned.
+ */
 export type BodyContent = string | string[] | Element | (() => string | string[] | Element);
 
 /** The element a step points at: selector, element, or a function returning either. */
@@ -179,6 +182,8 @@ export interface StepParts {
   /** `.vt-footer`, holding custom buttons. */
   footer?: HTMLElement;
   buttons: HTMLButtonElement[];
+  /** The element a step's body resolved to; the presenter moves it into `.vt-body`. */
+  content?: Element;
 }
 
 /** Where the popover ended up after positioning. */
@@ -231,7 +236,7 @@ export interface TourConfig {
   progress?: ProgressConfig;
   /** Replaces the built-in dialog presenter. */
   presenter?: PresenterFactory;
-  /** Hook that cleans HTML before it reaches the page. */
+  /** Hook that cleans title and body HTML before it reaches the page. Runs once per HTML string. */
   sanitize?: (html: string) => string;
   animate?: boolean;
 }

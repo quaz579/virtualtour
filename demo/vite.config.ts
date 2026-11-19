@@ -12,6 +12,7 @@ export default defineConfig({
         e2e: resolve(__dirname, "e2e.html"),
         actionDriven: resolve(__dirname, "fixtures/action-driven.html"),
         navigation: resolve(__dirname, "fixtures/navigation.html"),
+        content: resolve(__dirname, "fixtures/content.html"),
       },
     },
   },

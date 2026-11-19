@@ -33,6 +33,7 @@ export type PopoverDOM = {
 export type PopoverRenderOptions = {
   title?: string | undefined;
   description?: string | undefined;
+  label?: string | undefined;
 
   showButtons: AllowedButtons[];
   disableButtons: AllowedButtons[];
@@ -198,15 +199,24 @@ function applyPopoverContent(popover: PopoverDOM, options: PopoverRenderOptions)
   popover.closeButton.setAttribute("aria-label", options.closeBtnLabel);
   popover.nextButton.classList.toggle(P.doneButton, !!options.doneButton);
 
-  if (title) {
-    setHtml(popover.title, title);
-  }
+  setHtml(popover.title, title || "");
   setDisplay(popover.title, !!title);
 
-  if (description) {
-    setHtml(popover.description, description);
-  }
+  setHtml(popover.description, description || "");
   setDisplay(popover.description, !!description);
+
+  const labelled = popover.wrapper;
+  if (title) {
+    labelled.setAttribute("aria-labelledby", P.titleId);
+    labelled.removeAttribute("aria-label");
+  } else {
+    labelled.removeAttribute("aria-labelledby");
+    if (options.label) {
+      labelled.setAttribute("aria-label", options.label);
+    } else {
+      labelled.removeAttribute("aria-label");
+    }
+  }
 
   const showFooter = showButtons.includes("next") || showButtons.includes("previous") || showProgress;
 
@@ -274,7 +284,6 @@ export function renderPopover(anchor: Element, layer: Element, options: PopoverR
 
   popoverWrapper.id = P.contentId;
   popoverWrapper.setAttribute("role", "dialog");
-  popoverWrapper.setAttribute("aria-labelledby", P.titleId);
 
   popover.arrow.className = P.arrow;
 
@@ -400,11 +409,11 @@ function createPopover(): PopoverDOM {
 
   const title = createElement("div", P.title, P.titleId);
   title.style.display = "none";
-  title.innerText = "Popover Title";
+  title.innerText = "";
 
   const description = createElement("div", P.description, P.descriptionId);
   description.style.display = "none";
-  description.innerText = "Popover description is here";
+  description.innerText = "";
 
   const closeButton = createElement("button", P.closeButton);
   closeButton.innerHTML = "&times;";

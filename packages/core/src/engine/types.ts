@@ -66,6 +66,7 @@ export type PopoverPatch = Pick<
   Popover,
   | "title"
   | "description"
+  | "label"
   | "showButtons"
   | "disableButtons"
   | "showProgress"
@@ -189,6 +190,7 @@ export type Config = {
 export type Popover = {
   title?: string | undefined;
   description?: string | undefined;
+  label?: string | undefined;
   side?: Side;
   align?: Alignment;
 
