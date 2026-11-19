@@ -14,6 +14,7 @@ const attributes = Object.freeze({
   lockScroll: "data-vt-lock-scroll",
   overlay: "data-vt-overlay",
   layer: "data-vt-layer",
+  strategy: "data-vt-strategy",
 });
 
 const popover = Object.freeze({

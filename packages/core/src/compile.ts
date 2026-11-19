@@ -17,13 +17,12 @@ type FutureStepKeys =
   | "popover"
   | "popoverCrossOffset";
 
-type FuturePopoverKeys = "arrow" | "arrowMinInset" | "strategy";
+type FuturePopoverKeys = "arrow" | "arrowMinInset";
 
 /** Engine popover options, including the ones the engine reads once the matching milestone-two task lands. */
 export type EnginePopover = Omit<Popover, FuturePopoverKeys> & {
   arrow?: boolean;
   arrowMinInset?: number;
-  strategy?: "fixed" | "absolute";
 };
 
 /** Engine step options, including the per-step fields the engine gains later. */

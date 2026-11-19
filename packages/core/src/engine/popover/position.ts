@@ -16,6 +16,7 @@ export type PositionOptions = {
   shift?: boolean | undefined;
   hasTarget: boolean;
   sideAttribute?: string;
+  strategy?: "fixed" | "absolute";
 };
 
 type PopoverDimensions = {
@@ -125,6 +126,22 @@ function sidesByFreeSpace(element: Bounds, bounds: Bounds): Side[] {
     .map(entry => entry.side);
 }
 
+function toAbsolute(wrapper: HTMLElement, width: number, height: number) {
+  const { style } = wrapper;
+  const left = style.left === "auto" ? window.innerWidth - parseFloat(style.right) - width : parseFloat(style.left);
+  const top = style.top === "auto" ? window.innerHeight - parseFloat(style.bottom) - height : parseFloat(style.top);
+
+  wrapper.setAttribute(fixedNames.attr.strategy, "absolute");
+  style.right = "auto";
+  style.bottom = "auto";
+  style.left = "0px";
+  style.top = "0px";
+
+  const origin = wrapper.getBoundingClientRect();
+  style.left = `${left - origin.left}px`;
+  style.top = `${top - origin.top}px`;
+}
+
 export function repositionPopover(popover: PopoverDOM, anchor: Element, options: PositionOptions): RepositionInfo {
   const { align: requiredAlignment } = options;
   const flip = options.flip !== false;
@@ -132,6 +149,10 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   const centered = !options.hasTarget || options.side === "over";
   const popoverPadding = options.padding;
   const { style, classList } = popover.wrapper;
+  if (popover.wrapper.hasAttribute(fixedNames.attr.strategy)) {
+    popover.wrapper.removeAttribute(fixedNames.attr.strategy);
+    style.left = style.top = style.right = style.bottom = "";
+  }
 
   const popoverDimensions = getPopoverDimensions(popover, options.offset);
   const popoverArrowDimensions = popover.arrow.getBoundingClientRect();
@@ -287,6 +308,10 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     place("bottom", clampMax(bottomValue, window.innerHeight - margined.top - popoverDimensions.realHeight));
     place("top");
     place("right");
+  }
+
+  if (options.strategy === "absolute" && requestedSide !== "over") {
+    toAbsolute(popover.wrapper, popoverDimensions.realWidth, popoverDimensions.realHeight);
   }
 
   renderPopoverArrow(popover, fellBack ? "over" : renderedSide, renderedAlignment, elementDimensions);

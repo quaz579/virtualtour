@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createTour, tours, TourEnvironmentError, TourNavigationError } from "../src/index";
+import { createTour, localStorageStore, memoryStore, tours, TourEnvironmentError, TourNavigationError } from "../src/index";
 
 describe("tour model without a DOM", () => {
   it("runs with no DOM globals", () => {
@@ -23,5 +23,15 @@ describe("tour model without a DOM", () => {
     expect(new TourEnvironmentError("x").name).toBe("TourEnvironmentError");
     expect(new TourNavigationError("x")).toBeInstanceOf(Error);
     expect(new TourNavigationError("x")).not.toBeInstanceOf(TourEnvironmentError);
+  });
+
+  it("stores work without a DOM", async () => {
+    const store = localStorageStore();
+    expect(store.load("x")).toBeNull();
+    expect(() => store.save({ tourId: "x", updatedAt: "u" })).not.toThrow();
+    expect(() => store.clear("x")).not.toThrow();
+    const memory = memoryStore();
+    memory.save({ tourId: "x", updatedAt: "u" });
+    expect(memory.load("x")).toEqual({ tourId: "x", updatedAt: "u" });
   });
 });

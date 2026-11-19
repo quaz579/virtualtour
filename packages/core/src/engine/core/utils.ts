@@ -63,7 +63,14 @@ function focusableCandidates(parentEls: Element[]): HTMLElement[] {
 }
 
 function isFocusable(el: HTMLElement) {
-  return getComputedStyle(el).pointerEvents !== "none" && isElementVisible(el);
+  const style = getComputedStyle(el);
+  return style.pointerEvents !== "none" && style.visibility === "visible" && isElementVisible(el);
+}
+
+const MAX_TIMER_MS = 2147483647;
+
+export function timerDelay(ms: number): number {
+  return Math.min(ms, MAX_TIMER_MS);
 }
 
 export function getFocusableElements(parentEls: Element[]) {

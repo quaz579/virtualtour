@@ -217,6 +217,12 @@ export type Popover = {
   flip?: boolean;
   /** Slide along the edge to stay inside the boundary. Defaults to `true`. */
   shift?: boolean;
+  /**
+   * `"fixed"` (default) positions the popover against the viewport. `"absolute"` writes coordinates relative to
+   * the popover's containing block, which stays correct when an ancestor has `transform`, `filter` or `contain: paint`
+   * or the mount container scrolls. Centered steps always use `"fixed"`.
+   */
+  strategy?: "fixed" | "absolute";
 
   showButtons?: AllowedButtons[];
   showProgress?: boolean;

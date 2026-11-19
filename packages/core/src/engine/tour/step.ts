@@ -176,6 +176,7 @@ function resolveStepPosition(ctx: Context, element: Element, step: DriveStep, po
     shift: popover.shift ?? ctx.getConfig("popoverShift"),
     hasTarget: !isDummyElement(element),
     sideAttribute: ctx.names.sideAttr,
+    strategy: popover.strategy === "absolute" ? "absolute" : "fixed",
   };
 }
 
