@@ -658,7 +658,14 @@ interface StepParts {       // built by render/parts.ts
   buttons: HTMLButtonElement[];
 }
 
-interface RepositionInfo { side: Side | 'over'; align: Align; wrapperRect: DOMRect; bubbleRect: DOMRect; targetRect: DOMRect | null }
+interface RepositionInfo {
+  side: Side | 'over';   // the requested side when `pinned`
+  align: Align;          // logical: in RTL, start is the physical right for top/bottom
+  physicalAlign: 'left' | 'right' | 'top' | 'bottom' | 'center';
+  rtl: boolean;
+  pinned: boolean;       // no side fit: bottom-centre, arrow hidden
+  wrapperRect: DOMRect; bubbleRect: DOMRect; targetRect: DOMRect | null;
+}
 
 type PresenterFactory = (tour: Tour) => Presenter;
 ```

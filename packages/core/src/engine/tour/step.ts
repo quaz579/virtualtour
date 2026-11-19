@@ -271,6 +271,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
     },
 
     presenter: ctx.getConfig("presenter"),
+    layout: ctx.getConfig("presenter")?.layout,
     step,
     onPositioned: info => notifyRepositioned(ctx, info),
 
