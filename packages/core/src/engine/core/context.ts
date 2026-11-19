@@ -61,6 +61,8 @@ function createConfigStore() {
       stageRadius: 5,
       clipStageToScrollParents: true,
       popoverOffset: 10,
+      popoverPadding: 0,
+      popoverBoundary: "scrollParents",
       showButtons: ["next", "previous", "close"],
       disableButtons: [],
       overlayColor: "#000",
