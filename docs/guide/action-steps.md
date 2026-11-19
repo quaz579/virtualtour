@@ -2,7 +2,7 @@
 
 Stub: the full guide arrives with the docs work. This page lists every public member of the action-step API.
 
-An action step asks the user to do something before the tour moves on. Give a step an `instruction` and it becomes gated: Next stays disabled until the step completes.
+An action step asks the user to do something before the tour moves on. Give a step an `instruction` and it becomes gated: Next looks disabled and nudges when pressed until the step completes.
 
 ```ts
 import { createTour } from "virtualtour";
@@ -60,9 +60,11 @@ Both are optional members of `Presenter`.
 | `Presenter.onNudge(step)` | The popover shook: Next, ArrowRight or the overlay pressed on an unmet step, a rejected gesture, or `Tour.nudge`. Runs for plain steps too. |
 | `Presenter.onCompleted(step)` | The instruction was met. Runs before the `completed` event. |
 
+During `advanceDelay` the engine's own Next button does nothing, while `Tour.forward()` moves on at once.
+
 ## Arrow keys with custom buttons
 
-Custom `buttons` hide the engine's Next and Back. When a button has a `forward` or `backward` action, the arrow keys keep navigating anyway, through the same routes as the buttons: eligibility (`shouldShow`, `whenMissing`) applies, and an unmet action step nudges. `keys: { arrows: false }` turns them off. A step whose buttons only exit, finish or run a function keeps the arrows still.
+Custom `buttons` hide the engine's Next and Back. When a button has a `forward` or `backward` action, the arrow keys keep navigating anyway, through the same routes as the buttons: eligibility (`shouldShow`, `whenMissing`) applies, and an unmet action step nudges. `keys: { arrows: false }` turns them off. A step whose buttons only exit, finish or run a function keeps the arrows still. A step with only a `forward` or only a `backward` button gets both arrow directions.
 
 ## Engine hooks
 

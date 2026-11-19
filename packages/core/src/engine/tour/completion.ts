@@ -20,7 +20,9 @@ export function requestCompletion(ctx: Context, activation: Activation) {
   const delay = stepOption(ctx, activation.step, "advanceDelay") ?? 0;
   if (delay <= 0) {
     ctx.tour.next();
-    reopen(ctx, activation);
+    if (reopen(ctx, activation)) {
+      ctx.tour.refreshPopover();
+    }
     return;
   }
 
@@ -35,7 +37,9 @@ export function requestCompletion(ctx: Context, activation: Activation) {
     }
 
     ctx.tour.next();
-    reopen(ctx, activation);
+    if (reopen(ctx, activation)) {
+      ctx.tour.refreshPopover();
+    }
   }, delay);
   activation.controller.signal.addEventListener("abort", () => window.clearTimeout(timer));
 }

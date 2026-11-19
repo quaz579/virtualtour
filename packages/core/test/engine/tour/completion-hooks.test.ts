@@ -96,6 +96,24 @@ describe("completion is final", () => {
   });
 });
 
+describe("a stay after a completed step", () => {
+  it("clears the done state from the popover when the next element never shows", async () => {
+    const d = await start({
+      onElementMissing: "previous",
+      steps: [
+        actionStep({ advanceOn: "click", advanceDelay: 20 }),
+        { element: "#nope", waitForElement: 80, popover: { title: "Never" } },
+      ],
+    });
+    document.querySelector<HTMLElement>("#intro")!.click();
+    await tick(40);
+    expect(popoverEl()?.classList.contains("vt-popover-instruction-done")).toBe(true);
+    await tick(200);
+    expect(d.getActiveIndex()).toBe(0);
+    expect(popoverEl()?.classList.contains("vt-popover-instruction-done")).toBe(false);
+  });
+});
+
 describe("Config.onNudge", () => {
   it("runs for api nudges with the nudged step", async () => {
     const onNudge = vi.fn();

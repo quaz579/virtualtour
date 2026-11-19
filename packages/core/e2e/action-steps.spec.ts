@@ -11,6 +11,20 @@ const log = (page: Page) => page.evaluate(() => (window as unknown as { vtLog: s
 const popover = (page: Page) => page.locator(".vt-popover");
 const NUDGE = /vt-popover-nudge/;
 
+async function watchNudge(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as { vtNudged: number };
+    w.vtNudged = 0;
+    new MutationObserver((records) => {
+      for (const r of records) {
+        if ((r.target as Element).classList?.contains("vt-popover-nudge")) w.vtNudged += 1;
+      }
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+  });
+}
+
+const nudges = (page: Page) => page.evaluate(() => (window as unknown as { vtNudged: number }).vtNudged);
+
 async function open(page: Page, query = "", text = "Click Save.") {
   await page.goto(`/fixtures/action-steps.html${query}`);
   await page.locator("html[data-ready=true]").waitFor();
@@ -22,9 +36,10 @@ async function open(page: Page, query = "", text = "Click Save.") {
 
 test("Next on the gated step shakes the popover and does not move", async ({ page }) => {
   await open(page);
+  await watchNudge(page);
   await page.locator(".vt-popover-next-btn").click({ force: true });
-  await expect(popover(page)).toHaveClass(NUDGE);
-  await expect(popover(page)).not.toHaveClass(NUDGE, { timeout: 2000 });
+  await expect.poll(() => nudges(page)).toBeGreaterThan(0);
+  await expect(popover(page)).not.toHaveClass(NUDGE, { timeout: 3000 });
   expect(await log(page)).toEqual(["shown:save"]);
 });
 
@@ -57,8 +72,9 @@ test.describe("reduced motion", () => {
 
 test("a custom forward button nudges instead of skipping the gate, then the target completes it", async ({ page }) => {
   await open(page, "?mode=buttons");
+  await watchNudge(page);
   await page.getByRole("button", { name: "Continue" }).click();
-  await expect(popover(page)).toHaveClass(NUDGE);
+  await expect.poll(() => nudges(page)).toBeGreaterThan(0);
   expect(await log(page)).toEqual(["shown:save"]);
   await page.locator("#save").click();
   await expect.poll(() => log(page)).toContain("shown:after");
@@ -67,15 +83,17 @@ test("a custom forward button nudges instead of skipping the gate, then the targ
 test("arrow keys nudge a gated step even though custom buttons hide Next", async ({ page }) => {
   await open(page, "?mode=buttons");
   await page.locator("body").click({ position: { x: 5, y: 5 }, force: true });
+  await watchNudge(page);
   await page.keyboard.press("ArrowRight");
-  await expect(popover(page)).toHaveClass(NUDGE);
+  await expect.poll(() => nudges(page)).toBeGreaterThan(0);
   expect(await log(page)).toEqual(["shown:save"]);
 });
 
 test("strict click rejects a right-click with a nudge, then a left-click completes", async ({ page }) => {
   await open(page, "?mode=strict");
+  await watchNudge(page);
   await page.locator("#save").click({ button: "right" });
-  await expect(popover(page)).toHaveClass(NUDGE);
+  await expect.poll(() => nudges(page)).toBeGreaterThan(0);
   expect(await log(page)).toEqual(["shown:save"]);
   await page.locator("#save").click();
   await expect.poll(() => log(page)).toContain("shown:after");

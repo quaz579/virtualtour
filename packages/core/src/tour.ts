@@ -48,7 +48,6 @@ interface TourInternals {
   waits: Map<TourStep, AbortController>;
   warnedUnnamed: boolean;
   completing: TourStep | null;
-  skipForward: boolean;
   clearSanitized: () => void;
 }
 
@@ -97,7 +96,6 @@ export class Tour {
       waits: new Map(),
       warnedUnnamed: false,
       completing: null,
-      skipForward: false,
       clearSanitized,
     };
     internals.set(this, state);
@@ -529,6 +527,10 @@ function ensureEngine(tour: Tour): Driver {
   const compiled = compileTour(state.normalized, state.steps);
   let self: Driver | null = null;
   const owns = (): boolean => self !== null && state.engine === self;
+  const isLeavingAfterCompletion = (driveStep: DriveStep): boolean => {
+    const step = stepOf(tour, driveStep);
+    return step !== undefined && state.completing === step && state.queue.busy;
+  };
   const config = {
     ...compiled.base,
     steps: compiled.steps,
@@ -548,6 +550,7 @@ function ensureEngine(tour: Tour): Driver {
         settle(state);
         return;
       }
+      state.completing = null;
       markShown(step, popover.wrapper, element ?? null);
       const index = state.steps.indexOf(step);
       state.currentIndex = index;
@@ -567,7 +570,6 @@ function ensureEngine(tour: Tour): Driver {
       if (!owns()) return;
       const step = stepOf(tour, driveStep);
       if (step && state.completing === step && state.queue.busy) {
-        state.skipForward = true;
         return;
       }
       state.completing = step ?? null;
@@ -581,20 +583,12 @@ function ensureEngine(tour: Tour): Driver {
       const step = stepOf(tour, driveStep);
       if (step) guarded("presenter.onNudge", () => presenter.onNudge?.(step));
     },
-    onNextClick() {
-      if (!owns()) return;
-      if (state.skipForward) {
-        state.skipForward = false;
-        return;
-      }
+    onNextClick(_element: Element | undefined, driveStep: DriveStep) {
+      if (!owns() || isLeavingAfterCompletion(driveStep)) return;
       reportFailure(tour.forward());
     },
-    onDoneClick() {
-      if (!owns()) return;
-      if (state.skipForward) {
-        state.skipForward = false;
-        return;
-      }
+    onDoneClick(_element: Element | undefined, driveStep: DriveStep) {
+      if (!owns() || isLeavingAfterCompletion(driveStep)) return;
       reportFailure(tour.forward());
     },
     onPrevClick() {
@@ -651,13 +645,12 @@ function attachAdvance(tour: Tour, step: TourStep): void {
       if (state.advance === advance) state.advance = null;
       advance.timer = null;
       if (!state.running || state.ending || state.steps[state.currentIndex] !== step) return;
+      if (step.config.instruction !== undefined) {
+        if (state.steps[state.anchorIndex] === step) state.engine?.advance();
+        return;
+      }
       reportFailure(
-        navigateGuarded(tour, () => {
-          if (state.steps[state.anchorIndex] !== step) return Promise.resolve();
-          const engine = state.engine;
-          if (engine?.getActiveStep()?.popover?.instruction && engine.advance()) return Promise.resolve();
-          return runNavigation(tour, "forward");
-        })
+        navigateGuarded(tour, () => (state.steps[state.anchorIndex] === step ? runNavigation(tour, "forward") : Promise.resolve()))
       );
     }, 0);
   });
@@ -914,6 +907,7 @@ function beginRun(tour: Tour): boolean {
   const other = tours.current;
   if (other && other !== tour) terminate(other, "replaced");
   state.running = true;
+  state.completing = null;
   state.runId += 1;
   state.abort = new AbortController();
   state.currentIndex = -1;
@@ -930,6 +924,7 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
   const state = internalsOf(tour);
   if (!state.running || state.ending) return;
   state.ending = true;
+  state.completing = null;
   detachAdvance(state);
   const endStep = hookStep ?? state.steps[state.currentIndex] ?? state.steps[state.anchorIndex];
   for (const step of state.steps) leaveStep(tour, step);

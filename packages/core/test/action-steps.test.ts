@@ -265,6 +265,64 @@ describe("autoAdvance on an action step", () => {
   });
 });
 
+describe("completion bookkeeping across navigation and runs", () => {
+  const selectorStep = (id: string): StepConfig => act(id, { autoAdvance: { event: "click", selector: "#u" } });
+
+  it("completes again after going back to the step", async () => {
+    const tour = make({ steps: [selectorStep("a"), plain("b")] });
+    const completed = vi.fn();
+    tour.on("step-completed", completed);
+    await tour.start();
+    document.querySelector<HTMLElement>("#u")!.click();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    await tour.backward();
+    expect(currentId(tour)).toBe("a");
+    document.querySelector<HTMLElement>("#u")!.click();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    expect(completed).toHaveBeenCalledTimes(2);
+  });
+
+  it("completes again in a restarted run", async () => {
+    const tour = make({ steps: [selectorStep("a"), plain("b", { prepare: () => new Promise<void>((r) => setTimeout(r, 80)) })] });
+    const completed = vi.fn();
+    tour.on("step-completed", completed);
+    await tour.start();
+    document.querySelector<HTMLElement>("#u")!.click();
+    await tick(10);
+    tour.finish();
+    await tour.start();
+    document.querySelector<HTMLElement>("#u")!.click();
+    await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(2));
+  });
+
+  it("a duplicate completion that never reaches next() does not swallow the next real Next", async () => {
+    const tour = make({
+      steps: [act("a", { advanceDelay: 100 }), plain("b", { prepare: () => new Promise<void>((r) => setTimeout(r, 150)) }), plain("c")],
+    });
+    await tour.start();
+    tour.advance();
+    await tick(130);
+    tour.advance();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    await tick(150);
+    nextButton().click();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("c"));
+  });
+
+  it("a selector advance that the engine cannot complete does not fall back to a plain forward", async () => {
+    const tour = make({ steps: [selectorStep("a"), plain("b")] });
+    const completed = vi.fn();
+    tour.on("step-completed", completed);
+    await tour.start();
+    const advance = vi.spyOn(engineOf(tour)!, "advance").mockReturnValue(false);
+    document.querySelector<HTMLElement>("#u")!.click();
+    await tick(30);
+    expect(advance).toHaveBeenCalled();
+    expect(currentId(tour)).toBe("a");
+    expect(completed).not.toHaveBeenCalled();
+  });
+});
+
 describe("nudge(message?)", () => {
   it("shows the feedback text, shakes and calls the presenter's onNudge", async () => {
     const onNudge = vi.fn();
