@@ -168,12 +168,18 @@ export interface StepConfig {
   revealWith?: (target: Element) => void | Promise<void>;
   /**
    * Moves on when the user does something. With `selector`, the first matching `event` in the document advances the tour after
-   * the page's own handlers ran, and `strict` is ignored. Without `selector`, the engine advances on `event` at the target.
+   * the page's own handlers ran, and `strict` is ignored. Without `selector`, the engine advances on `event` at the target;
+   * `strict` then blocks every other mouse gesture on the target and nudges, so `{ event: "click", strict: true }` rejects a right-click.
+   * On an action step the advance completes the step, so `advanceDelay` and the `completed` events apply.
    */
   autoAdvance?: { event: string | string[]; selector?: string; strict?: boolean };
-  /** Action step: what the user must do before moving on. */
+  /**
+   * Action step: what the user must do before moving on, as HTML that passes through `sanitize`. A function is
+   * evaluated each time the step shows. While the instruction is unmet, Next, the arrow keys, the overlay and
+   * {@link Tour.forward} nudge instead of moving; `autoAdvance` or {@link Tour.advance} completes the step.
+   */
   instruction?: string | (() => string);
-  /** Milliseconds to stay on a completed action step before moving on. */
+  /** Milliseconds a completed action step stays on screen, showing its done state, before the tour moves on. Default 0. */
   advanceDelay?: number;
   focus?: "dialog" | "first-button";
   /** Namespaced bag for presenters. */
@@ -242,6 +248,10 @@ export interface Presenter {
   /** Re-applies a step whose configuration changed while it is shown. */
   update(popover: PopoverDOM, step: TourStep, parts: StepParts): void;
   beforeLeave(step: TourStep): void;
+  /** The popover was nudged: Next, ArrowRight or the overlay pressed before an instruction was met, a rejected gesture, or {@link Tour.nudge}. Runs for plain steps too. */
+  onNudge?(step: TourStep): void;
+  /** An action step's instruction was met. Runs before the step's `completed` event. */
+  onCompleted?(step: TourStep): void;
   unmount(): void;
   /** Which popover layout the engine builds. Default `dialog`. */
   layout?: "dialog" | "speaker";

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDriver, navButton, nextFrame, popoverEl, SAMPLE_STEPS, useDriverHarness } from "../utils";
 
 useDriverHarness();
@@ -29,6 +29,18 @@ describe("nudge", () => {
     d.nudge();
 
     expect(isPopoverNudged()).toBe(true);
+  });
+
+  it("does not touch window, so a nudge during teardown cannot throw", async () => {
+    const d = await start();
+    d.nudge();
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(() => d.nudge()).not.toThrow();
+      expect(() => d.nudge()).not.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("changes the popover and shakes it in one call", async () => {
