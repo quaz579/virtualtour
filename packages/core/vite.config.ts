@@ -1,6 +1,6 @@
 import { copyFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig, transformWithEsbuild } from "vite";
 
 const entries = {
   index: resolve(__dirname, "src/index.ts"),
@@ -24,6 +24,23 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         external: [/^\.\.\/index(\.ts)?$/],
+        output: {
+          plugins: dev
+            ? []
+            : [
+                {
+                  name: "minify-whitespace",
+                  async renderChunk(code: string, chunk: { fileName: string }) {
+                    const result = await transformWithEsbuild(code, chunk.fileName, {
+                      minifyWhitespace: true,
+                      target: "es2020",
+                      sourcemap: true,
+                    });
+                    return { code: result.code, map: result.map };
+                  },
+                },
+              ],
+        },
       },
     },
     plugins: dev

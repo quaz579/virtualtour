@@ -1,4 +1,4 @@
-import { AvatarPackError } from "./pack";
+import { fail, hasOwn, isRecord } from "./pack";
 import type { AvatarPack, LicenseInfo, PointRoles, RoleMap } from "./pack";
 
 /** Where a classic map and its sheet live, plus overrides for what the map cannot say. */
@@ -30,20 +30,8 @@ const DEFAULT_NAME = "Classic avatar pack";
 
 type Json = Record<string, unknown>;
 
-function isRecord(value: unknown): value is Json {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function fail(path: string, message: string): never {
-  throw new AvatarPackError(path, message);
-}
-
 function setOwn<T>(target: Record<string, T>, key: string, value: T): void {
   Object.defineProperty(target, key, { value, enumerable: true, writable: true, configurable: true });
-}
-
-function hasOwn(target: object, key: string): boolean {
-  return Object.prototype.hasOwnProperty.call(target, key);
 }
 
 /**
