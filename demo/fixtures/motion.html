@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour motion fixture</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      .abs {
+        position: absolute;
+        box-sizing: border-box;
+        margin: 0;
+        width: 120px;
+        height: 40px;
+      }
+      #m1 {
+        left: 40px;
+        top: 60px;
+      }
+      #m2 {
+        left: 700px;
+        top: 420px;
+      }
+      #m3 {
+        left: 380px;
+        top: 700px;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="abs" id="m1">One</button>
+    <button class="abs" id="m2">Two</button>
+    <button class="abs" id="m3">Three</button>
+    <span id="counter"></span>
+    <script type="module" src="./motion.ts"></script>
+  </body>
+</html>
