@@ -65,7 +65,7 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 
 ### Popover
 
-`vt-popover`, `vt-popover-side-*`, `vt-popover-align-*`, `vt-popover-rtl`, `vt-popover-waiting`, `vt-waiting`, `vt-popover-nudge`, `vt-popover-has-instruction`, `vt-popover-instruction-done`, `vt-dialog`
+`vt-popover`, `vt-popover-side-*`, `vt-popover-align-*`, `vt-popover-rtl`, `vt-no-arrow`, `vt-popover-waiting`, `vt-waiting`, `vt-popover-nudge`, `vt-popover-has-instruction`, `vt-popover-instruction-done`, `vt-dialog`
 
 ### Parts
 
@@ -92,7 +92,6 @@ Names you set yourself. The engine never emits them.
 
 | Name | Where | Effect |
 |---|---|---|
-| `vt-no-arrow` | step `classes` | Hides the arrow on one popover |
 | `data-vt-theme` | `<html>` | `dark` or `light` forces a scheme |
 | `data-vt-progress-bar` | popover | Shows the progress bar; `--vt-progress-index` and `--vt-progress-total` set its width |
 

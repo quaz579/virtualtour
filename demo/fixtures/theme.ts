@@ -20,7 +20,7 @@ async function main(): Promise<void> {
     dim: true,
     animate: params.has("animate"),
     steps: [
-      { id: "first", title: "Themed step", body: "Body text for the theme check.", target: "#target", placement: { side: "bottom" }, classes: params.get("classes") ?? "" },
+      { id: "first", title: "Themed step", body: "Body text for the theme check.", target: "#target", placement: { side: "bottom" }, position: { arrow: !params.has("noarrow") } },
       {
         id: "second",
         title: "Second step",

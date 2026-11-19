@@ -203,11 +203,12 @@ test("reduced motion leaves document.getAnimations() empty right after start()",
   expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
 });
 
-test("vt-no-arrow hides the arrow and the arrow shows without it", async ({ page }) => {
+test("position.arrow false adds vt-no-arrow and hides the arrow, and the arrow shows without it", async ({ page }) => {
   await open(page);
   expect(await style(page, ".vt-popover-arrow", "display")).not.toBe("none");
-  await open(page, "?classes=vt-no-arrow");
+  await open(page, "?noarrow");
   expect(await style(page, ".vt-popover-arrow", "display")).toBe("none");
+  await expect(popover(page)).toHaveClass(/vt-no-arrow/);
 });
 
 test("the progress bar width follows the progress variables", async ({ page }) => {
