@@ -42,6 +42,7 @@ let clock: number;
 let reduced: boolean;
 const created: Tour[] = [];
 const players: SpritePlayer[] = [];
+const schedulers: IdleScheduler[] = [];
 
 async function run(ms: number): Promise<void> {
   clock += ms;
@@ -62,6 +63,7 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const tour of created.splice(0)) if (tour.isRunning()) tour.finish();
+  for (const idle of schedulers.splice(0)) idle.disarm();
   for (const player of players.splice(0)) player.dispose();
   tours.off();
   setCurrentTour(null);
@@ -78,6 +80,7 @@ function scheduler(options: { quietMs?: number; random?: () => number; avatarPac
   const player = new SpritePlayer(avatarPack, el, { reducedMotion: () => reduced });
   players.push(player);
   const idle = new IdleScheduler(player, avatarPack, { quietMs: options.quietMs ?? 300, reducedMotion: () => reduced, ...(options.random ? { random: options.random } : {}) });
+  schedulers.push(idle);
   return { idle, player, name: () => el.getAttribute("data-vt-anim") };
 }
 
@@ -197,6 +200,7 @@ describe("IdleScheduler", () => {
     const player = new SpritePlayer(avatarPack, el, { reducedMotion: () => false });
     players.push(player);
     const idle = new IdleScheduler(player, avatarPack, { reducedMotion: () => false });
+    schedulers.push(idle);
     idle.arm();
     await run(5999);
     expect(el.getAttribute("data-vt-anim")).toBe("rest");
