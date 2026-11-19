@@ -1,6 +1,7 @@
 import type { Alignment, Placement, PlacementRequest, PopoverDOM, Side } from "./popover";
 import type { RepositionInfo } from "../types";
 import { fixedNames } from "../core/namespace";
+import { isRtl } from "../core/env";
 import { clipRectByScrollParents } from "../core/utils";
 
 const popoverNames = fixedNames.popover;
@@ -9,6 +10,9 @@ export type PositionOptions = {
   side: PlacementRequest;
   align: Alignment;
   offset: number;
+  crossOffset?: number | undefined;
+  arrow?: boolean | undefined;
+  arrowMinInset?: number | undefined;
   padding: number;
   boundaryPadding?: number;
   boundary?: "viewport" | "scrollParents" | undefined;
@@ -41,7 +45,12 @@ function getPopoverDimensions(popover: PopoverDOM, offset: number): PopoverDimen
 type Bounds = { left: number; top: number; right: number; bottom: number };
 
 const EXPLICIT_FALLBACK: Side[] = ["left", "right", "top", "bottom"];
+const EXPLICIT_FALLBACK_RTL: Side[] = ["right", "left", "top", "bottom"];
 const AUTO_ORDER: Side[] = ["bottom", "top", "right", "left"];
+const AUTO_ORDER_RTL: Side[] = ["bottom", "top", "left", "right"];
+
+const mirror = (alignment: Alignment): Alignment =>
+  alignment === "start" ? "end" : alignment === "end" ? "start" : alignment;
 
 const insetBounds = (b: Bounds, by: number): Bounds => ({
   left: b.left + by,
@@ -120,8 +129,8 @@ function freeSpace(side: Side, element: Bounds, bounds: Bounds): number {
   return bounds.right - element.right;
 }
 
-function sidesByFreeSpace(element: Bounds, bounds: Bounds): Side[] {
-  return AUTO_ORDER.map((side, index) => ({ side, index, space: freeSpace(side, element, bounds) }))
+function sidesByFreeSpace(element: Bounds, bounds: Bounds, rtl: boolean): Side[] {
+  return (rtl ? AUTO_ORDER_RTL : AUTO_ORDER).map((side, index) => ({ side, index, space: freeSpace(side, element, bounds) }))
     .sort((a, b) => b.space - a.space || a.index - b.index)
     .map(entry => entry.side);
 }
@@ -149,6 +158,9 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   const centered = !options.hasTarget || options.side === "over";
   const popoverPadding = options.padding;
   const { style, classList } = popover.wrapper;
+  const rtl = isRtl(anchor);
+  const showArrow = options.arrow !== false;
+  const crossOffset = Number.isFinite(options.crossOffset) ? (options.crossOffset as number) : 0;
   if (popover.wrapper.hasAttribute(fixedNames.attr.strategy)) {
     popover.wrapper.removeAttribute(fixedNames.attr.strategy);
     style.left = style.top = style.right = style.bottom = "";
@@ -157,7 +169,7 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   const popoverDimensions = getPopoverDimensions(popover, options.offset);
   const popoverArrowDimensions = popover.arrow.getBoundingClientRect();
   const elementDimensions = anchor.getBoundingClientRect();
-  const arrowSize = popoverArrowDimensions.width || ARROW_SIZE;
+  const arrowSize = showArrow ? popoverArrowDimensions.width || ARROW_SIZE : 0;
 
   const edgeRoom = arrowSize * 2;
   const { viewport, scroller } = resolveBounds(
@@ -180,7 +192,7 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     right: rightValue >= window.innerWidth - b.right,
   });
 
-  const autoOrder = options.side === "auto" && !centered ? sidesByFreeSpace(elementDimensions, scroller) : undefined;
+  const autoOrder = options.side === "auto" && !centered ? sidesByFreeSpace(elementDimensions, scroller, rtl) : undefined;
   const requestedSide: Placement = centered ? "over" : (autoOrder?.[0] ?? (options.side as Placement));
 
   let bounds = scroller;
@@ -191,10 +203,10 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     const fitScroller = fitsIn(scroller);
     const fitViewport = scroller === viewport ? fitScroller : fitsIn(viewport);
     const viewportOrder =
-      autoOrder && scroller !== viewport ? sidesByFreeSpace(elementDimensions, viewport) : autoOrder;
+      autoOrder && scroller !== viewport ? sidesByFreeSpace(elementDimensions, viewport, rtl) : autoOrder;
     const pick = (fit: Record<Side, boolean>, order: Side[] | undefined): Side | undefined => {
       const preferred = order?.[0] ?? requestedSide;
-      const chain = order ?? EXPLICIT_FALLBACK;
+      const chain = order ?? (rtl ? EXPLICIT_FALLBACK_RTL : EXPLICIT_FALLBACK);
 
       return fit[preferred] ? preferred : chain.find(candidate => fit[candidate]);
     };
@@ -221,9 +233,18 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
 
   const margined = insetBounds(bounds, arrowSize);
 
-  const alignAlong = (elementStart: number, elementSize: number, popoverSize: number, start: number, end: number) => {
+  const alignAlong = (
+    elementStart: number,
+    elementSize: number,
+    popoverSize: number,
+    start: number,
+    end: number,
+    mirrored: boolean
+  ) => {
+    const shiftBy = mirrored ? -crossOffset : crossOffset;
     const rawFor = (alignment: Alignment) =>
-      rawAlignedStart(alignment, elementStart, elementSize, popoverSize, popoverPadding);
+      rawAlignedStart(mirrored ? mirror(alignment) : alignment, elementStart, elementSize, popoverSize, popoverPadding) +
+      shiftBy;
     const overflows = (raw: number) => raw < start || raw + popoverSize > end;
 
     let alignment = requiredAlignment;
@@ -246,7 +267,8 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
       elementDimensions.height,
       popoverDimensions.realHeight,
       margined.top,
-      margined.bottom
+      margined.bottom,
+      false
     );
   const alignHorizontally = () =>
     alignAlong(
@@ -254,7 +276,8 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
       elementDimensions.width,
       popoverDimensions.realWidth,
       margined.left,
-      margined.right
+      margined.right,
+      rtl
     );
 
   const place = (edge: Side, value?: number) => {
@@ -314,7 +337,16 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     toAbsolute(popover.wrapper, popoverDimensions.realWidth, popoverDimensions.realHeight);
   }
 
-  renderPopoverArrow(popover, fellBack ? "over" : renderedSide, renderedAlignment, elementDimensions);
+  classList.toggle(popoverNames.rtl, rtl);
+  classList.toggle(fixedNames.noArrow, !showArrow);
+
+  renderPopoverArrow(popover, fellBack ? "over" : renderedSide, {
+    alignment: renderedAlignment,
+    rtl,
+    elementRect: elementDimensions,
+    showArrow,
+    minInset: Number.isFinite(options.arrowMinInset) ? Math.max(0, options.arrowMinInset as number) : ARROW_CORNER_INSET,
+  });
 
   const sideClass = popoverNames.sideClass(renderedSide);
   const alignClass = popoverNames.alignClass(renderedAlignment);
@@ -351,18 +383,19 @@ export function calculateArrowTarget(
   popoverStart: number,
   popoverEnd: number,
   alignment: Alignment,
-  arrowSize: number = ARROW_SIZE
+  arrowSize: number = ARROW_SIZE,
+  minInset: number = ARROW_CORNER_INSET
 ): number {
   const popoverLength = popoverEnd - popoverStart;
   const fullySpansPopover = elementStart <= popoverStart && elementEnd >= popoverEnd;
 
   if (fullySpansPopover) {
     if (alignment === "start") {
-      return ARROW_CORNER_INSET + arrowSize / 2;
+      return minInset + arrowSize / 2;
     }
 
     if (alignment === "end") {
-      return popoverLength - ARROW_CORNER_INSET - arrowSize / 2;
+      return popoverLength - minInset - arrowSize / 2;
     }
 
     return popoverLength / 2;
@@ -377,10 +410,11 @@ export function calculateArrowTarget(
 export function calculateArrowOffset(
   targetCenter: number,
   popoverLength: number,
-  arrowSize: number = ARROW_SIZE
+  arrowSize: number = ARROW_SIZE,
+  minInset: number = ARROW_CORNER_INSET
 ): number {
-  const minOffset = ARROW_CORNER_INSET;
-  const maxOffset = popoverLength - ARROW_CORNER_INSET - arrowSize;
+  const minOffset = minInset;
+  const maxOffset = popoverLength - minInset - arrowSize;
 
   if (maxOffset < minOffset) {
     return Math.max(0, (popoverLength - arrowSize) / 2);
@@ -412,7 +446,10 @@ export function resolveArrowSide(
   return element.right <= popover.left ? "right" : "left";
 }
 
-function renderPopoverArrow(popover: PopoverDOM, side: Placement, alignment: Alignment, elementRect: DOMRect) {
+type ArrowRender = { alignment: Alignment; rtl: boolean; elementRect: DOMRect; showArrow: boolean; minInset: number };
+
+function renderPopoverArrow(popover: PopoverDOM, side: Placement, render: ArrowRender) {
+  const { elementRect, showArrow, minInset } = render;
   const popoverArrow = popover.arrow;
 
   popoverArrow.className = popoverNames.arrow;
@@ -421,7 +458,7 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, alignment: Ali
   popoverArrow.style.bottom = "";
   popoverArrow.style.left = "";
 
-  if (side === "over") {
+  if (side === "over" || !showArrow) {
     popoverArrow.classList.add(popoverNames.arrowNone);
     return;
   }
@@ -439,19 +476,21 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, alignment: Ali
       elementRect.bottom,
       popoverRect.top,
       popoverRect.bottom,
-      alignment,
-      arrowSize
+      render.alignment,
+      arrowSize,
+      minInset
     );
-    popoverArrow.style.top = `${calculateArrowOffset(target, popoverRect.height, arrowSize)}px`;
+    popoverArrow.style.top = `${calculateArrowOffset(target, popoverRect.height, arrowSize, minInset)}px`;
   } else {
     const target = calculateArrowTarget(
       elementRect.left,
       elementRect.right,
       popoverRect.left,
       popoverRect.right,
-      alignment,
-      arrowSize
+      render.rtl ? mirror(render.alignment) : render.alignment,
+      arrowSize,
+      minInset
     );
-    popoverArrow.style.left = `${calculateArrowOffset(target, popoverRect.width, arrowSize)}px`;
+    popoverArrow.style.left = `${calculateArrowOffset(target, popoverRect.width, arrowSize, minInset)}px`;
   }
 }

@@ -12,6 +12,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, "index.html"),
         e2e: resolve(__dirname, "e2e.html"),
+        e2eRtl: resolve(__dirname, "e2e-rtl.html"),
         actionDriven: resolve(__dirname, "fixtures/action-driven.html"),
         navigation: resolve(__dirname, "fixtures/navigation.html"),
         lateTarget: resolve(__dirname, "fixtures/late-target.html"),
