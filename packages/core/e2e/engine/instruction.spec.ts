@@ -224,7 +224,7 @@ test.describe("instruction steps while animating", () => {
           { element: "#two", popover: { title: "Last" } },
         ],
       });
-      const clicked = new Promise<{ log: string[]; index: number }>(resolve => {
+      const clicked = new Promise<{ log: string[]; index: number | undefined }>(resolve => {
         const observer = new MutationObserver(() => {
           const path = document.querySelector(".vt-overlay path");
           if (!path) {
