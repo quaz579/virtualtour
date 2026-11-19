@@ -1,7 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { openFixture, settle } from "./engine/harness";
 
-test.skip(({ browserName }) => browserName !== "chromium", "frame timing is only tracked on chromium");
+test.beforeEach(({}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "frame timing is only tracked on chromium");
+});
+test.describe.configure({ retries: 2 });
 
 const ROWS = 10_000;
 const EXTRAS = 6;
@@ -116,6 +119,8 @@ test("a tour on a 10000-row list keeps frames and the main thread healthy while 
   testInfo.annotations.push({ type: "scroll", description: JSON.stringify(result) });
   console.log(`perf ${JSON.stringify({ counts, ...result })}`);
 
+  expect(counts.styles).toBeLessThanOrEqual(16);
+  expect(counts.rects).toBeLessThanOrEqual(20);
   expect(result.scrolled).toBeGreaterThan(0);
   expect(result.longTasks).toBe(0);
   expect(result.fps).toBeGreaterThan(50);

@@ -86,4 +86,23 @@ describe("extra cut-outs between refreshes", () => {
     expect(dedupe.calls).toBe(before + 1);
     expect(document.querySelector("[data-vt-overlay] path")!.getAttribute("d")).toContain("320");
   });
+
+  it("recomputes the path when only an extra's height or the stage changes", async () => {
+    const { driver, stubbed } = await start();
+    const read = () => document.querySelector("[data-vt-overlay] path")!.getAttribute("d");
+    const first = read();
+    const before = dedupe.calls;
+
+    stubbed.mockReturnValue(rect(300, 10, 40, 60));
+    driver.refresh();
+    await nextFrame();
+    expect(dedupe.calls).toBe(before + 1);
+    expect(read()).not.toBe(first);
+
+    vi.spyOn(document.querySelector("#card-1")!, "getBoundingClientRect").mockReturnValue(rect(50, 50, 80, 30));
+    driver.highlight({ element: "#card-1", allowedElements: "#extra", popover: { title: "t" } });
+    await nextFrame();
+    await nextFrame();
+    expect(dedupe.calls).toBeGreaterThan(before + 1);
+  });
 });
