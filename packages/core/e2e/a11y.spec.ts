@@ -109,6 +109,7 @@ test("arrows navigate and Escape exits, returning focus to the trigger", async (
 test("arrows and Escape typed inside a field on the page go to the app, not the tour", async ({ page }) => {
   await open(page, "four", "s1");
   await page.keyboard.press("ArrowRight");
+  await expect.poll(() => log(page)).toContain("shown:s2");
   await page.keyboard.press("ArrowRight");
   await expect.poll(() => log(page)).toContain("shown:s3");
   await page.locator("#field").focus();
@@ -174,7 +175,7 @@ test("reduced motion leaves no running animation after start and after forward",
   expect(await page.evaluate(() => document.body.classList.contains("vt-simple"))).toBe(true);
 });
 
-test("the popover stays inside the viewport and operable at 200% zoom", async ({ page }) => {
+test("the popover stays inside the viewport and operable in a 640x400 viewport (a 1280x800 window at 200% zoom)", async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 400 });
   await open(page, "four", "s1");
   const box = await popover(page).boundingBox();

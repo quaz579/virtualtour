@@ -14,7 +14,7 @@ Placeholder: the full guide arrives with the docs work. This page records what t
 | Reduced motion | With `prefers-reduced-motion: reduce` the tour runs in `vt-simple` mode: no fade, no tween, and the nudge flashes instead of shaking. |
 | Live region | A polite live region announces step text when it changes through `configure()` and when an action step gives feedback. |
 | Target attributes | A button, a link, a `select`, a `summary`, a button-type `input` or an element with an interactive role (button, link, menu item, tab, combobox, switch, checkbox or tree item) gets `aria-haspopup`, `aria-expanded` and `aria-controls` while it is the target. Other elements are left alone because those attributes are invalid on them. |
-| Zoom | At 200% zoom the popover stays inside the viewport and every control stays operable. |
+| Zoom | In a 640x400 viewport (a 1280x800 window at 200% zoom) the popover stays inside the viewport and every control stays operable. |
 
 ## Automated checks
 
