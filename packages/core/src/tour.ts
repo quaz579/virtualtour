@@ -1,6 +1,6 @@
 import { compileStepForShow, compileTour } from "./compile";
 import type { EngineStep } from "./compile";
-import { normalizeTourConfig, resolveStepConfig } from "./config";
+import { DEFAULT_HOOK_TIMEOUT_MS, normalizeTourConfig, resolveStepConfig } from "./config";
 import type { NormalizedTourConfig } from "./config";
 import { createEngine } from "./engine/driver";
 import type { Config, DriveStep, Driver, EnginePresenter, RepositionInfo as EngineRepositionInfo } from "./engine/driver";
@@ -500,15 +500,33 @@ function attachAdvance(tour: Tour, step: TourStep): void {
   detachAdvance(state);
   const auto = step.config.autoAdvance;
   if (auto?.selector === undefined) return;
+  if (!isValidSelector(auto.selector)) {
+    if (typeof __DEV__ === "undefined" || __DEV__) {
+      console.warn(`[virtualtour] Step "${step.id}" has an invalid autoAdvance selector ${JSON.stringify(auto.selector)}; it will never advance.`);
+    }
+    return;
+  }
   const advance: NonNullable<TourInternals["advance"]> = { step, detach: () => {}, timer: null };
   advance.detach = listenForAdvance(auto.selector, auto.event, () => {
     advance.timer = setTimeout(() => {
       if (state.advance === advance) state.advance = null;
       advance.timer = null;
-      if (state.running && !state.ending && state.steps[state.currentIndex] === step) reportFailure(tour.forward());
+      if (!state.running || state.ending || state.steps[state.currentIndex] !== step) return;
+      reportFailure(
+        navigateGuarded(tour, () => (state.steps[state.anchorIndex] === step ? runNavigation(tour, "forward") : Promise.resolve()))
+      );
     }, 0);
   });
   state.advance = advance;
+}
+
+function isValidSelector(selector: string): boolean {
+  try {
+    document.createDocumentFragment().querySelector(selector);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isLive(state: TourInternals, runId: number): boolean {
@@ -539,12 +557,18 @@ function markWaiting(state: TourInternals): () => void {
   };
 }
 
+interface WaitBudget {
+  left: number;
+  waited: boolean;
+}
+
 function checkEligible(
   tour: Tour,
   step: TourStep,
   runId: number,
   forced: boolean,
-  found: Map<TourStep, Element | null>
+  found: Map<TourStep, Element | null>,
+  budget: WaitBudget
 ): boolean | Promise<boolean> {
   const state = internalsOf(tour);
   if (!state.steps.includes(step) || !isLive(state, runId)) return false;
@@ -560,8 +584,17 @@ function checkEligible(
     return true;
   };
   const target = resolveTarget(config.target);
-  const wait = config.waitFor ?? 0;
-  if (target || !(wait > 0)) return verdict(target);
+  const requested = config.waitFor ?? 0;
+  if (target || !(requested > 0)) return verdict(target);
+  const wait = budget.waited ? Math.min(requested, budget.left) : requested;
+  if (wait < requested) {
+    console.warn(
+      `[virtualtour] Step "${step.id}" waits ${wait > 0 ? `only ${wait} ms` : "no longer"} for its target: the navigation spent its waitBudget of ${state.normalized.waitBudget} ms.`
+    );
+  }
+  if (!(wait > 0)) return verdict(target);
+  budget.waited = true;
+  const waitStart = Date.now();
   const release = markWaiting(state);
   const waiting = new AbortController();
   const runSignal = state.abort?.signal ?? null;
@@ -570,6 +603,7 @@ function checkEligible(
   else runSignal?.addEventListener("abort", relay, { once: true });
   state.waits.set(step, waiting);
   const done = (): void => {
+    budget.left = Math.max(0, budget.left - (Date.now() - waitStart));
     release();
     runSignal?.removeEventListener("abort", relay);
     if (state.waits.get(step) === waiting) state.waits.delete(step);
@@ -586,18 +620,24 @@ function checkEligible(
   );
 }
 
+function newWaitBudget(tour: Tour): WaitBudget {
+  const cap = internalsOf(tour).normalized.waitBudget;
+  return { left: cap > 0 ? cap : Infinity, waited: false };
+}
+
 function advanceFrom(
   tour: Tour,
   from: number,
   direction: "forward" | "backward",
-  forcedStep: TourStep | null = null
+  forcedStep: TourStep | null = null,
+  budget: WaitBudget = newWaitBudget(tour)
 ): NavigationOutcome | Promise<NavigationOutcome> {
   const state = internalsOf(tour);
   const runId = state.runId;
   const snapshot = state.steps.slice();
   const found = new Map<TourStep, Element | null>();
   const picked = selectEligible(snapshot.length, from, direction, (index) =>
-    checkEligible(tour, snapshot[index] as TourStep, runId, snapshot[index] === forcedStep, found)
+    checkEligible(tour, snapshot[index] as TourStep, runId, snapshot[index] === forcedStep, found, budget)
   );
   return chain(picked, (outcome) => {
     if (!isLive(state, runId)) return { kind: "stay" } as NavigationOutcome;
@@ -606,7 +646,7 @@ function advanceFrom(
     return chain(presentStep(tour, step, found.get(step) ?? null), (): NavigationOutcome | Promise<NavigationOutcome> => {
       if (!isLive(state, runId)) return { kind: "stay" };
       if (state.steps.includes(step)) return { kind: "show", index: state.steps.indexOf(step) };
-      return advanceFrom(tour, resumePoint(state, snapshot, outcome.index, direction), direction);
+      return advanceFrom(tour, resumePoint(state, snapshot, outcome.index, direction), direction, null, budget);
     });
   });
 }
@@ -637,7 +677,7 @@ function isThenable(value: unknown): value is PromiseLike<unknown> {
   return typeof (value as { then?: unknown } | null | undefined)?.then === "function";
 }
 
-function runHook(label: string, call: () => unknown, signal: AbortSignal | null): void | Promise<void> {
+function runHook(label: string, call: () => unknown, signal: AbortSignal | null, timeoutMs: number): void | Promise<void> {
   const report = (error: unknown): void => console.error(`[virtualtour] ${label} threw; the step still shows:`, error);
   let result: unknown;
   try {
@@ -647,7 +687,23 @@ function runHook(label: string, call: () => unknown, signal: AbortSignal | null)
     return;
   }
   if (!isThenable(result)) return;
-  return raceAbort(Promise.resolve(result), signal).then(() => undefined, report);
+  const pending = Promise.resolve(result);
+  if (!(timeoutMs > 0) || timeoutMs === Infinity) return raceAbort(pending, signal).then(() => undefined, report);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<void>((resolve) => {
+    timer = setTimeout(() => {
+      console.warn(`[virtualtour] ${label} did not settle within ${timeoutMs} ms; the step shows anyway.`);
+      resolve();
+    }, Math.min(timeoutMs, 2 ** 31 - 1));
+  });
+  pending.catch(() => undefined);
+  return raceAbort(Promise.race([pending, expired]), signal).then(
+    () => clearTimeout(timer),
+    (error: unknown) => {
+      clearTimeout(timer);
+      report(error);
+    }
+  );
 }
 
 function presentStep(tour: Tour, step: TourStep, found: Element | null): void | Promise<void> {
@@ -657,10 +713,11 @@ function presentStep(tour: Tour, step: TourStep, found: Element | null): void | 
   const signal = state.abort?.signal ?? null;
   if (step.isShown() && state.engine?.isActive()) return;
   const { prepare, revealWith } = step.config;
+  const timeoutMs = step.config.hookTimeout ?? DEFAULT_HOOK_TIMEOUT_MS;
   const reveal = (): void | Promise<void> => {
     if (!isLive(state, runId)) return;
     const target = found && !found.isConnected ? resolveTarget(step.config.target) : found;
-    const revealing = target && revealWith ? runHook("revealWith", () => revealWith(target), signal) : undefined;
+    const revealing = target && revealWith ? runHook("revealWith", () => revealWith(target), signal, timeoutMs) : undefined;
     return chain(revealing, () => {
       if (!isLive(state, runId)) return;
       const current = state.steps.indexOf(step);
@@ -669,7 +726,7 @@ function presentStep(tour: Tour, step: TourStep, found: Element | null): void | 
       return showStep(tour, current);
     });
   };
-  return chain(prepare ? runHook("prepare", () => prepare(), signal) : undefined, reveal);
+  return chain(prepare ? runHook("prepare", () => prepare(), signal, timeoutMs) : undefined, reveal);
 }
 
 function resumeAfterDrop(tour: Tour, from: number): Promise<void> {

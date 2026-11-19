@@ -53,3 +53,13 @@ test("the next step finds a target the clicked button's own handler just created
   );
   expect(id).toBe("created");
 });
+
+test("a page handler that also calls forward() does not skip a step", async ({ page }) => {
+  await open(page, "?mode=double");
+  await page.locator("#save").click();
+  await expect.poll(() => log(page)).toContain("shown:slow");
+  await page.waitForTimeout(900);
+  const entries = await log(page);
+  expect(entries).not.toContain("shown:third");
+  expect(entries.filter((e) => e === "shown:slow")).toHaveLength(1);
+});

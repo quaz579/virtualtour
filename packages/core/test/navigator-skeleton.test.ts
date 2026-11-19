@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { NavigationQueue, resolveStepIndex, selectIndex } from "../src/navigator";
+import { NavigationQueue, resolveStepIndex, selectEligible } from "../src/navigator";
 import { TourNavigationError } from "../src/errors";
 import { createTour } from "../src/index";
 
-describe("selectIndex", () => {
+const selectIndex = (total: number, from: number, direction: "forward" | "backward", isEligible: (index: number) => boolean = () => true) =>
+  selectEligible(total, from, direction, isEligible);
+
+describe("selectEligible", () => {
   it("moves forward to the next index", () => {
     expect(selectIndex(3, -1, "forward")).toEqual({ kind: "show", index: 0 });
     expect(selectIndex(3, 0, "forward")).toEqual({ kind: "show", index: 1 });
