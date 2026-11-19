@@ -36,11 +36,11 @@ A selector `autoAdvance` on an action step completes the step the same way, so `
 
 | Member | What it does |
 |---|---|
-| `Tour.advance()` | Completes the action step on screen as if the user had done the thing. No effect when no step is on screen or the step still waits for its target. |
+| `Tour.advance()` | Completes the action step on screen as if the user had done the thing. On a plain step it only moves forward and emits no events. No effect when no step is on screen or the step still waits for its target. |
 | `Tour.nudge(message?)` | Shakes the popover (a flash under reduced motion). `message` goes in the feedback row as HTML that passes through `sanitize`; no message clears the row. |
 | `Tour.forward()` | On an unmet action step it nudges instead of moving, whoever calls it: the engine's Next button, a custom `forward` button, the page. Once the step is complete, `forward()` moves on at once without waiting out `advanceDelay`. |
 
-`goTo`, `backward` and `exit` are not gated.
+`goTo`, `backward` and `exit` are not gated. While the tour moves away from a completed step, repeated gestures and `advance()` calls emit no second event and move nothing twice. If the move never leaves the step, the next gesture completes it again.
 
 ## Events
 
@@ -57,12 +57,12 @@ Both are optional members of `Presenter`.
 
 | Member | When it runs |
 |---|---|
-| `Presenter.onNudge(step)` | The popover shook: Next, ArrowRight or the overlay pressed on an unmet step, or `Tour.nudge`. |
+| `Presenter.onNudge(step)` | The popover shook: Next, ArrowRight or the overlay pressed on an unmet step, a rejected gesture, or `Tour.nudge`. Runs for plain steps too. |
 | `Presenter.onCompleted(step)` | The instruction was met. Runs before the `completed` event. |
 
 ## Arrow keys with custom buttons
 
-Custom `buttons` hide the engine's Next and Back. The arrow keys keep navigating anyway, through the same routes as the buttons: eligibility (`shouldShow`, `whenMissing`) applies, and an unmet action step nudges. `keys: { arrows: false }` turns them off.
+Custom `buttons` hide the engine's Next and Back. When a button has a `forward` or `backward` action, the arrow keys keep navigating anyway, through the same routes as the buttons: eligibility (`shouldShow`, `whenMissing`) applies, and an unmet action step nudges. `keys: { arrows: false }` turns them off. A step whose buttons only exit, finish or run a function keeps the arrows still.
 
 ## Engine hooks
 

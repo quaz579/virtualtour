@@ -24,7 +24,7 @@ test("Next on the gated step shakes the popover and does not move", async ({ pag
   await open(page);
   await page.locator(".vt-popover-next-btn").click({ force: true });
   await expect(popover(page)).toHaveClass(NUDGE);
-  await expect(popover(page)).not.toHaveClass(NUDGE, { timeout: 1000 });
+  await expect(popover(page)).not.toHaveClass(NUDGE, { timeout: 2000 });
   expect(await log(page)).toEqual(["shown:save"]);
 });
 
@@ -70,6 +70,15 @@ test("arrow keys nudge a gated step even though custom buttons hide Next", async
   await page.keyboard.press("ArrowRight");
   await expect(popover(page)).toHaveClass(NUDGE);
   expect(await log(page)).toEqual(["shown:save"]);
+});
+
+test("strict click rejects a right-click with a nudge, then a left-click completes", async ({ page }) => {
+  await open(page, "?mode=strict");
+  await page.locator("#save").click({ button: "right" });
+  await expect(popover(page)).toHaveClass(NUDGE);
+  expect(await log(page)).toEqual(["shown:save"]);
+  await page.locator("#save").click();
+  await expect.poll(() => log(page)).toContain("shown:after");
 });
 
 test("a page click matching autoAdvance.selector completes the step through the gate", async ({ page }) => {

@@ -287,7 +287,8 @@ export interface Driver {
   hasPreviousStep: () => boolean;
   highlight: (step: DriveStep) => void;
   updatePopover: (patch?: PopoverPatch) => void;
-  advance: () => void;
+  /** Completes the current step as `advanceOn` would; returns `false` when no step can complete (none shown, or still waiting for its element). */
+  advance: () => boolean;
   nudge: (message?: string | PopoverPatch) => void;
   /** Nudges and returns `true` when the current step is an action step whose instruction is not yet met; returns `false` and does nothing otherwise. */
   nudgeIfGated: () => boolean;

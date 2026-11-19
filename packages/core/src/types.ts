@@ -234,7 +234,7 @@ export interface Presenter {
   /** Re-applies a step whose configuration changed while it is shown. */
   update(popover: PopoverDOM, step: TourStep, parts: StepParts): void;
   beforeLeave(step: TourStep): void;
-  /** An action step was nudged: Next, ArrowRight or the overlay pressed before its instruction was met, or {@link Tour.nudge}. */
+  /** The popover was nudged: Next, ArrowRight or the overlay pressed before an instruction was met, a rejected gesture, or {@link Tour.nudge}. Runs for plain steps too. */
   onNudge?(step: TourStep): void;
   /** An action step's instruction was met. Runs before the step's `completed` event. */
   onCompleted?(step: TourStep): void;

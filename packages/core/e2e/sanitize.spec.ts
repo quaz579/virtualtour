@@ -102,11 +102,11 @@ test("a user Element body and a DocumentFragment body survive close and a second
   await page.evaluate(() => void (window as unknown as Win).vtTour.start());
   await expect.poll(() => page.evaluate(() => (window as unknown as Win).vtLog.filter((l) => l === "shown:first").length)).toBe(2);
   await expect.poll(() => log(page)).toContain("shown:first");
-  await page.evaluate(async () => {
-    (window as unknown as Win).vtTour.advance();
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    await (window as unknown as Win).vtTour.forward();
-  });
+  const shownCount = (id: string) => page.evaluate((name) => (window as unknown as Win).vtLog.filter((l) => l === name).length, `shown:${id}`);
+  await page.evaluate(() => (window as unknown as Win).vtTour.advance());
+  await expect.poll(() => shownCount("array")).toBe(2);
+  await page.evaluate(() => void (window as unknown as Win).vtTour.forward());
+  await expect.poll(() => shownCount("element")).toBe(2);
   await expect(page.locator(".vt-body")).toHaveText("Original element body");
   await page.evaluate(() => void (window as unknown as Win).vtTour.forward());
   await expect(page.locator(".vt-body .fragment-note")).toHaveText("Fragment body");

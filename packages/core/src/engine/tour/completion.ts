@@ -2,7 +2,7 @@ import type { Activation, Context } from "../core/context";
 import { stepOption } from "../core/options";
 import { isDummyElement } from "../core/utils";
 import { announce } from "../popover/live-region";
-import { isCurrent, latch, markDone, unlatch } from "./lifecycle";
+import { isCurrent, latch, markDone, reopen } from "./lifecycle";
 import { isActionStep } from "./step";
 
 export function requestCompletion(ctx: Context, activation: Activation) {
@@ -20,7 +20,7 @@ export function requestCompletion(ctx: Context, activation: Activation) {
   const delay = stepOption(ctx, activation.step, "advanceDelay") ?? 0;
   if (delay <= 0) {
     ctx.tour.next();
-    unlatch(ctx, activation);
+    reopen(ctx, activation);
     return;
   }
 
@@ -35,7 +35,7 @@ export function requestCompletion(ctx: Context, activation: Activation) {
     }
 
     ctx.tour.next();
-    unlatch(ctx, activation);
+    reopen(ctx, activation);
   }, delay);
   activation.controller.signal.addEventListener("abort", () => window.clearTimeout(timer));
 }

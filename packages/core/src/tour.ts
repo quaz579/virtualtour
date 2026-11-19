@@ -47,6 +47,8 @@ interface TourInternals {
   advance: { step: TourStep; detach: () => void; timer: ReturnType<typeof setTimeout> | null } | null;
   waits: Map<TourStep, AbortController>;
   warnedUnnamed: boolean;
+  completing: TourStep | null;
+  skipForward: boolean;
   clearSanitized: () => void;
 }
 
@@ -94,6 +96,8 @@ export class Tour {
       advance: null,
       waits: new Map(),
       warnedUnnamed: false,
+      completing: null,
+      skipForward: false,
       clearSanitized,
     };
     internals.set(this, state);
@@ -211,7 +215,8 @@ export class Tour {
   /**
    * Moves to the next step, or finishes after the last one. Does nothing while no run is active. While the step on
    * screen is an action step whose instruction is not met, it nudges instead of moving, whoever calls it: a custom
-   * `forward` button, the page, or the keyboard.
+   * `forward` button, the page, or the keyboard. Only `forward` is gated: `goTo`, `backward` and `exit` are not. A
+   * step's own completion passes the gate; nothing else does.
    */
   forward(): Promise<void> {
     const state = internalsOf(this);
@@ -221,7 +226,8 @@ export class Tour {
 
   /**
    * Completes the action step on screen as if the user had done what its instruction asks: emits `completed`, then
-   * `step-completed`, waits the step's `advanceDelay` and moves forward. Does nothing while no step is on screen or
+   * `step-completed`, waits the step's `advanceDelay` and moves forward. While the tour is still moving away from the step, repeated calls and gestures complete nothing more.
+   * On a step without an instruction it only moves forward, with no events. Does nothing while no step is on screen or
    * the step is still waiting for its target.
    */
   advance(): void {
@@ -558,9 +564,14 @@ function ensureEngine(tour: Tour): Driver {
       if (step) leaveStep(tour, step);
     },
     onStepCompleted(_element: Element | undefined, driveStep: DriveStep) {
-      if (!owns() || !driveStep.popover?.instruction) return;
+      if (!owns()) return;
       const step = stepOf(tour, driveStep);
-      if (!step) return;
+      if (step && state.completing === step && state.queue.busy) {
+        state.skipForward = true;
+        return;
+      }
+      state.completing = step ?? null;
+      if (!driveStep.popover?.instruction || !step) return;
       guarded("presenter.onCompleted", () => presenter.onCompleted?.(step));
       emitStep(step, "completed", { step });
       emitTour(tour, "step-completed", { tour, step });
@@ -571,10 +582,20 @@ function ensureEngine(tour: Tour): Driver {
       if (step) guarded("presenter.onNudge", () => presenter.onNudge?.(step));
     },
     onNextClick() {
-      if (owns()) reportFailure(tour.forward());
+      if (!owns()) return;
+      if (state.skipForward) {
+        state.skipForward = false;
+        return;
+      }
+      reportFailure(tour.forward());
     },
     onDoneClick() {
-      if (owns()) reportFailure(tour.forward());
+      if (!owns()) return;
+      if (state.skipForward) {
+        state.skipForward = false;
+        return;
+      }
+      reportFailure(tour.forward());
     },
     onPrevClick() {
       if (owns()) reportFailure(tour.backward());
@@ -630,12 +651,13 @@ function attachAdvance(tour: Tour, step: TourStep): void {
       if (state.advance === advance) state.advance = null;
       advance.timer = null;
       if (!state.running || state.ending || state.steps[state.currentIndex] !== step) return;
-      if (state.engine?.getActiveStep()?.popover?.instruction) {
-        state.engine.advance();
-        return;
-      }
       reportFailure(
-        navigateGuarded(tour, () => (state.steps[state.anchorIndex] === step ? runNavigation(tour, "forward") : Promise.resolve()))
+        navigateGuarded(tour, () => {
+          if (state.steps[state.anchorIndex] !== step) return Promise.resolve();
+          const engine = state.engine;
+          if (engine?.getActiveStep()?.popover?.instruction && engine.advance()) return Promise.resolve();
+          return runNavigation(tour, "forward");
+        })
       );
     }, 0);
   });

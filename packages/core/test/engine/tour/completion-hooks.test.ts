@@ -65,6 +65,37 @@ describe("Config.onStepCompleted", () => {
   });
 });
 
+describe("completion is final", () => {
+  it("completes again each time while the move that follows does not leave the step", async () => {
+    const onStepCompleted = vi.fn();
+    const onNextClick = vi.fn();
+    const d = await start({ onStepCompleted, onNextClick, steps: [actionStep(), SAMPLE_STEPS[1]] });
+    d.advance();
+    d.advance();
+    expect(onStepCompleted).toHaveBeenCalledTimes(2);
+    expect(onNextClick).toHaveBeenCalledTimes(2);
+    expect(d.nudgeIfGated()).toBe(true);
+  });
+
+  it("advance() reports whether a step could complete", async () => {
+    const d = createDriver({ animate: false, steps: [actionStep(), SAMPLE_STEPS[1]] });
+    expect(d.advance()).toBe(false);
+    d.drive(0);
+    await nextFrame();
+    expect(d.advance()).toBe(true);
+  });
+
+  it("advance() reports false while the step waits for its element", async () => {
+    const d = createDriver({
+      animate: false,
+      steps: [{ element: "#late", waitForElement: 300, popover: { title: "Late", instruction: "Do it." } }],
+    });
+    d.drive(0);
+    await nextFrame();
+    expect(d.advance()).toBe(false);
+  });
+});
+
 describe("Config.onNudge", () => {
   it("runs for api nudges with the nudged step", async () => {
     const onNudge = vi.fn();
@@ -177,6 +208,17 @@ describe("setConfig with changed steps", () => {
     d.setConfig({ ...d.getConfig(), steps: config.steps! });
     expect(navButton("next")!.textContent).toBe("Done");
     expect(document.querySelector(".vt-popover-progress-text")?.textContent).toBe("2 of 2");
+  });
+
+  it("survives the active step being removed: no throw, popover text untouched", async () => {
+    const d = await start({ steps: SAMPLE_STEPS });
+    d.moveNext();
+    await nextFrame();
+    const before = popoverEl()?.textContent;
+    const config = d.getConfig();
+    expect(() => d.setConfig({ ...config, steps: [config.steps![0]!, config.steps![2]!] })).not.toThrow();
+    expect(popoverEl()?.textContent).toBe(before);
+    expect(d.getActiveIndex()).toBe(1);
   });
 
   it("leaves the active index alone when the active step is not in the new list", async () => {

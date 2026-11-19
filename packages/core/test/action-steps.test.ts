@@ -150,6 +150,53 @@ describe("advance() and completion events", () => {
     expect(completed).toHaveBeenCalledTimes(1);
   });
 
+  it("a second advance() or click while the next step prepares slowly completes nothing again and skips nothing", async () => {
+    const slow = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 120));
+    const tour = make({
+      steps: [act("a", { target: "#t", autoAdvance: { event: "click" } }), plain("b", { prepare: slow }), plain("c")],
+    });
+    const completed = vi.fn();
+    tour.on("step-completed", completed);
+    await tour.start();
+    tour.advance();
+    tour.advance();
+    await tick(10);
+    document.querySelector<HTMLElement>("#t")!.click();
+    await tick(10);
+    tour.advance();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    await tick(150);
+    expect(currentId(tour)).toBe("b");
+    expect(completed).toHaveBeenCalledTimes(1);
+  });
+
+  it("a double click on the target while the next step prepares slowly completes once", async () => {
+    const slow = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 120));
+    const tour = make({
+      steps: [act("a", { target: "#t", autoAdvance: { event: "click" } }), plain("b", { prepare: slow }), plain("c")],
+    });
+    const completed = vi.fn();
+    tour.on("step-completed", completed);
+    await tour.start();
+    const target = document.querySelector<HTMLElement>("#t")!;
+    target.click();
+    await tick(10);
+    target.click();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    await tick(150);
+    expect(currentId(tour)).toBe("b");
+    expect(completed).toHaveBeenCalledTimes(1);
+  });
+
+  it("advance() on a plain step only moves forward and emits no events", async () => {
+    const tour = await show({ steps: [plain("a"), plain("b")] });
+    const completed = vi.fn();
+    tour.on("step-completed", completed);
+    tour.advance();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    expect(completed).not.toHaveBeenCalled();
+  });
+
   it("advance() does nothing while no step is on screen", () => {
     const tour = make({ steps: [act("a"), plain("b")] });
     expect(() => tour.advance()).not.toThrow();
@@ -202,15 +249,6 @@ describe("autoAdvance on an action step", () => {
     target.click();
     await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
     expect(completed).toHaveBeenCalledTimes(1);
-  });
-
-  it("strict click rejects a right-click and nudges", async () => {
-    const tour = await show({
-      steps: [act("a", { target: "#t", autoAdvance: { event: "click", strict: true } }), plain("b")],
-    });
-    document.querySelector<HTMLElement>("#t")!.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, composed: true, button: 2 }));
-    await tick(20);
-    expect(currentId(tour)).toBe("a");
   });
 
   it("a selector autoAdvance completes the action step instead of bypassing it", async () => {
@@ -371,6 +409,13 @@ describe("arrow keys with custom buttons", () => {
     });
     pressKey("ArrowRight");
     await vi.waitFor(() => expect(currentId(tour)).toBe("c"));
+  });
+
+  it("a step whose buttons only exit or finish keeps the arrows still", async () => {
+    const tour = await show({ steps: [plain("a", { buttons: [{ text: "Quit", action: "exit" }] }), plain("b")] });
+    pressKey("ArrowRight");
+    await tick(30);
+    expect(currentId(tour)).toBe("a");
   });
 
   it("keys.arrows: false turns the arrows off", async () => {

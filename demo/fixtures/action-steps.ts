@@ -22,6 +22,15 @@ const gated: StepConfig =
         autoAdvance: { event: "click" },
         buttons: [{ text: "Continue", action: "forward" }],
       }
+    : mode === "strict"
+      ? {
+          id: "save",
+          title: "Save",
+          body: "Left-click the real button.",
+          target: "#save",
+          instruction: "Click Save.",
+          autoAdvance: { event: "click", strict: true },
+        }
     : mode === "selector"
       ? {
           id: "save",

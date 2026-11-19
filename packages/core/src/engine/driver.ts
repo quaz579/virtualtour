@@ -135,7 +135,7 @@ export function createEngine(options: Config = {}): Driver {
     return isActionStep(step) && !(activation && isDone(ctx, activation.step));
   }
 
-  function nudgeIfGated(): boolean {
+  function swallowIfActionStep(): boolean {
     if (!isActionStep(ctx.getState("__activation")?.step ?? currentPopoverStep())) {
       return false;
     }
@@ -147,7 +147,7 @@ export function createEngine(options: Config = {}): Driver {
     return true;
   }
 
-  function nudgeIfUnmet(): boolean {
+  function nudgeIfGated(): boolean {
     if (!isUnmetGate()) {
       return false;
     }
@@ -160,7 +160,7 @@ export function createEngine(options: Config = {}): Driver {
   }
 
   function pressNext() {
-    if (!nudgeIfGated()) {
+    if (!swallowIfActionStep()) {
       next();
     }
   }
@@ -183,7 +183,7 @@ export function createEngine(options: Config = {}): Driver {
   function handleOverlayClick() {
     const overlayClickBehavior = ctx.getConfig("overlayClickBehavior");
 
-    if (typeof overlayClickBehavior !== "function" && overlayClickBehavior !== "none" && nudgeIfGated()) {
+    if (typeof overlayClickBehavior !== "function" && overlayClickBehavior !== "none" && swallowIfActionStep()) {
       return;
     }
 
@@ -281,13 +281,15 @@ export function createEngine(options: Config = {}): Driver {
     drive(index);
   }
 
-  function advance() {
+  function advance(): boolean {
     const activation = ctx.getState("__activation");
     if (!activation || isWaiting(ctx)) {
-      return;
+      return false;
     }
 
     requestCompletion(ctx, activation);
+
+    return true;
   }
 
   const warnedSteps = new WeakSet<DriveStep>();
@@ -344,7 +346,7 @@ export function createEngine(options: Config = {}): Driver {
 
   function handleArrowRight() {
     const hasStep = ctx.getState("activeIndex") !== undefined && !!currentPopoverStep();
-    if (isTransitioning(ctx) || !hasStep || nudgeIfGated() || !canUseButton("next", true)) {
+    if (isTransitioning(ctx) || !hasStep || swallowIfActionStep() || !canUseButton("next", true)) {
       return;
     }
 
@@ -413,7 +415,7 @@ export function createEngine(options: Config = {}): Driver {
       ctx.setState("activeIndex", moved);
     }
 
-    if (reindexed || steps?.length !== before?.length) {
+    if (moved >= 0 && (reindexed || steps?.length !== before?.length)) {
       refreshActivePopover();
     }
   }
@@ -645,7 +647,7 @@ export function createEngine(options: Config = {}): Driver {
     },
     updatePopover,
     advance,
-    nudgeIfGated: nudgeIfUnmet,
+    nudgeIfGated,
     nudge: (message?: string | PopoverPatch) => {
       if (typeof message === "object") {
         updatePopover(message);

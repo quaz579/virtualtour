@@ -356,7 +356,9 @@ describe("03-schemas section 1.4 rows (step fields)", () => {
 
   it("row buttons: arrow keys keep navigating while the buttons hide Next and Back", () => {
     expect(compileOne({ buttons: [{ text: "Go", action: "forward" }] }).step.popover?.navigateWithKeys).toBe(true);
+    expect(compileOne({ buttons: [{ text: "Back", action: "backward" }] }).step.popover?.navigateWithKeys).toBe(true);
     expect(compileOne({}).step.popover?.navigateWithKeys).toBeUndefined();
+    expect(compileOne({ buttons: [{ text: "End", action: "finish" }, { text: "Run", action: () => {} }] }).step.popover?.navigateWithKeys).toBeUndefined();
   });
 
   it("row advanceDelay: becomes advanceDelay", () => {
