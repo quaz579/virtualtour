@@ -104,3 +104,41 @@ test("opening the panel in the step before attaches the next step to its target"
   await expect.poll(() => log(page)).toContain("shown:panel");
   expect(await currentTarget(page)).toBe("panel-btn");
 });
+
+test("a prepare that never settles times out with a warning and the step shows", async ({ page }) => {
+  await open(page, "/fixtures/prepare.html?mode=hang");
+  await expect.poll(() => log(page)).toContain("shown:intro");
+  await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => log(page), { timeout: 4000 }).toContain("shown:stuck");
+  const warnings = await page.evaluate(() => (window as unknown as { vtWarnings: string[] }).vtWarnings);
+  expect(warnings.some((w) => w.includes("prepare did not settle within 400 ms"))).toBe(true);
+  await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => log(page)).toContain("shown:after");
+});
+
+test("consecutive missing steps spend at most the wait budget", async ({ page }) => {
+  await open(page, "/fixtures/late-target.html?never=1&waitFor=1000&skip=1&missing=4&waitBudget=1500");
+  await expect.poll(() => log(page), { timeout: 8000 }).toContain("shown:end");
+  const m = await marks(page);
+  const waited = (m["started"] ?? 0) - (m["clicked"] ?? 0);
+  expect(waited).toBeGreaterThanOrEqual(1400);
+  expect(waited).toBeLessThan(3500);
+});
+
+test("a step shown centered after a wait timeout stays centered when its target appears later", async ({ page }) => {
+  await open(page, "/fixtures/late-target.html?never=1&waitFor=300");
+  await expect.poll(() => log(page)).toContain("started:absent");
+  await page.evaluate(() => {
+    const el = document.createElement("button");
+    el.id = "late-target";
+    el.textContent = "Late button";
+    document.querySelector("#slot")?.appendChild(el);
+  });
+  const viewport = page.viewportSize();
+  await page.setViewportSize({ width: (viewport?.width ?? 1280) - 40, height: viewport?.height ?? 720 });
+  await page.waitForTimeout(400);
+  expect(await currentTarget(page)).toBeNull();
+  const box = await popover(page).boundingBox();
+  const width = (viewport?.width ?? 1280) - 40;
+  expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - width / 2)).toBeLessThan(80);
+});

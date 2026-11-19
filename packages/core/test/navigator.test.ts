@@ -695,3 +695,138 @@ describe("review round 3", () => {
   });
 });
 
+
+describe("navigator hardening", () => {
+  it("a prepare that never settles times out with a warning and the step still shows", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([{ id: "a" }, { id: "b", hookTimeout: 40, prepare: () => new Promise<void>(() => {}) }]);
+    await tour.start();
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("b");
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("prepare did not settle within 40 ms"))).toBe(true);
+  });
+
+  it("a revealWith that never settles times out and the step still shows", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([{ id: "a" }, { id: "b", target: "#b", hookTimeout: 40, revealWith: () => new Promise<void>(() => {}) }]);
+    await tour.start();
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("b");
+    expect(tour.currentStep?.resolvedTarget).toBe(document.querySelector("#b"));
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("revealWith did not settle"))).toBe(true);
+  });
+
+  it("a timed-out prepare on a skip step whose target is missing still skips it", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const prepare = vi.fn(() => new Promise<void>(() => {}));
+    const tour = make([{ id: "a" }, { id: "b", target: "#never", whenMissing: "skip", hookTimeout: 30, prepare }, { id: "c" }]);
+    await tour.start();
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("c");
+    expect(prepare).not.toHaveBeenCalled();
+  });
+
+  it("a prepare that settles in time leaves no timer behind to warn later", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([{ id: "a" }, { id: "b", hookTimeout: 50, prepare: () => Promise.resolve() }]);
+    await tour.start();
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("b");
+    await tick(120);
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("did not settle"))).toBe(false);
+  });
+
+  it("hookTimeout 0 waits for the hook indefinitely", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([{ id: "a" }, { id: "b", hookTimeout: 0, prepare: () => gate }]);
+    await tour.start();
+    const moving = tour.forward();
+    await tick(80);
+    expect(tour.currentStep?.id).toBe("a");
+    release();
+    await moving;
+    expect(tour.currentStep?.id).toBe("b");
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("did not settle"))).toBe(false);
+  });
+
+  it("caps the total wait across consecutive missing steps", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make(
+      [
+        { id: "a" },
+        { id: "m1", target: "#n1", waitFor: 150, whenMissing: "skip" },
+        { id: "m2", target: "#n2", waitFor: 150, whenMissing: "skip" },
+        { id: "m3", target: "#n3", waitFor: 150, whenMissing: "skip" },
+        { id: "m4", target: "#n4", waitFor: 150, whenMissing: "skip" },
+        { id: "z" },
+      ],
+      { waitBudget: 200 }
+    );
+    await tour.start();
+    const began = performance.now();
+    await tour.forward();
+    const spent = performance.now() - began;
+    expect(tour.currentStep?.id).toBe("z");
+    expect(spent).toBeGreaterThanOrEqual(190);
+    expect(spent).toBeLessThan(450);
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("waitBudget"))).toBe(true);
+  });
+
+  it("a step that is out of budget still shows centered when it is not a skip step", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make(
+      [{ id: "a" }, { id: "m1", target: "#n1", waitFor: 100, whenMissing: "skip" }, { id: "m2", target: "#n2", waitFor: 5000 }],
+      { waitBudget: 100 }
+    );
+    await tour.start();
+    const began = performance.now();
+    await tour.forward();
+    expect(performance.now() - began).toBeLessThan(500);
+    expect(tour.currentStep?.id).toBe("m2");
+    expect(tour.currentStep?.resolvedTarget).toBeNull();
+  });
+
+  it("the budget is per navigation, not per tour", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make(
+      [{ id: "a" }, { id: "m1", target: "#n1", waitFor: 100, whenMissing: "skip" }, { id: "b" }, { id: "m2", target: "#n2", waitFor: 100, whenMissing: "skip" }, { id: "z" }],
+      { waitBudget: 120 }
+    );
+    await tour.start();
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("b");
+    const began = performance.now();
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("z");
+    expect(performance.now() - began).toBeGreaterThanOrEqual(90);
+  });
+
+  it("a step shown centered after a waitFor timeout stays centered when the target appears later", async () => {
+    const tour = make([{ id: "a" }, { id: "b", target: "#late", waitFor: 40 }]);
+    await tour.start();
+    await tour.forward();
+    expect(tour.currentStep?.resolvedTarget).toBeNull();
+    const late = document.createElement("div");
+    late.id = "late";
+    document.body.appendChild(late);
+    const entry = engineOf(tour)?.getConfig().steps?.[1];
+    expect((entry?.element as () => Element | null)()).toBeNull();
+    await tour.backward();
+    await tour.forward();
+    expect(tour.currentStep?.resolvedTarget).toBe(late);
+  });
+
+  it("exit() during a stuck prepare clears the hook timer so no late warning fires", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([{ id: "a" }, { id: "b", hookTimeout: 50, prepare: () => new Promise<void>(() => {}) }]);
+    await tour.start();
+    const moving = tour.forward();
+    await tick(10);
+    await tour.exit();
+    await moving;
+    await tick(120);
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("did not settle"))).toBe(false);
+  });
+});
