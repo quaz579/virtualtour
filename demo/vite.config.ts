@@ -18,6 +18,7 @@ export default defineConfig({
         autoAdvance: resolve(__dirname, "fixtures/auto-advance.html"),
         content: resolve(__dirname, "fixtures/content.html"),
         sanitize: resolve(__dirname, "fixtures/sanitize.html"),
+        avatarPlayer: resolve(__dirname, "fixtures/avatar-player.html"),
       },
     },
   },
