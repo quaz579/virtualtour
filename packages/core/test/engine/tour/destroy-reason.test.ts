@@ -121,7 +121,7 @@ describe("destroy before the first step settles", () => {
     d.destroy();
 
     expect(onDestroyed).toHaveBeenCalledTimes(1);
-    expect(onDestroyed.mock.calls[0][1].popover?.title).toBe("Only");
-    expect(onDestroyed.mock.calls[0][0]).toBe(document.querySelector("#intro"));
+    expect(onDestroyed.mock.calls[0]![1].popover?.title).toBe("Only");
+    expect(onDestroyed.mock.calls[0]![0]).toBe(document.querySelector("#intro"));
   });
 });

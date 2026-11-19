@@ -60,8 +60,8 @@ function trapFocus(ctx: Context, e: KeyboardEvent) {
     const index =
       (((startIndex + direction * offset) % focusableEls.length) + focusableEls.length) % focusableEls.length;
     const candidate = focusableEls[index];
-    candidate.focus();
-    if (candidate.matches(":focus")) {
+    candidate?.focus();
+    if (candidate?.matches(":focus")) {
       return;
     }
   }

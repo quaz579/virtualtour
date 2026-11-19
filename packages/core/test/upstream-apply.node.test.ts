@@ -132,7 +132,7 @@ describe("namespace table", () => {
   });
 
   it("rewrites every popover class name the engine defines from its upstream spelling", () => {
-    const strings = Object.values(dynamic.popover).filter((value): value is string => typeof value === "string");
+    const strings = Object.values(dynamic.popover).filter(value => typeof value === "string") as string[];
     expect(strings.length).toBeGreaterThan(20);
     for (const value of strings) {
       expect(value.startsWith("vt-popover")).toBe(true);
