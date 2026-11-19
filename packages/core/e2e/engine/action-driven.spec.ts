@@ -10,8 +10,17 @@ const popover = (page: Page) => page.locator(".vt-popover");
 async function expectNudgeWithoutFade(page: Page) {
   await page.waitForFunction(() => document.querySelector(".vt-popover")?.getAnimations().length === 0);
   await page.evaluate(() => {
-    const state = window as unknown as { minOpacity: number };
+    const state = window as unknown as { minOpacity: number; nudges: number };
     state.minOpacity = 1;
+    state.nudges = 0;
+    let nudged = false;
+    new MutationObserver(() => {
+      const has = !!document.querySelector(".vt-popover.vt-popover-nudge");
+      if (has && !nudged) {
+        state.nudges += 1;
+      }
+      nudged = has;
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"], subtree: true });
     const sample = () => {
       const wrapper = document.querySelector(".vt-popover");
       if (wrapper) {
@@ -23,7 +32,7 @@ async function expectNudgeWithoutFade(page: Page) {
   });
 
   await page.locator("#demo-file").click();
-  await expect(popover(page)).toHaveClass(/vt-popover-nudge/);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { nudges: number }).nudges)).toBe(1);
   await expect(popover(page)).not.toHaveClass(/vt-popover-nudge/, { timeout: 2000 });
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await page.waitForFunction(() => document.querySelector(".vt-popover")?.getAnimations().length === 0);
