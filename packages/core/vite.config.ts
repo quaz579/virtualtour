@@ -1,7 +1,6 @@
 import { copyFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
-import dts from "vite-plugin-dts";
 
 const entries = {
   index: resolve(__dirname, "src/index.ts"),
@@ -51,14 +50,6 @@ export default defineConfig(({ mode }) => {
               for (const file of ["pack.json", "sheet.png", "LICENSE-ART.md"]) copyFileSync(resolve(from, file), resolve(to, file));
             },
           },
-          dts({
-            include: ["src/index.ts", "src/avatar", "src/motion"],
-            tsconfigPath: resolve(__dirname, "tsconfig.json"),
-            beforeWriteFile: (filePath, content) => ({
-              filePath: filePath.replace(/\/(avatar|motion)\/index\.d\.ts$/, "/$1.d.ts"),
-              content,
-            }),
-          }),
         ],
   };
 });

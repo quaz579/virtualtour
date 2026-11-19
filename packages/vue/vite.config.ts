@@ -15,5 +15,14 @@ export default defineConfig({
       external: ["vue", "virtualtour"],
     },
   },
-  plugins: [dts({ include: ["src"], tsconfigPath: resolve(__dirname, "tsconfig.build.json"), entryRoot: "src" })],
+  plugins: [
+    dts({
+      include: ["src"],
+      tsconfigPath: resolve(__dirname, "tsconfig.build.json"),
+      entryRoot: "src",
+      afterDiagnostic: (diagnostics) => {
+        if (diagnostics.length > 0) throw new Error(`declaration build reported ${diagnostics.length} type error(s)`);
+      },
+    }),
+  ],
 });
