@@ -62,6 +62,10 @@ export default defineConfig({
         items: [{ text: "Avatar reference", link: "/avatar/" }],
       },
       {
+        text: "Demo",
+        items: [{ text: "Demo app", link: "/demo" }],
+      },
+      {
         text: "Migration",
         items: [{ text: "From driver.js", link: "/migration/from-driverjs" }],
       },
