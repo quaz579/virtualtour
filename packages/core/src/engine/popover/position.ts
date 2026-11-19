@@ -10,9 +10,9 @@ export type PositionOptions = {
   side: PlacementRequest;
   align: Alignment;
   offset: number;
-  crossOffset?: number;
-  arrow?: boolean;
-  arrowMinInset?: number;
+  crossOffset?: number | undefined;
+  arrow?: boolean | undefined;
+  arrowMinInset?: number | undefined;
   padding: number;
   boundaryPadding?: number;
   boundary?: "viewport" | "scrollParents" | undefined;
@@ -160,7 +160,7 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   const { style, classList } = popover.wrapper;
   const rtl = isRtl(anchor);
   const showArrow = options.arrow !== false;
-  const crossOffset = options.crossOffset || 0;
+  const crossOffset = Number.isFinite(options.crossOffset) ? (options.crossOffset as number) : 0;
   if (popover.wrapper.hasAttribute(fixedNames.attr.strategy)) {
     popover.wrapper.removeAttribute(fixedNames.attr.strategy);
     style.left = style.top = style.right = style.bottom = "";
@@ -345,7 +345,7 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     rtl,
     elementRect: elementDimensions,
     showArrow,
-    minInset: options.arrowMinInset ?? ARROW_CORNER_INSET,
+    minInset: Number.isFinite(options.arrowMinInset) ? Math.max(0, options.arrowMinInset as number) : ARROW_CORNER_INSET,
   });
 
   const sideClass = popoverNames.sideClass(renderedSide);

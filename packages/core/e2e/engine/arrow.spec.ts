@@ -59,6 +59,33 @@ test("a hidden arrow leaves the popover offset px from the target", async ({ pag
   near(pop.y, target.y + target.height + 10);
 });
 
+test("a hidden arrow gives up the arrow allowance when shifting inside the viewport", async ({ page }) => {
+  await openFixture(page);
+  const leftEdges: Record<string, number> = {};
+
+  for (const arrow of [true, false]) {
+    await page.evaluate(arrow => {
+      window.tour?.destroy();
+      const target = document.querySelector<HTMLElement>("#heading")!;
+      target.style.cssText = "position:fixed;top:100px;left:0;width:40px;height:30px";
+      window.tour = window.__engine.createEngine({ animate: false, stagePadding: 0, popoverOffset: 10, popoverPadding: 0 });
+      window.tour.highlight({
+        element: "#heading",
+        popover: { title: "Arrow", description: "Placed", side: "bottom", align: "center", arrow },
+      });
+    }, arrow);
+    await expect(title(page)).toHaveText("Arrow");
+    await settle(page);
+    const target = await box(page.locator("#heading"));
+    const pop = await box(popover(page));
+    near(pop.y, target.y + target.height + 10);
+    leftEdges[String(arrow)] = pop.x;
+  }
+
+  near(leftEdges.false!, 0);
+  expect(leftEdges.true!).toBeGreaterThan(leftEdges.false! + 5);
+});
+
 for (const dir of ["ltr", "rtl"] as const) {
   test.describe(`minInset ${dir}`, () => {
     test.beforeEach(async ({ page }) => {

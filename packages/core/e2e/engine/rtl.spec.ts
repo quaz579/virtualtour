@@ -196,3 +196,27 @@ test("side fallback mirrors", async ({ page }) => {
   expect(sides.ltr).toBe("left");
   expect(sides.rtl).toBe("right");
 });
+
+test("side auto breaks a left and right free space tie by direction", async ({ page }) => {
+  const sides: Record<Dir, string> = { ltr: "", rtl: "" };
+  for (const dir of DIRS) {
+    await openFixture(page, FIXTURES[dir]);
+    sides[dir] = await page.evaluate(() => {
+      const infos: string[] = [];
+      window.tour?.destroy();
+      window.tour = window.__engine.createEngine({
+        animate: false,
+        stagePadding: 0,
+        onReposition: info => infos.push(info.side),
+      });
+      const target = document.querySelector<HTMLElement>("#one")!;
+      const left = (window.innerWidth - 100) / 2;
+      target.style.cssText = `position:fixed;top:150px;left:${left}px;width:100px;height:${window.innerHeight - 300}px`;
+      window.tour.highlight({ element: "#one", popover: { title: "Auto", side: "auto" } });
+      return infos.at(-1)!;
+    });
+  }
+
+  expect(sides.ltr).toBe("right");
+  expect(sides.rtl).toBe("left");
+});

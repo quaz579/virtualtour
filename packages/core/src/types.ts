@@ -62,7 +62,12 @@ export type PlacementRef = "auto" | { side: Side | "auto" | "over"; align?: Alig
 
 /** Popover positioning switches. */
 export interface PositionOptions {
-  /** Gap between target and popover, or `{ main, cross }`. Main default 10, cross default 0. */
+  /**
+   * Gap between target and popover, or `{ main, cross }`. Main default 10, cross default 0. `cross` shifts along the edge the
+   * popover sits on: on top/bottom positive moves toward inline-end (left in right-to-left layouts, whose direction is read
+   * from the anchor element); on left/right positive moves down. Ignored for `over` and centered steps. Non-finite values
+   * fall back to the default.
+   */
   offset?: number | { main?: number; cross?: number };
   /** Distance kept from the boundary. Default 0. */
   viewportPadding?: number;
@@ -77,7 +82,7 @@ export interface PositionOptions {
   shift?: boolean;
   /** CSS positioning strategy. Default `fixed`. */
   strategy?: "fixed" | "absolute";
-  /** `false` hides the arrow; `{ minInset }` sets the closest the arrow gets to a corner. Default true, 15. */
+  /** `false` hides the arrow; `{ minInset }` sets the closest the arrow gets to a corner. Default true, 15. Negative or non-finite `minInset` falls back to 15. */
   arrow?: boolean | { minInset?: number };
 }
 

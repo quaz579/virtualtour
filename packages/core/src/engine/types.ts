@@ -273,7 +273,11 @@ export type DriveStep = {
   /** Scroll options for this step's element; `false` never scrolls. Overrides `Config.scrollIntoView`. */
   scrollIntoView?: false | ScrollIntoViewOptions;
   popoverOffset?: number;
-  /** Offset along the edge the popover sits on; positive moves toward inline-end, so left in right-to-left layouts. Defaults to `0`. */
+  /**
+   * Offset along the edge the popover sits on. On top/bottom, positive moves toward inline-end, so left in right-to-left
+   * layouts (direction comes from the anchor element); on left/right, positive moves down. Ignored for `over` and centered
+   * steps. Defaults to `0`.
+   */
   popoverCrossOffset?: number;
   /** Overrides `Config.popoverPadding` for this step. */
   popoverPadding?: number;
