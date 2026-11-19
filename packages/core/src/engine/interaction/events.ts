@@ -117,7 +117,14 @@ export function initEvents(ctx: Context) {
   };
   const onWindowKeydownCapture = (e: KeyboardEvent) => onKeydownCapture(ctx, e);
   const onWindowResize = () => requireRefresh(ctx);
-  const onWindowScroll = () => requireRefresh(ctx);
+  const onWindowScroll = (e?: Event) => {
+    const target = e?.target;
+    if (target instanceof Element && target.closest(`.${ctx.names.popover.root}`)) {
+      return;
+    }
+
+    requireRefresh(ctx);
+  };
 
   ctx.setState("__events", {
     onKeyup: onWindowKeyup,

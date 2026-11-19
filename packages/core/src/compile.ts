@@ -10,8 +10,7 @@ type ScrollIntoViewValue = false | ScrollIntoViewOptions;
 
 type FutureConfigKeys =
   | "mountIn"
-  | "dimMountIn"
-  | "lockScrollParent";
+  | "dimMountIn";
 
 type FutureStepKeys =
   | "popover"
@@ -44,7 +43,6 @@ export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
 export type EngineConfig = Omit<Config, FutureConfigKeys> & {
   mountIn?: Element | (() => Element);
   dimMountIn?: Element | (() => Element);
-  lockScrollParent?: boolean;
 };
 
 /** Result of {@link compileTour}. */

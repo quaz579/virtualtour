@@ -66,6 +66,7 @@ test.describe("scroll lock", () => {
 
       window.tour = window.__engine.createEngine({
         animate: false,
+        lockScrollParent: true,
         onElementMissing: () => {
           window.log.push("missing");
         },

@@ -116,7 +116,7 @@ test.describe("scroll containers", () => {
 
   test("scroll for the next step after the previous step locked them", async ({ page }) => {
     await page.evaluate(() => {
-      window.tour = window.__engine.createEngine({ animate: false, steps: [{ element: "#first" }, { element: "#last" }] });
+      window.tour = window.__engine.createEngine({ animate: false, lockScrollParent: true, steps: [{ element: "#first" }, { element: "#last" }] });
       window.tour.drive();
     });
     await expect(scroller(page)).toHaveAttribute("data-vt-lock-scroll");
@@ -127,6 +127,95 @@ test.describe("scroll containers", () => {
     await expect(page.locator("#last")).toHaveAttribute("data-vt-target");
     expect(await isShownInScroller(page, "#last")).toBe(true);
     expect(await scrollerTop(page)).toBeGreaterThan(0);
+  });
+});
+
+test.describe("scroll following", () => {
+  const rectOf = (page: Page, selector: string) =>
+    page.evaluate(selector => {
+      const { top, left, width, height } = document.querySelector(selector)!.getBoundingClientRect();
+
+      return { top, left, width, height };
+    }, selector);
+
+  const popoverOffset = async (page: Page) => {
+    const target = await rectOf(page, "#middle");
+    const pop = await rectOf(page, ".vt-popover");
+
+    return { dx: pop.left - target.left, dy: pop.top - target.top };
+  };
+
+  const cutout = (page: Page) =>
+    page.evaluate(() => {
+      const path = document.querySelector(".vt-overlay path")!.getAttribute("d") ?? "";
+
+      return path;
+    });
+
+  const start = async (page: Page, lockScrollParent?: boolean) => {
+    await addScroller(page);
+    await page.evaluate(lockScrollParent => {
+      window.tour = window.__engine.createEngine({ animate: false, ...(lockScrollParent ? { lockScrollParent } : {}) });
+      window.tour.highlight({ element: "#middle", popover: { title: "Middle", side: "right" } });
+    }, lockScrollParent);
+    await expect(title(page)).toHaveText("Middle");
+  };
+
+  test("moves the popover and cut-out with the target as the scroller scrolls", async ({ page }) => {
+    await start(page);
+    const initial = await popoverOffset(page);
+    let previousCutout = await cutout(page);
+    let previousTop = await rectOf(page, "#middle").then(rect => rect.top);
+
+    for (let step = 0; step < 5; step += 1) {
+      await scroller(page).evaluate(element => element.scrollBy(0, 20));
+      await expect.poll(() => rectOf(page, "#middle").then(rect => rect.top)).toBeLessThan(previousTop);
+      previousTop = (await rectOf(page, "#middle")).top;
+      await expect.poll(() => cutout(page)).not.toBe(previousCutout);
+      previousCutout = await cutout(page);
+      await settle(page);
+
+      const offset = await popoverOffset(page);
+      expect(Math.abs(offset.dx - initial.dx)).toBeLessThanOrEqual(1);
+      expect(Math.abs(offset.dy - initial.dy)).toBeLessThanOrEqual(1);
+    }
+
+    expect(await scrollerTop(page)).toBe(100);
+  });
+
+  test("follows a wheel over the target as it moves the scroller", async ({ page, browserName }) => {
+    test.skip(browserName === "webkit", "WebKit does not route wheel to a scroller under the dim overlay");
+    await start(page);
+    const initial = await popoverOffset(page);
+
+    for (let step = 0; step < 5; step += 1) {
+      await page.locator("#middle").hover();
+      const before = await scrollerTop(page);
+      await page.mouse.wheel(0, 20);
+      await expect.poll(() => scrollerTop(page)).toBeGreaterThan(before);
+      await settle(page);
+
+      const offset = await popoverOffset(page);
+      expect(Math.abs(offset.dx - initial.dx)).toBeLessThanOrEqual(1);
+      expect(Math.abs(offset.dy - initial.dy)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test("lockScrollParent: true keeps the scroller from moving", async ({ page }) => {
+    await start(page, true);
+    await expect(scroller(page)).toHaveAttribute("data-vt-lock-scroll");
+    await expect(scroller(page)).toHaveCSS("overflow", "hidden");
+
+    await page.locator("#middle").hover();
+    await page.mouse.wheel(0, 60);
+    await settle(page);
+    expect(await scrollerTop(page)).toBe(0);
+  });
+
+  test("leaves the scroller unlocked by default", async ({ page }) => {
+    await start(page);
+    await expect(scroller(page)).not.toHaveAttribute("data-vt-lock-scroll");
+    await expect(scroller(page)).not.toHaveCSS("overflow", "hidden");
   });
 });
 
