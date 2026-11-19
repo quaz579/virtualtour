@@ -155,10 +155,10 @@ export function clipRectByScrollParents(element: Element, rect: DOMRect, scrolla
   let right = rect.right;
   let bottom = rect.bottom;
   let current: Element | null = element;
+  let currentPosition = getComputedStyle(element).position;
   let skipping = false;
 
   while (current) {
-    const currentPosition = getComputedStyle(current).position;
     if (currentPosition === "fixed") {
       break;
     }
@@ -200,6 +200,7 @@ export function clipRectByScrollParents(element: Element, rect: DOMRect, scrolla
     }
 
     current = parent;
+    currentPosition = style.position;
   }
 
   return new DOMRect(left, top, right - left, bottom - top);
