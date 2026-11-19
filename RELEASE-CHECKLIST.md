@@ -21,7 +21,7 @@ Nothing here tags, publishes or hosts anything. A box is checked only when the c
 - [x] The perf tripwire passes (`e2e/perf.spec.ts`, chromium): no long task and above 50 fps during 2 s of wheel scrolling on a 10 000-row list.
 - [ ] The accessibility audit is green in dialog and avatar modes. Dialog mode is covered by `e2e/a11y.spec.ts`; the avatar axe cases are an open follow-up.
 - [ ] A manual screen-reader run (VoiceOver and NVDA) is recorded. Open gate: needs a person.
-- [ ] The docs link check is green (docs site).
+- [x] The docs link check is green (`npm run docs:links`, run 2026-11-19).
 
 ## Repository hygiene
 
