@@ -1,4 +1,7 @@
 export { AvatarPackError, normalizePack, preloadSheet, resolveRole, validatePack } from "./pack";
+export { loadAvatarPack, loadClassicAvatarPack, thumbtackPack } from "./loaders";
+export type { LoadAvatarPackOptions } from "./loaders";
+export type { ClassicSource } from "./classic";
 export { SpritePlayer } from "./player";
 export { SpeakerPresenter } from "./speaker";
 export type { AvatarDock, AvatarOptions, AvatarStepOptions, SpeakerPresenterOptions } from "./speaker";
