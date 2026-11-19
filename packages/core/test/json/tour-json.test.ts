@@ -149,6 +149,20 @@ describe("parseTourJson", () => {
     expect(() => (config.dimMountIn as () => Element)()).toThrow(/^dimMountIn: /);
   });
 
+  it("rejects a handlers entry that is not a function, with the path", () => {
+    const doc = { ...base(), steps: [{ shouldShow: { handler: "bad" } }] };
+    const error = errorOf(() => parseTourJson(doc, { handlers: { bad: 5 as never } }));
+    expect(error.path).toBe("steps[0].shouldShow.handler");
+    expect(error.message).toMatch(/not a function/);
+  });
+
+  it("reports an invalid mountIn selector as TourEnvironmentError naming the path", () => {
+    const config = parseTourJson({ ...base(), mountIn: "###", dimMountIn: "div[" });
+    expect(() => (config.mountIn as () => Element)()).toThrow(TourEnvironmentError);
+    expect(() => (config.mountIn as () => Element)()).toThrow(/^mountIn: invalid selector/);
+    expect(() => (config.dimMountIn as () => Element)()).toThrow(/^dimMountIn: invalid selector/);
+  });
+
   const cases: [string, unknown, string, RegExp][] = [
     ["a bad format", { ...base(), format: "virtualtour-tour/2" }, "format", /expected "virtualtour-tour\/1"/],
     ["a missing format", { steps: [] }, "format", /required/],
@@ -248,6 +262,22 @@ describe("serializeTour", () => {
     expect(errorOf(() => serializeTour({ steps: [{ body: element }] })).path).toBe("steps[0].body");
     expect(errorOf(() => serializeTour({ steps: [{ body: () => "x" }] })).path).toBe("steps[0].body");
     expect(errorOf(() => serializeTour({ mountIn: () => element })).path).toBe("mountIn");
+  });
+
+  it("skips undefined values, including on keys the format cannot carry", () => {
+    expect(serializeTour({ steps: [], presenter: undefined, sanitize: undefined } as never)).toEqual({ format: "virtualtour-tour/1", steps: [] });
+    expect(serializeTour({ steps: [{ title: undefined }] } as never).steps).toEqual([{}]);
+  });
+
+  it("rejects meta and extensions that are not plain JSON, with the path", () => {
+    expect(errorOf(() => serializeTour({ steps: [{ meta: { when: new Date() } }] } as never)).path).toBe("steps[0].meta.when");
+    expect(errorOf(() => serializeTour({ steps: [{ meta: [NaN] }] })).path).toBe("steps[0].meta[0]");
+    expect(errorOf(() => serializeTour({ steps: [{ extensions: { f: () => 1 } }] })).path).toBe("steps[0].extensions.f");
+    expect(serializeTour({ steps: [{ meta: { a: [1, null, "x", { b: true }] } }] }).steps).toHaveLength(1);
+  });
+
+  it("explains that Infinity is not JSON", () => {
+    expect(errorOf(() => serializeTour({ waitBudget: Infinity })).message).toMatch(/Infinity/);
   });
 
   it("throws for a value JSON cannot carry", () => {

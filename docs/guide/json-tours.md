@@ -39,8 +39,14 @@ Both schemas ship with the package for editor support and validation: `virtualto
 These keys, or these forms of a key, cannot be written as JSON. Set them on the config in code after parsing.
 
 - `body` as an `Element`, a `DocumentFragment` or a function: JSON bodies are strings or lists of strings.
-- `mountIn` as an `Element`: JSON carries a selector.
-- `dimMountIn` as an `Element`: JSON carries a selector.
+- `mountIn` as a function you wrote: `serializeTour` writes an `Element` through `elementSelectors`, and the function `parseTourJson` made back to its selector, but nothing else.
+- `dimMountIn` as a function you wrote: the same rules as `mountIn`.
 - `progress`: a progress store is code.
 - `presenter`: a presenter factory is code.
 - `sanitize`: a sanitizer is code.
+
+## Values JSON cannot carry
+
+- `Infinity` and `NaN` are not JSON. `waitBudget` and `hookTimeout` use `0` for no limit in the engine; write `0` or a large finite number. `serializeTour` throws for `Infinity`.
+- `meta`, `extensions` and button `attrs` are handed over by reference: `parseTourJson` returns the same objects it was given, so changing the config changes the parsed document.
+- `serializeTour` checks `meta` and `extensions` for plain JSON values and throws with the path for functions, dates, `NaN` and the like.

@@ -329,7 +329,12 @@ function label(d: D): string {
 
 function mountThunk(selector: string, path: string): () => Element {
   const thunk = (): Element => {
-    const found = document.querySelector(selector);
+    let found: Element | null;
+    try {
+      found = document.querySelector(selector);
+    } catch {
+      throw new TourEnvironmentError(`${path}: invalid selector "${selector}"`);
+    }
     if (!found) throw new TourEnvironmentError(`${path}: no element matches "${selector}"`);
     return found;
   };
@@ -337,16 +342,34 @@ function mountThunk(selector: string, path: string): () => Element {
   return thunk;
 }
 
+function jsonSafe(v: unknown, path: string): void {
+  if (v === null || typeof v === "string" || typeof v === "boolean") return;
+  if (typeof v === "number") {
+    if (!Number.isFinite(v)) fail(path, "not JSON: use a finite number");
+    return;
+  }
+  if (Array.isArray(v)) {
+    v.forEach((item, i) => jsonSafe(item, `${path}[${i}]`));
+    return;
+  }
+  const proto = typeof v === "object" ? Object.getPrototypeOf(v) : undefined;
+  if (typeof v !== "object" || (proto !== Object.prototype && proto !== null)) fail(path, "not JSON: only plain values can be written");
+  for (const k of Object.keys(v as object)) jsonSafe((v as Record<string, unknown>)[k], join(path, k));
+}
+
 function walk(d: D, v: unknown, path: string, c: Ctx): unknown {
   switch (d.t) {
     case "any":
+      if (!c.parse) jsonSafe(v, path);
       return v;
     case "str":
       if (typeof v !== "string") fail(path, "expected a string");
       if (d.re && !d.re.test(v)) fail(path, `must match ${d.re.source}`);
       return v;
     case "num":
-      if (typeof v !== "number" || !Number.isFinite(v)) fail(path, "expected a finite number");
+      if (typeof v !== "number" || !Number.isFinite(v)) {
+        fail(path, c.parse || typeof v !== "number" ? "expected a finite number" : "not JSON: use a finite number instead of Infinity or NaN");
+      }
       if (d.min !== undefined && v < d.min) fail(path, `must be at least ${d.min}`);
       if (d.max !== undefined && v > d.max) fail(path, `must be at most ${d.max}`);
       return v;
@@ -372,8 +395,9 @@ function walk(d: D, v: unknown, path: string, c: Ctx): unknown {
       if (!isObj(v)) fail(path, "expected an object");
       const out: Record<string, unknown> = {};
       for (const k of Object.keys(v)) {
+        if (v[k] === undefined) continue;
         if (!has(d.p, k)) fail(join(path, k), c.parse ? "unknown key" : "cannot be written as JSON");
-        if (v[k] !== undefined) out[k] = walk(d.p[k]!, v[k], join(path, k), c);
+        out[k] = walk(d.p[k]!, v[k], join(path, k), c);
       }
       for (const k of d.req ?? []) if (!has(out, k)) fail(join(path, k), "is required");
       return out;
@@ -386,7 +410,9 @@ function walk(d: D, v: unknown, path: string, c: Ctx): unknown {
         const name = v["handler"];
         if (typeof name !== "string") fail(join(path, "handler"), "expected a string");
         if (!has(c.handlers, name)) fail(join(path, "handler"), `no handler named "${name}"`);
-        return c.handlers[name];
+        const handler = c.handlers[name];
+        if (typeof handler !== "function") fail(join(path, "handler"), `handler "${name}" is not a function`);
+        return handler;
       }
       if (typeof v !== "function") fail(path, "expected a function");
       const name = c.names.get(v as TourJsonHandler);

@@ -137,6 +137,11 @@ const extraMalformed: [string, unknown, string][] = [
   ["button without an action", step({ buttons: [{ text: "x" }] }), "required"],
   ["extensions array", step({ extensions: [] }), "type"],
   ["handler with an extra key", step({ shouldShow: { handler: "a", extra: 1 } }), "additionalProperties"],
+  ["negative viewportPadding", step({ position: { viewportPadding: -1 } }), "minimum"],
+  ["negative arrow minInset", step({ position: { arrow: { minInset: -1 } } }), "minimum"],
+  ["extra selector that is not a string", step({ spotlight: { extra: ["#a", 3] } }), "type"],
+  ["negative hookTimeout", step({ hookTimeout: -1 }), "minimum"],
+  ["invalid targetInteractive string", step({ spotlight: { targetInteractive: "click-only" } }), "const"],
   ["autoAdvance without an event", step({ autoAdvance: { selector: "#a" } }), "required"],
 ];
 
@@ -177,7 +182,8 @@ describe("key coverage", () => {
   };
   const guide = readFileSync(join(repo, "docs/guide/json-tours.md"), "utf8");
   const codeOnly = (): string[] => {
-    const section = guide.slice(guide.indexOf("## Code-only keys"));
+    const from = guide.indexOf("## Code-only keys");
+    const section = guide.slice(from, guide.indexOf("\n## ", from + 1));
     return [...section.matchAll(/^- `(\w+)`/gm)].map((m) => m[1]!);
   };
   const defs = tourSchema["$defs"] as Record<string, { properties: Record<string, unknown> }>;
