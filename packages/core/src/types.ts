@@ -66,6 +66,11 @@ export interface PositionOptions {
   offset?: number | { main?: number; cross?: number };
   /** Distance kept from the boundary. Default 0. */
   viewportPadding?: number;
+  /**
+   * What the popover must stay inside. `scrollParents` is the viewport narrowed by the target's scrolling ancestors, so
+   * a target inside a scroller keeps its popover inside that scroller; `viewport` ignores scrollers. Default `scrollParents`.
+   */
+  boundary?: "viewport" | "scrollParents";
   /** Fall back to another side or alignment when the popover does not fit. Default true. */
   flip?: boolean;
   /** Slide along the edge to stay inside the boundary. Default true. */

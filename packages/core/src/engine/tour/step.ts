@@ -162,20 +162,21 @@ export function markStandalone(step: DriveStep): DriveStep {
   return step;
 }
 
-function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): PositionOptions {
+function resolveStepPosition(ctx: Context, element: Element, step: DriveStep, popover: Popover): PositionOptions {
   const stagePadding = stepOption(ctx, step, "stagePadding") || 0;
 
   return {
-    side: step.popover?.side || "bottom",
-    align: step.popover?.align || "start",
+    side: popover.side || "bottom",
+    align: popover.align || "start",
     offset: stagePadding + (stepOption(ctx, step, "popoverOffset") || 0),
     padding: stagePadding,
     boundaryPadding: stepOption(ctx, step, "popoverPadding") || 0,
-    boundary: ctx.getConfig("popoverBoundary") || "scrollParents",
-    centered: step.popover?.side === "over" || isDummyElement(element),
+    boundary: stepOption(ctx, step, "popoverBoundary"),
+    flip: popover.flip ?? ctx.getConfig("popoverFlip"),
+    shift: popover.shift ?? ctx.getConfig("popoverShift"),
     hasTarget: !isDummyElement(element),
     sideAttribute: ctx.names.sideAttr,
-    strategy: step.popover?.strategy === "absolute" ? "absolute" : "fixed",
+    strategy: popover.strategy === "absolute" ? "absolute" : "fixed",
   };
 }
 
@@ -254,7 +255,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
     step,
     onPositioned: info => notifyRepositioned(ctx, info),
 
-    position: resolveStepPosition(ctx, element, step),
+    position: resolveStepPosition(ctx, element, step, popover),
   };
 }
 
@@ -319,7 +320,9 @@ export function repositionStepPopover(ctx: Context, element: Element, step: Driv
     return;
   }
 
-  notifyRepositioned(ctx, repositionPopover(popover, element, resolveStepPosition(ctx, element, step)));
+  const effective: Popover = { ...step.popover, ...activePatch(ctx, step) };
+
+  notifyRepositioned(ctx, repositionPopover(popover, element, resolveStepPosition(ctx, element, step, effective)));
 }
 
 function showPopoverWaiting(ctx: Context) {

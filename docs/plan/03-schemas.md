@@ -69,6 +69,7 @@ names throw `TourJsonError` with the JSON path.
   "position": {
     "offset": 10,                                     // number | { "main": 10, "cross": 0 }
     "viewportPadding": 8,
+    "boundary": "scrollParents",                      // "scrollParents" | "viewport"
     "flip": true, "shift": true,
     "strategy": "fixed",                              // "fixed" | "absolute"
     "arrow": true                                     // boolean | { "minInset": 15 }
@@ -155,6 +156,7 @@ Rules:
       "offset": { "oneOf": [ { "type": "number" }, { "type": "object", "additionalProperties": false, "properties": {
         "main": { "type": "number" }, "cross": { "type": "number" } } } ] },
       "viewportPadding": { "type": "number", "minimum": 0 },
+      "boundary": { "enum": ["scrollParents", "viewport"] },
       "flip": { "type": "boolean" }, "shift": { "type": "boolean" },
       "strategy": { "enum": ["fixed", "absolute"] },
       "arrow": { "oneOf": [ { "type": "boolean" }, { "type": "object", "additionalProperties": false, "properties": {
@@ -213,6 +215,7 @@ docs example against it with a dev-only schema validator (dev dependency; never 
 | `placement` | `popover.side` (`Side \| 'auto' \| 'over'`), `popover.align` | absent with a target → `'over'` (A-3, F-06); `'auto'` → F-07 |
 | `position.offset` | `popoverOffset`, `popoverCrossOffset` (per step, V-02 / F-08) | |
 | `position.viewportPadding` | `popoverPadding` (per step) | F-06 |
+| `position.boundary` | `popoverBoundary` (per step and tour) | F-06, WU-28 |
 | `position.flip` / `shift` | `popover.flip` / `popover.shift` | F-07 |
 | `position.strategy` | `popover.strategy` | F-10 |
 | `position.arrow.minInset` | `popover.arrowMinInset` | F-08 |
