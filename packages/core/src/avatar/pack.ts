@@ -90,13 +90,13 @@ export interface NormalizedPack extends AvatarPack {
 }
 
 const FORMAT = "virtualtour-avatar/1";
-const hasOwn = (target: object, key: string): boolean => Object.prototype.hasOwnProperty.call(target, key);
+export const hasOwn = (target: object, key: string): boolean => Object.prototype.hasOwnProperty.call(target, key);
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function fail(path: string, message: string): never {
+export function fail(path: string, message: string): never {
   throw new AvatarPackError(path, message);
 }
 
