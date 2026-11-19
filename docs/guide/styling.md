@@ -1,6 +1,6 @@
 # Styling contract
 
-Placeholder: the full styling guide arrives with the docs work. This page lists the names the engine adds to the page.
+Placeholder: the full styling guide arrives with the docs work. The complete class, attribute and variable contract, including the optional `theme.css` and dark mode, is in `packages/core/STYLES.md`. This page lists the names the engine adds to the page.
 
 ## Mechanism attributes (fixed)
 

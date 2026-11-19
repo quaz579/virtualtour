@@ -27,6 +27,7 @@ export default defineConfig({
         avatarPlayer: resolve(__dirname, "fixtures/avatar-player.html"),
         vue: resolve(__dirname, "fixtures/vue.html"),
         react: resolve(__dirname, "fixtures/react.html"),
+        theme: resolve(__dirname, "fixtures/theme.html"),
       },
     },
   },
