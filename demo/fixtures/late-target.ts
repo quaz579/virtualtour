@@ -14,11 +14,22 @@ const delay = Number(params.get("delay") ?? 800);
 const waitFor = Number(params.get("waitFor") ?? 3000);
 const never = params.get("never") === "1";
 const skip = params.get("skip") === "1";
+const missing = Number(params.get("missing") ?? 0);
+const waitBudget = params.get("waitBudget");
 
 const tour = createTour({
   name: "late-target",
   animate: false,
+  ...(waitBudget === null ? {} : { waitBudget: Number(waitBudget) }),
   steps: [
+    ...Array.from({ length: missing }, (_, i) => ({
+      id: `missing-${i}`,
+      title: `Missing ${i}`,
+      body: "Never appears.",
+      target: `#missing-${i}`,
+      waitFor,
+      whenMissing: "skip" as const,
+    })),
     {
       id: "late",
       title: "Late",

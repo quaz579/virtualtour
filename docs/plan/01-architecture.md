@@ -620,9 +620,13 @@ For a candidate index `i` in direction `dir`:
    While waiting, the current step stays visible with `aria-busy="true"` on its wrapper and the
    `vt-waiting` class. The engine's own `waitForElement` stays `0` because the lookup must
    happen before `prepare` (A-9).
+   One navigation spends at most `waitBudget` ms (tour option, default 10000, `0` disables) waiting across consecutive
+   steps; once spent, later steps are judged on what is on the page and follow `whenMissing`.
 3. Still missing: `whenMissing === 'skip'` → next candidate; else eligible as centered (the
-   compiled `DriveStep.element` is a function returning `null`, so the engine centers it).
-4. `await prepare?.()` (A-7); exceptions are caught and reported; the step still shows.
+   compiled `DriveStep.element` is a function returning `null`, so the engine centers it); it stays centered until it is hidden, even when the target appears later.
+4. `await prepare?.()` (A-7); exceptions are caught and reported; the step still shows. A hook that has not settled
+   after `hookTimeout` (step option, default 10000 ms, `0` disables) is abandoned with a warning and the step shows, the
+   same as for an exception; `revealWith` follows the same rule.
 5. `revealWith?.(target)` awaited (SC-2) with the compiled step's `scrollIntoView: false`, so
    the engine does not scroll again; then `engine.moveTo(i)`.
 

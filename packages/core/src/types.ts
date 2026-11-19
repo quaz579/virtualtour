@@ -142,6 +142,11 @@ export interface StepConfig {
   whenMissing?: "center" | "skip";
   shouldShow?: () => boolean;
   prepare?: () => Promise<unknown> | unknown;
+  /**
+   * Milliseconds `prepare` and `revealWith` may each take to settle. When one runs longer a warning is logged and the
+   * step shows anyway, as it does when the hook throws. `0` or `Infinity` waits forever. Default 10000.
+   */
+  hookTimeout?: number;
   spotlight?: SpotlightOptions;
   /** How the target is scrolled into view. Default true. */
   reveal?: boolean | "smooth" | ScrollIntoViewOptions;
@@ -250,4 +255,10 @@ export interface TourConfig {
   /** Hook that cleans title and body HTML before it reaches the page. Runs once per HTML string. */
   sanitize?: (html: string) => string;
   animate?: boolean;
+  /**
+   * Total milliseconds one navigation may spend waiting for targets across consecutive steps with `waitFor`. The first
+   * step that waits always gets its full `waitFor`; once the budget is spent, later steps are judged on what is on the page and follow their `whenMissing`. `0` or `Infinity` removes the cap.
+   * Default 10000.
+   */
+  waitBudget?: number;
 }

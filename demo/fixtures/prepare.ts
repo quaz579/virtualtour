@@ -5,6 +5,7 @@ declare global {
   interface Window {
     vtTour: Tour;
     vtLog: string[];
+    vtWarnings: string[];
   }
 }
 
@@ -19,7 +20,13 @@ const openPanel = (): void => {
 };
 
 const steps: StepConfig[] =
-  mode === "cookbook"
+  mode === "hang"
+    ? [
+        { id: "intro", title: "Intro", body: "First." },
+        { id: "stuck", title: "Stuck", body: "Its prepare never settles.", hookTimeout: 400, prepare: () => new Promise<void>(() => {}) },
+        { id: "after", title: "After", body: "Last." },
+      ]
+    : mode === "cookbook"
     ? [
         { id: "open", title: "Open", body: "Opens the panel while it prepares.", prepare: openPanel },
         { id: "panel", title: "Panel", body: "Attached to the panel button.", target: "#panel-btn" },
@@ -34,6 +41,13 @@ const tour = createTour({ name: "prepare", animate: false, steps });
 window.vtTour = tour;
 window.vtLog = [];
 tour.on("step-shown", (p) => window.vtLog.push(`shown:${p.step.id}`));
+
+window.vtWarnings = [];
+const nativeWarn = console.warn.bind(console);
+console.warn = (...args: unknown[]) => {
+  window.vtWarnings.push(args.map(String).join(" "));
+  nativeWarn(...args);
+};
 
 document.querySelector<HTMLButtonElement>("#start")?.addEventListener("click", () => {
   void tour.start();

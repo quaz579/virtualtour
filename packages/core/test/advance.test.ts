@@ -285,3 +285,58 @@ describe("auto-advance listener lifecycle", () => {
   });
 });
 
+
+describe("advance idempotence and selector validation", () => {
+  it("does not double-advance when the page's own handler also calls forward()", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const tour = make([
+      { id: "a", autoAdvance: { event: "click", selector: "#save" } },
+      { id: "b", prepare: () => gate },
+      { id: "c" },
+    ]);
+    document.querySelector("#save")?.addEventListener("click", () => void tour.forward());
+    await tour.start();
+    click("#save");
+    await tick(60);
+    release();
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("b"));
+    await tick(60);
+    expect(tour.currentStep?.id).toBe("b");
+  });
+
+  it("does not double-advance when the page handler's forward() resolves synchronously", async () => {
+    const tour = make([{ id: "a", autoAdvance: { event: "click", selector: "#save" } }, { id: "b" }, { id: "c" }]);
+    document.querySelector("#save")?.addEventListener("click", () => void tour.forward());
+    await tour.start();
+    click("#save");
+    await tick(60);
+    expect(tour.currentStep?.id).toBe("b");
+  });
+
+  it("still advances once when the page does nothing", async () => {
+    const tour = make([{ id: "a", autoAdvance: { event: "click", selector: "#save" } }, { id: "b" }, { id: "c" }]);
+    await tour.start();
+    click("#save");
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("b"));
+    await tick(60);
+    expect(tour.currentStep?.id).toBe("b");
+  });
+
+  it("warns about an invalid autoAdvance selector", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([{ id: "a", autoAdvance: { event: "click", selector: "##bad[" } }, { id: "b" }]);
+    await tour.start();
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("invalid autoAdvance selector"))).toBe(true);
+    click("#save");
+    await tick(40);
+    expect(tour.currentStep?.id).toBe("a");
+  });
+
+  it("does not warn for a valid selector", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([{ id: "a", title: "A", autoAdvance: { event: "click", selector: "#save" } }, { id: "b" }]);
+    await tour.start();
+    expect(warn.mock.calls.some((c) => String(c[0]).includes("autoAdvance selector"))).toBe(false);
+  });
+});
