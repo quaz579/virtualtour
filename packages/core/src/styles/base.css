@@ -197,3 +197,52 @@
 .vt-popover-arrow-none {
   display: none;
 }
+
+.vt-body {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.vt-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+.vt-button {
+  all: unset;
+  display: inline-block;
+  box-sizing: border-box;
+  padding: 3px 7px;
+  background-color: #ffffff;
+  color: #2d2d2d;
+  font-size: 12px;
+  line-height: 1.3;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.vt-button:hover,
+.vt-button:focus-visible {
+  background-color: #f7f7f7;
+}
+
+.vt-button:focus-visible {
+  outline: 2px solid #2d2d2d;
+  outline-offset: 1px;
+}
+
+.vt-button--secondary {
+  background-color: transparent;
+  color: #727272;
+}
+
+.vt-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
