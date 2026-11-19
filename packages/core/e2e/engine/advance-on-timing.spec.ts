@@ -93,7 +93,7 @@ test.describe("advanceOn while the highlight is moving", () => {
   });
 
   test("the deprecated advanceOnClick ignores every click until the transition has finished", async ({ page }) => {
-    await page.evaluate(() => {
+    const ignored = await page.evaluate(() => {
       window.tour = window.__engine.createEngine({
         duration: 2000,
         advanceOnClick: true,
@@ -107,12 +107,15 @@ test.describe("advanceOn while the highlight is moving", () => {
         ],
       });
       window.tour.drive();
+      document.querySelector<HTMLElement>("#one")!.click();
+      return new Promise<string>(resolve =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve(`${window.tour.getActiveIndex()} ${window.log.join()}`))
+        )
+      );
     });
+    expect(ignored).toBe("0 ");
     await expect(overlay(page)).toHaveCount(1);
-
-    await page.locator("#one").click();
-    await settle(page);
-    expect(await page.evaluate(() => `${window.tour.getActiveIndex()} ${window.log.join()}`)).toBe("0 ");
 
     await highlighted(page, 1);
     await page.locator("#one").dblclick();

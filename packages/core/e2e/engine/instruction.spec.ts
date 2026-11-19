@@ -22,14 +22,64 @@ const NUDGE_CLASS = /vt-popover-nudge/;
 
 const instruction = (page: Page) => page.locator(".vt-popover-instruction");
 
+type NudgeWindow = Window & { __nudges: number };
+
+const nudgeCount = (page: Page) => page.evaluate(() => (window as unknown as NudgeWindow).__nudges);
+
+async function watchNudges(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as NudgeWindow;
+    w.__nudges = 0;
+    const has = (value: string | null) => (value ?? "").split(/\s+/).includes("vt-popover-nudge");
+    new MutationObserver(records => {
+      records.forEach((record, index) => {
+        if (record.attributeName !== "class") {
+          return;
+        }
+
+        const next = records.slice(index + 1).find(other => other.target === record.target);
+        const after = next ? next.oldValue : (record.target as Element).getAttribute("class");
+        if (!has(record.oldValue) && has(after)) {
+          w.__nudges += 1;
+        }
+      });
+    }).observe(document, { subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ["class"] });
+  });
+}
+
+async function holdTimer(page: Page, delay: number) {
+  await page.evaluate(delay => {
+    const w = window as unknown as { __held: Array<() => void> };
+    w.__held = [];
+    const original = window.setTimeout.bind(window);
+    window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+      if (timeout === delay) {
+        w.__held.push(() => original(handler, 0, ...args));
+
+        return 0;
+      }
+
+      return original(handler, timeout, ...args);
+    }) as typeof window.setTimeout;
+  }, delay);
+}
+
+const releaseTimer = (page: Page) =>
+  page.evaluate(() => {
+    const w = window as unknown as { __held: Array<() => void> };
+    w.__held.splice(0).forEach(release => release());
+  });
+
 async function expectNudge(page: Page, act: () => Promise<void>) {
+  const before = await nudgeCount(page);
   await act();
-  await expect(popover(page)).toHaveClass(NUDGE_CLASS);
+  await expect.poll(() => nudgeCount(page)).toBeGreaterThan(before);
   await expect(popover(page)).not.toHaveClass(NUDGE_CLASS, { timeout: 2000 });
 }
 
 test.beforeEach(async ({ page }) => {
   await openFixture(page);
+  await watchNudges(page);
 });
 
 test.describe("instruction steps", () => {
@@ -143,8 +193,8 @@ test.describe("instruction steps", () => {
 });
 
 test.describe("instruction steps while animating", () => {
-  const start = async (page: Page, index: number) => {
-    await page.evaluate(index => {
+  const createTour = (page: Page, index: number) =>
+    page.evaluate(index => {
       window.tour = window.__engine.createEngine({
         duration: 1000,
         overlayClickBehavior: "nextStep",
@@ -159,15 +209,39 @@ test.describe("instruction steps while animating", () => {
       });
       window.tour.drive(index);
     }, index);
-    await expect(overlay(page)).toHaveCount(1);
-  };
 
   test("an overlay click does not skip an action step that is still animating in", async ({ page }) => {
-    await start(page, 1);
+    const result = await page.evaluate(() => {
+      window.tour = window.__engine.createEngine({
+        duration: 1000,
+        overlayClickBehavior: "nextStep",
+        onHighlighted: (_element, step) => {
+          window.log.push(`highlighted ${step.popover?.title}`);
+        },
+        steps: [
+          { element: "#intro", popover: { title: "Read" } },
+          { element: "#one", popover: { title: "Act", instruction: "Click One." } },
+          { element: "#two", popover: { title: "Last" } },
+        ],
+      });
+      const clicked = new Promise<{ log: string[]; index: number | undefined }>(resolve => {
+        const observer = new MutationObserver(() => {
+          const path = document.querySelector(".vt-overlay path");
+          if (!path) {
+            return;
+          }
 
-    await page.mouse.click(5, 5);
-    expect(await log(page)).toEqual([]);
-    expect(await activeIndex(page)).toBe(1);
+          observer.disconnect();
+          path.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+          resolve({ log: window.log.slice(), index: window.tour.getActiveIndex() });
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      });
+      window.tour.drive(1);
+
+      return clicked;
+    });
+    expect(result).toEqual({ log: [], index: 1 });
 
     await expect.poll(() => log(page)).toEqual(["highlighted Act"]);
     await expect(title(page)).toHaveText("Act");
@@ -175,17 +249,20 @@ test.describe("instruction steps while animating", () => {
   });
 
   test("an overlay click does not skip an action step during the move from a read step", async ({ page }) => {
-    await start(page, 0);
+    await createTour(page, 0);
     await expect.poll(() => log(page)).toEqual(["highlighted Read"]);
 
-    await page.evaluate(() => window.tour.moveNext());
-    await page.mouse.click(5, 5);
-    expect(await log(page)).toEqual(["highlighted Read"]);
-    expect(await activeIndex(page)).toBe(1);
+    const result = await page.evaluate(() => {
+      window.tour.moveNext();
+      const path = document.querySelector(".vt-overlay path")!;
+      path.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+      return { log: window.log.slice(), index: window.tour.getActiveIndex() };
+    });
+    expect(result).toEqual({ log: ["highlighted Read"], index: 1 });
 
     await expect.poll(() => log(page)).toEqual(["highlighted Read", "highlighted Act"]);
-    await page.mouse.click(5, 5);
-    await expect(popover(page)).toHaveClass(NUDGE_CLASS);
+    await expectNudge(page, () => page.mouse.click(5, 5));
     await expect(title(page)).toHaveText("Act");
     expect(await activeIndex(page)).toBe(1);
   });
@@ -193,6 +270,7 @@ test.describe("instruction steps while animating", () => {
 
 test.describe("advanceDelay", () => {
   test("ignores Next, ArrowRight and the overlay during the pause, without a nudge", async ({ page }) => {
+    await holdTimer(page, 1500);
     await page.evaluate(() => {
       window.tour = window.__engine.createEngine({
         animate: false,
@@ -226,7 +304,8 @@ test.describe("advanceDelay", () => {
     expect(await log(page)).toEqual([]);
     await expect(title(page)).toHaveText("Act");
 
-    await expect(title(page)).toHaveText("After", { timeout: 4000 });
+    await releaseTimer(page);
+    await expect(title(page)).toHaveText("After");
     await settle(page);
     expect(await log(page)).toEqual(["onNextClick Act"]);
     expect(await activeIndex(page)).toBe(1);
@@ -268,9 +347,7 @@ test.describe("instruction steps as rendered", () => {
     await expect(indicator(page)).toHaveAttribute("aria-hidden", "true");
 
     const nudged = async (act: () => Promise<void>) => {
-      await act();
-      await expect(popover(page)).toHaveClass(/vt-popover-nudge/);
-      await expect(popover(page)).not.toHaveClass(/vt-popover-nudge/, { timeout: 2000 });
+      await expectNudge(page, act);
       await expect(title(page)).toHaveText("Act");
     };
     await nudged(() => nextButton(page).click({ force: true }));
@@ -361,8 +438,7 @@ test.describe("instruction steps as rendered", () => {
     await settle(page);
     await page.evaluate(() => window.log.splice(0));
 
-    await page.locator("#two").click({ button: "right" });
-    await expect(popover(page)).toHaveClass(/vt-popover-nudge/);
+    await expectNudge(page, () => page.locator("#two").click({ button: "right" }));
     expect(await log(page)).toEqual([]);
     await expect(title(page)).toHaveText("Strict");
 
@@ -372,6 +448,7 @@ test.describe("instruction steps as rendered", () => {
   });
 
   test("show the done state for advanceDelay, then move on", async ({ page }) => {
+    await holdTimer(page, 3000);
     await page.evaluate(() => {
       window.tour = window.__engine.createEngine({
         animate: false,
@@ -402,14 +479,16 @@ test.describe("instruction steps as rendered", () => {
     await expect(popover(page)).not.toHaveClass(/vt-popover-nudge/);
     await expect(title(page)).toHaveText("Act");
 
-    await expect(title(page)).toHaveText("Again", { timeout: 10000 });
+    await releaseTimer(page);
+    await expect(title(page)).toHaveText("Again");
     await expect(popover(page)).not.toHaveClass(/vt-popover-instruction-done/);
     await expect(nextButton(page)).toHaveText("Done");
     await expect(nextButton(page)).toHaveAttribute("aria-disabled", "true");
 
     await page.locator("#two").click();
     await expect(popover(page)).toHaveClass(/vt-popover-instruction-done/);
-    await expect(popover(page)).toHaveCount(0, { timeout: 10000 });
+    await releaseTimer(page);
+    await expect(popover(page)).toHaveCount(0);
   });
 
   test("respect reduced motion", async ({ page }) => {

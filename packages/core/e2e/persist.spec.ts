@@ -55,11 +55,12 @@ test("exiting at step 2 with resume shows step 2 after reload", async ({ page })
   await expect(popover(page)).toBeVisible();
   await page.locator(".vt-popover-next-btn").click();
   await expect(page.locator(".vt-popover-title")).toHaveText("Two");
+  await expect.poll(() => log(page)).toContain("shown:two");
   await page.keyboard.press("Escape");
   await expect(popover(page)).toHaveCount(0);
-  const saved = JSON.parse((await stored(page)) as string) as Record<string, unknown>;
-  expect(saved["lastStepId"]).toBe("two");
-  expect(typeof saved["exitedAt"]).toBe("string");
+  await expect
+    .poll(async () => JSON.parse((await stored(page)) || "{}") as Record<string, unknown>)
+    .toMatchObject({ lastStepId: "two", exitedAt: expect.any(String) });
 
   await page.reload();
   await page.locator("html[data-ready=true]").waitFor();
