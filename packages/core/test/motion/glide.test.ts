@@ -76,6 +76,17 @@ describe("glide", () => {
     expect(animations).toHaveLength(0);
   });
 
+  it("puts the entrance animations back where they were when the position does not change", async () => {
+    Object.assign(positions, { "1": { left: 100, top: 50 } });
+    const tour = await start({ steps });
+    glide(tour);
+    const fade = { currentTime: 120, finish: vi.fn(() => { fade.currentTime = 400; }) };
+    HTMLElement.prototype.getAnimations = () => [fade as unknown as Animation];
+    await tour.forward();
+    expect(fade.finish).toHaveBeenCalled();
+    expect(fade.currentTime).toBe(120);
+  });
+
   it("cancels the running glide on the next step change and starts a new one from the visible position", async () => {
     const tour = await start({ steps });
     glide(tour);

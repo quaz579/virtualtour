@@ -29,9 +29,9 @@ function isCentered(step: TourStep): boolean {
 
 /**
  * Slides the popover from where the previous step left it to where the next step puts it, instead of fading the new
- * popover in: the engine's entrance animations on the new popover are finished at once. Does nothing under reduced motion, when the tour's `animate` is off, when one step is centered and the
- * other is not, or when the two steps use different popover layouts. Returns a function that stops listening and
- * cancels a glide in progress.
+ * popover in: the engine's entrance animations on the new popover are finished at once. Does nothing under reduced
+ * motion, when the tour's `animate` is off, when one step is centered and the other is not, or when the two steps use
+ * different popover layouts. Returns a function that stops listening and cancels a glide in progress.
  */
 export function glide(tour: Tour, options: GlideOptions = {}): () => void {
   const durationMs = options.durationMs ?? 250;
@@ -77,9 +77,12 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
     if (typeof element.animate !== "function") return;
     if (prefersReducedMotion() || !document.body.hasAttribute(FADE_ATTR)) return;
     if (from.centered !== isCentered(step) || from.dialog !== element.classList.contains(DIALOG_CLASS)) return;
+    const finished: { animation: Animation; at: CSSNumberish | null }[] = [];
     for (const entering of element.getAnimations?.() ?? []) {
+      const at = entering.currentTime;
       try {
         entering.finish();
+        finished.push({ animation: entering, at });
       } catch {
         continue;
       }
@@ -87,7 +90,10 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
     const rect = element.getBoundingClientRect();
     const dx = from.left - rect.left;
     const dy = from.top - rect.top;
-    if (dx === 0 && dy === 0) return;
+    if (dx === 0 && dy === 0) {
+      for (const { animation, at } of finished) animation.currentTime = at;
+      return;
+    }
     element.classList.add(GLIDE_CLASS);
     const animation = element.animate(
       [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0px, 0px)" }],
