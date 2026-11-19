@@ -714,6 +714,13 @@ async function showStep(tour: Tour, index: number): Promise<void> {
   const step = state.steps[index];
   if (!state.running || state.ending || !step) return;
   if (step.isShown() && state.engine?.isActive()) return;
+  if (!state.engine) {
+    const ready = guardedReady(presenterOf(tour));
+    if (ready) {
+      await ready;
+      if (!state.running || state.ending) return;
+    }
+  }
   const engine = ensureEngine(tour);
   evaluateStepInto(tour, index);
   settle(state);
@@ -722,6 +729,14 @@ async function showStep(tour: Tour, index: number): Promise<void> {
   });
   engine.moveTo(index);
   await shown;
+}
+
+function guardedReady(presenter: Presenter): Promise<void> | undefined {
+  try {
+    return presenter.ready?.().catch(() => undefined);
+  } catch {
+    return undefined;
+  }
 }
 
 function attachAdvance(tour: Tour, step: TourStep): void {
@@ -1126,7 +1141,11 @@ export function setCurrentIndex(tour: Tour, index: number): void {
 export function presenterOf(tour: Tour): Presenter {
   const state = internalsOf(tour);
   state.presenter ??= state.normalized.presenter
-    ? state.normalized.presenter(tour)
+    ? state.normalized.presenter(tour, {
+        namespace: state.normalized.namespace,
+        ...(state.normalized.sanitize ? { sanitize: state.normalized.sanitize } : {}),
+        fadeMs: state.normalized.animate ? state.normalized.dimOptions.transitionMs : 0,
+      })
     : new DialogPresenter(tour, state.normalized.namespace, state.normalized.sanitize);
   return state.presenter;
 }

@@ -71,6 +71,7 @@ The bubble reads `--vt-bg`, `--vt-space`, `--vt-radius` and `--vt-shadow` from t
 | `data-vt-strategy` | popover | `absolute` when positioned inside a transformed container |
 | `data-vt-dock` | speaker popover | `start` or `end`: the inline edge of the bubble the avatar sits on, or above (`start`) and below (`end`) it beside a left or right popover. Written by the presenter, which resolves `auto`. |
 | `data-vt-side` | speaker popover | `top`, `bottom`, `left`, `right` or `over`: the side the popover ended on, `over` when no side fit and it was pinned to the viewport. Written by the presenter after every reposition, whatever the tour's namespace. |
+| `data-vt-anim` | avatar | Name of the animation the sprite player is showing, `rest` when it stands still. Written by the player; style on it only to hide or restyle a pose. |
 
 ## Classes
 

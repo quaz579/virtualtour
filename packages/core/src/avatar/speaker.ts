@@ -3,8 +3,13 @@ import { DialogPresenter } from "../presenter";
 import type { TourStep } from "../step";
 import type { Tour } from "../tour";
 import type { Presenter, RepositionInfo, StepParts } from "../types";
-import type { NormalizedPack } from "./pack";
+import { prefersReducedMotion } from "../engine/core/env";
+import type { AvatarDirection, AvatarPackError, NormalizedPack } from "./pack";
+import { resolveRole } from "./pack";
 import { SpritePlayer } from "./player";
+import { pointDirection, resolveAnimation } from "./select";
+
+declare const __DEV__: boolean | undefined;
 
 /** Which edge of the bubble the avatar sits on. `start` and `end` are inline directions, so they mirror in right-to-left pages. `auto` picks the edge with more room beside the target. */
 export type AvatarDock = "start" | "end" | "auto";
@@ -15,10 +20,18 @@ export interface AvatarOptions {
   dock?: AvatarDock;
   /** Multiplies the avatar's frame size in CSS pixels. Default 1. */
   scale?: number;
+  /** Animation name or role for a step that has no target and is not the first step. Default `rest`. */
+  defaultAnimation?: string;
+  /** Read by `withAvatar`: how long a run waits for the pack before it starts in dialog mode. Default 3000. */
+  loadTimeoutMs?: number;
+  /** Read by `withAvatar`: called once when the pack fails to load or arrives too late. */
+  onError?: (error: AvatarPackError) => void;
 }
 
 /** What a step may set under `extensions.avatar`. */
 export interface AvatarStepOptions {
+  /** An animation name, a role (`greet`, `think`) or a role path (`point.left`). It wins over the automatic choice. */
+  animation?: string;
   dock?: AvatarDock;
   /** Leave the avatar out of this step. */
   hidden?: boolean;
@@ -30,6 +43,8 @@ export interface SpeakerPresenterOptions extends AvatarOptions {
   namespace?: string;
   /** The tour's `sanitize` hook, applied to custom footer buttons. */
   sanitize?: (html: string) => string;
+  /** Milliseconds the engine's entrance fade takes. Step animations start after it. Default 0. */
+  fadeMs?: number;
 }
 
 type Placement = "top" | "bottom" | "left" | "right" | "over";
@@ -47,12 +62,14 @@ const GAP_VARIABLE = "--vt-avatar-gap";
 const REFRESH_BUDGET = 2;
 const SIDES: readonly string[] = ["top", "bottom", "left", "right"];
 const DOCKS: readonly string[] = ["start", "end", "auto"];
+const WAITING_CLASS = "vt-waiting";
 
 function stepOptions(step: TourStep): AvatarStepOptions {
   const raw = step.config.extensions?.["avatar"];
   if (typeof raw !== "object" || raw === null) return {};
-  const { dock, hidden } = raw as Record<string, unknown>;
+  const { dock, hidden, animation } = raw as Record<string, unknown>;
   const out: AvatarStepOptions = {};
+  if (typeof animation === "string" && animation !== "") out.animation = animation;
   if (typeof dock === "string" && DOCKS.includes(dock)) out.dock = dock as AvatarDock;
   if (hidden === true) out.hidden = true;
   return out;
@@ -91,6 +108,13 @@ export class SpeakerPresenter implements Presenter {
   private applied: Layout | null = null;
   private refreshes = 0;
   private refreshQueued = false;
+  private info: RepositionInfo | null = null;
+  private shown = false;
+  private seq = 0;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private observer: MutationObserver | null = null;
+  private waiting = false;
+  private pointing: AvatarDirection | null = null;
 
   constructor(tour: Tour, pack: NormalizedPack, options: SpeakerPresenterOptions = {}) {
     this.tour = tour;
@@ -114,24 +138,49 @@ export class SpeakerPresenter implements Presenter {
     this.step = step;
     this.refreshes = 0;
     this.refreshQueued = false;
+    this.info = null;
+    this.shown = false;
     this.base.mount(popover, step, parts);
     this.configure(popover, step);
+    this.watchWaiting(popover);
     const dock = this.dockSetting === "auto" ? "end" : this.dockSetting;
     this.write(popover, { side: requestedSide(step), dock });
   }
 
   afterShow(popover: PopoverDOM, step: TourStep): void {
     this.base.afterShow(popover, step);
+    this.shown = true;
+    if (this.hidden) return;
+    const delay = prefersReducedMotion() ? 0 : Math.max(0, this.options.fadeMs ?? 0);
+    const seq = this.interrupt();
+    if (delay === 0) {
+      this.perform(step);
+      return;
+    }
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      if (this.seq === seq && this.step === step) this.perform(step);
+    }, delay);
+  }
+
+  onNudge(_step: TourStep): void {
+    this.react("alert");
+  }
+
+  onCompleted(_step: TourStep): void {
+    this.react("celebrate");
   }
 
   afterReposition(popover: PopoverDOM, step: TourStep, info: RepositionInfo): void {
     this.base.afterReposition(popover, step, info);
     const side: Placement = info.pinned ? "over" : info.side;
+    this.info = info;
     const next: Layout = { side, dock: this.resolveDock(info, side) };
     const previous = this.applied;
     this.write(popover, next);
     if (!previous || (previous.side === next.side && previous.dock === next.dock)) this.refreshes = 0;
     else this.queueRefresh(popover, step);
+    this.repoint();
   }
 
   update(popover: PopoverDOM, step: TourStep, parts: StepParts): void {
@@ -141,16 +190,123 @@ export class SpeakerPresenter implements Presenter {
 
   beforeLeave(step: TourStep): void {
     this.base.beforeLeave(step);
+    this.quiet();
+    this.shown = false;
+    this.player.stop();
     this.popover = null;
     this.step = null;
   }
 
   unmount(): void {
     this.base.unmount();
+    this.quiet();
+    this.shown = false;
     this.popover = null;
     this.step = null;
     this.player.dispose();
     this.avatar.remove();
+  }
+
+  private quiet(): void {
+    this.interrupt();
+    this.observer?.disconnect();
+    this.observer = null;
+    this.waiting = false;
+    this.pointing = null;
+  }
+
+  private interrupt(): number {
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+    this.seq += 1;
+    return this.seq;
+  }
+
+  private watchWaiting(popover: PopoverDOM): void {
+    this.observer?.disconnect();
+    this.observer = null;
+    this.waiting = false;
+    if (typeof MutationObserver === "undefined") return;
+    const observer = new MutationObserver(() => {
+      const waiting = popover.wrapper.classList.contains(WAITING_CLASS);
+      if (waiting === this.waiting) return;
+      this.waiting = waiting;
+      if (this.hidden || !this.shown) return;
+      this.interrupt();
+      if (waiting) this.start(this.resolveRoleName("think"), true);
+      else this.player.stop();
+    });
+    observer.observe(popover.wrapper, { attributes: true, attributeFilter: ["class"] });
+    this.observer = observer;
+  }
+
+  private resolveRoleName(ref: string, dir?: AvatarDirection): string {
+    return resolveAnimation(this.pack, ref, dir) ?? this.pack.roles.rest;
+  }
+
+  private react(role: "alert" | "celebrate"): void {
+    if (this.hidden || !this.shown) return;
+    const seq = this.interrupt();
+    this.pointing = null;
+    this.start(this.resolveRoleName(role), false, () => {
+      if (this.seq === seq) this.player.stop();
+    });
+  }
+
+  private start(name: string, loop: boolean, done?: () => void): void {
+    const run = loop ? this.player.play(name, { loop: true }) : this.player.play(name);
+    run.then(done, (error: unknown) => {
+      if (typeof __DEV__ === "undefined" || __DEV__) console.warn(`[virtualtour] Avatar animation "${name}" failed.`, error);
+    });
+  }
+
+  private direction(): AvatarDirection | null {
+    const info = this.info;
+    if (!info?.targetRect) return null;
+    const own = this.avatar.getBoundingClientRect();
+    const from = own.width > 0 || own.height > 0 ? own : info.wrapperRect;
+    const target = info.targetRect;
+    return pointDirection(
+      { x: from.left + from.width / 2, y: from.top + from.height / 2 },
+      { x: target.left + target.width / 2, y: target.top + target.height / 2 },
+    );
+  }
+
+  private perform(step: TourStep): void {
+    const explicit = stepOptions(step).animation;
+    const dir = this.direction();
+    this.pointing = null;
+    let name: string | undefined;
+    if (explicit !== undefined) {
+      name = resolveAnimation(this.pack, explicit, dir ?? undefined);
+      if (name === undefined && (typeof __DEV__ === "undefined" || __DEV__)) {
+        console.warn(`[virtualtour] Step "${step.id}" asks for avatar animation "${explicit}", which is neither a pack animation nor a role.`);
+      }
+    }
+    if (name === undefined) {
+      if (dir === null) {
+        const first = this.tour.steps.indexOf(step) === 0;
+        name = first ? resolveRole(this.pack, "greet") : this.defaultName();
+      } else {
+        name = resolveRole(this.pack, "point", dir);
+        this.pointing = dir;
+      }
+    }
+    this.start(name, false);
+  }
+
+  private defaultName(): string {
+    const configured = this.options.defaultAnimation;
+    return (configured === undefined ? undefined : resolveAnimation(this.pack, configured)) ?? this.pack.roles.rest;
+  }
+
+  private repoint(): void {
+    if (this.pointing === null || !this.shown || this.hidden || this.timer !== null) return;
+    const dir = this.direction();
+    if (dir === null || dir === this.pointing) return;
+    this.pointing = dir;
+    this.interrupt();
+    this.start(resolveRole(this.pack, "point", dir), false);
   }
 
   private configure(popover: PopoverDOM, step: TourStep): void {

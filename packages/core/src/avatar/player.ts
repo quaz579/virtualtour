@@ -23,6 +23,8 @@ interface Run {
   hiddenAt: number | null;
 }
 
+const ANIM_ATTR = "data-vt-anim";
+
 const STYLE_PROPS = [
   "width",
   "height",
@@ -176,6 +178,7 @@ export class SpritePlayer {
     this.disposed = true;
     for (const prop of STYLE_PROPS) this.el.style.removeProperty(prop);
     this.el.removeAttribute("aria-hidden");
+    this.el.removeAttribute(ANIM_ATTR);
   }
 
   private interrupt(): void {
@@ -220,6 +223,7 @@ export class SpritePlayer {
     if (name === this.shownName && index === this.shownIndex) return;
     const frame = this.pack.frames[name]?.[index];
     if (!frame) return;
+    if (name !== this.shownName) this.el.setAttribute(ANIM_ATTR, name);
     this.shownName = name;
     this.shownIndex = index;
     this.el.style.backgroundPosition = `${-frame.x}px ${-frame.y}px`;
