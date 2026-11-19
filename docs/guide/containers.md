@@ -2,7 +2,9 @@
 
 ## Mount containers
 
-`mountIn` inserts the popover into an element instead of `document.body`. `dimMountIn` does the same for the overlay. Both must be elements of the current document, outside any shadow root.
+`mountIn` inserts the popover into an element instead of `document.body`. `dimMountIn` does the same for the overlay. Each is an element or a function that returns one, set on the tour config. The element must be in the current document and outside any shadow root; anything else throws an error when the tour mounts.
+
+A target inside an open `<dialog>` is the exception. The popover and the overlay go into a layer inside that dialog so they stay above it, and `mountIn` and `dimMountIn` are not used for that step.
 
 ## Position strategy
 
@@ -15,7 +17,7 @@
 
 A `transform`, `filter` or `contain: paint` on an ancestor of the popover turns that ancestor into the containing block for `fixed` descendants, so a `fixed` popover lands offset from its target. With `strategy: 'absolute'` the engine measures the containing block and writes `top` and `left` relative to it, so the popover stays next to the target, including after the page scrolls.
 
-Centered steps always use `fixed`, whatever the strategy.
+The strategy is a step option, set under `position` (`position.strategy`), and it can come from `stepDefaults`. Centered steps always use `fixed`, whatever the strategy.
 
 ## Unsupported pairings
 

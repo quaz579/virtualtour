@@ -12,10 +12,12 @@
   },
   "scripts": {
     "build": "npm run build --workspace virtualtour && npm run build --workspace virtualtour-react && npm run build --workspace virtualtour-vue",
-    "typecheck": "npm run typecheck --workspace virtualtour --workspace virtualtour-react --workspace virtualtour-vue",
+    "typecheck": "npm run typecheck --workspace virtualtour --workspace virtualtour-react --workspace virtualtour-vue && npm run typecheck --workspace virtualtour-docs",
     "test": "npm test --workspace virtualtour --workspace virtualtour-react --workspace virtualtour-vue",
     "e2e": "npm run e2e --workspace virtualtour",
     "size": "node packages/core/tools/size-report.mjs",
-    "lint:prose": "node tools/lint-prose.mjs"
+    "lint:prose": "node tools/lint-prose.mjs",
+    "docs:build": "npm run build --workspace virtualtour-docs",
+    "docs:links": "node tools/check-links.mjs"
   }
 }
