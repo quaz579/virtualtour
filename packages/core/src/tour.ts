@@ -12,11 +12,12 @@ import { listenForAdvance } from "./advance/auto-advance";
 import { resolveTarget, waitForTarget } from "./dom/target";
 import { chain, NavigationQueue, raceAbort, resolveStepIndex, selectEligible } from "./navigator";
 import type { NavigationOutcome } from "./navigator";
+import { ProgressTracker } from "./persist/progress";
 import { DialogPresenter } from "./presenter";
 import { memoizeSanitizer } from "./render/content";
 import { relayTourEvent, setCurrentTour, tours } from "./registry";
 import { emitStep, lookupTarget, markHidden, markShown, resetStep, retireStep, setConfiguredHook, setResolvedTarget, TourStep } from "./step";
-import type { Presenter, ProgressInfo, RepositionInfo, StepConfig, StepParts, TourConfig } from "./types";
+import type { Presenter, ProgressInfo, ProgressRecord, RepositionInfo, StepConfig, StepParts, TourConfig } from "./types";
 
 declare const __DEV__: boolean | undefined;
 
@@ -47,6 +48,8 @@ interface TourInternals {
   advance: { step: TourStep; detach: () => void; timer: ReturnType<typeof setTimeout> | null } | null;
   waits: Map<TourStep, AbortController>;
   warnedUnnamed: boolean;
+  progress: ProgressTracker | null;
+  starting: boolean;
   clearSanitized: () => void;
 }
 
@@ -94,9 +97,14 @@ export class Tour {
       advance: null,
       waits: new Map(),
       warnedUnnamed: false,
+      progress: normalized.progress ? new ProgressTracker(normalized.id, normalized.progress) : null,
+      starting: false,
       clearSanitized,
     };
     internals.set(this, state);
+    if (normalized.progress && config.id === undefined && (typeof __DEV__ === "undefined" || __DEV__)) {
+      console.warn("[virtualtour] A tour with `progress` has no `id`, so its saved progress cannot match across page loads. Set a stable `id`.");
+    }
     const reserved = new Set<string>();
     for (const def of normalized.steps) if (def.id !== undefined) reserved.add(def.id);
     for (const def of normalized.steps) state.steps.push(this.createStep(def, reserved));
@@ -204,8 +212,35 @@ export class Tour {
    */
   async start(): Promise<void> {
     requireDocument("start");
+    const state = internalsOf(this);
+    if (state.running || state.starting) return;
+    let resumeAt = -1;
+    const progress = state.progress;
+    if (progress) {
+      state.starting = true;
+      let record: ProgressRecord | null;
+      try {
+        record = await progress.load();
+      } finally {
+        state.starting = false;
+      }
+      if (state.running) return;
+      if (record?.completedAt !== undefined && progress.skipCompleted) {
+        emitTour(this, "bypassed", { tour: this, reason: "completed" });
+        return;
+      }
+      if (progress.resume && record?.lastStepId !== undefined) resumeAt = state.steps.findIndex((s) => s.id === record.lastStepId);
+    }
     if (!beginRun(this)) return;
-    await navigateGuarded(this, () => runNavigation(this, "forward"));
+    if (resumeAt <= 0) {
+      await navigateGuarded(this, () => runNavigation(this, "forward"));
+      return;
+    }
+    await navigateGuarded(this, () => {
+      const runId = state.runId;
+      const outcome = advanceFrom(this, resumeAt - 1, "forward");
+      return Promise.resolve(chain(outcome, (o) => concludeNavigation(this, runId, o)));
+    });
   }
 
   /** Moves to the next step, or finishes after the last one. Does nothing while no run is active. */
@@ -524,6 +559,7 @@ function ensureEngine(tour: Tour): Driver {
       guarded("presenter.afterShow", () => presenter.afterShow(popover, step));
       attachAdvance(tour, step);
       emitStep(step, "shown", { step });
+      state.progress?.stepShown(step.id);
       emitTour(tour, "step-shown", { tour, step, previous: state.previousStep });
       settle(state);
     },
@@ -870,9 +906,11 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
   const endStep = hookStep ?? state.steps[state.currentIndex] ?? state.steps[state.anchorIndex];
   for (const step of state.steps) leaveStep(tour, step);
   if (kind === "finished") {
+    state.progress?.finished();
     if (endStep) emitStep(endStep, "finished", { step: endStep });
     emitTour(tour, "finished", { tour });
   } else {
+    if (kind !== "replaced") state.progress?.exited(endStep?.id);
     if (endStep) emitStep(endStep, "exited", { step: endStep });
     emitTour(tour, "exited", { tour, reason: kind });
   }
