@@ -6,6 +6,7 @@ import type { Presenter, RepositionInfo, StepParts } from "../types";
 import { prefersReducedMotion } from "../engine/core/env";
 import type { AvatarDirection, AvatarPackError, NormalizedPack } from "./pack";
 import { resolveRole } from "./pack";
+import { IdleScheduler } from "./idle";
 import { SpritePlayer } from "./player";
 import { pointDirection, resolveAnimation } from "./select";
 
@@ -22,6 +23,10 @@ export interface AvatarOptions {
   scale?: number;
   /** Animation name or role for a step that has no target and is not the first step. Default `rest`. */
   defaultAnimation?: string;
+  /** Plays a random idle animation after a quiet period. Default true; a step can override it with `extensions.avatar.idle`. */
+  idle?: boolean;
+  /** Milliseconds of quiet before an idle animation plays. Default 6000. */
+  idleQuietMs?: number;
   /** Read by `withAvatar`: how long a run waits for the pack before it starts in dialog mode. Default 3000. */
   loadTimeoutMs?: number;
   /** Read by `withAvatar`: called once when the pack fails to load or arrives too late. */
@@ -33,6 +38,8 @@ export interface AvatarStepOptions {
   /** An animation name, a role (`greet`, `think`) or a role path (`point.left`). It wins over the automatic choice. */
   animation?: string;
   dock?: AvatarDock;
+  /** Turns the idle loop on or off for this step. */
+  idle?: boolean;
   /** Leave the avatar out of this step. */
   hidden?: boolean;
 }
@@ -67,11 +74,12 @@ const WAITING_CLASS = "vt-waiting";
 function stepOptions(step: TourStep): AvatarStepOptions {
   const raw = step.config.extensions?.["avatar"];
   if (typeof raw !== "object" || raw === null) return {};
-  const { dock, hidden, animation } = raw as Record<string, unknown>;
+  const { dock, hidden, animation, idle } = raw as Record<string, unknown>;
   const out: AvatarStepOptions = {};
   if (typeof animation === "string" && animation !== "") out.animation = animation;
   if (typeof dock === "string" && DOCKS.includes(dock)) out.dock = dock as AvatarDock;
   if (hidden === true) out.hidden = true;
+  if (typeof idle === "boolean") out.idle = idle;
   return out;
 }
 
@@ -95,6 +103,7 @@ export class SpeakerPresenter implements Presenter {
   readonly avatar: HTMLElement;
   /** Plays the pack's animations on {@link SpeakerPresenter.avatar}. */
   readonly player: SpritePlayer;
+  private readonly idle: IdleScheduler;
   private readonly tour: Tour;
   private readonly pack: NormalizedPack;
   private readonly options: SpeakerPresenterOptions;
@@ -105,6 +114,7 @@ export class SpeakerPresenter implements Presenter {
   private step: TourStep | null = null;
   private dockSetting: AvatarDock = "end";
   private hidden = false;
+  private idleEnabled = true;
   private applied: Layout | null = null;
   private refreshes = 0;
   private refreshQueued = false;
@@ -128,6 +138,7 @@ export class SpeakerPresenter implements Presenter {
     this.avatar = document.createElement("div");
     this.avatar.className = "vt-avatar";
     this.player = new SpritePlayer(pack, this.avatar);
+    this.idle = new IdleScheduler(this.player, pack, options.idleQuietMs === undefined ? {} : { quietMs: options.idleQuietMs });
     if (this.scale !== 1) {
       this.avatar.style.transform = `scale(${this.scale})`;
       this.avatar.style.transformOrigin = "0 0";
@@ -192,7 +203,10 @@ export class SpeakerPresenter implements Presenter {
 
   update(popover: PopoverDOM, step: TourStep, parts: StepParts): void {
     this.base.update(popover, step, parts);
+    const wasIdle = this.idleEnabled && !this.hidden;
     this.configure(popover, step);
+    const current = this.player.current;
+    if (!wasIdle && this.idleEnabled && !this.hidden && (current === null || current === this.pack.roles.rest)) this.armIdle();
   }
 
   beforeLeave(step: TourStep): void {
@@ -224,6 +238,7 @@ export class SpeakerPresenter implements Presenter {
   }
 
   private interrupt(): number {
+    this.idle.disarm();
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
     this.seq += 1;
@@ -252,6 +267,7 @@ export class SpeakerPresenter implements Presenter {
       const resume = this.deferred;
       this.deferred = null;
       if (resume && resume === this.step) this.perform(resume);
+      else this.armIdle();
     });
     observer.observe(popover.wrapper, { attributes: true, attributeFilter: ["class"] });
     this.observer = observer;
@@ -276,12 +292,16 @@ export class SpeakerPresenter implements Presenter {
       const resume = this.deferred;
       this.deferred = null;
       if (resume && resume === this.step) this.perform(resume);
+      else this.armIdle();
     });
   }
 
   private start(name: string, loop: boolean, done?: () => void): void {
+    const seq = this.seq;
     const run = loop ? this.player.play(name, { loop: true }) : this.player.play(name);
-    run.then(done, (error: unknown) => {
+    run.then(() => {
+      if (this.seq === seq) done?.();
+    }, (error: unknown) => {
       if (typeof __DEV__ === "undefined" || __DEV__) console.warn(`[virtualtour] Avatar animation "${name}" failed.`, error);
     });
   }
@@ -318,7 +338,16 @@ export class SpeakerPresenter implements Presenter {
         this.pointing = dir;
       }
     }
-    this.start(name, false);
+    if (name === this.pack.roles.rest) {
+      this.start(name, false);
+      this.armIdle();
+    } else {
+      this.start(name, false, () => this.armIdle());
+    }
+  }
+
+  private armIdle(): void {
+    if (this.shown && !this.hidden && this.idleEnabled) this.idle.arm();
   }
 
   private defaultName(): string {
@@ -332,12 +361,14 @@ export class SpeakerPresenter implements Presenter {
     if (dir === null || dir === this.pointing) return;
     this.pointing = dir;
     this.interrupt();
-    this.start(resolveRole(this.pack, "point", dir), false);
+    this.start(resolveRole(this.pack, "point", dir), false, () => this.armIdle());
   }
 
   private configure(popover: PopoverDOM, step: TourStep): void {
     const options = stepOptions(step);
     this.hidden = options.hidden === true;
+    this.idleEnabled = options.idle ?? this.options.idle ?? true;
+    if (!this.idleEnabled || this.hidden) this.idle.disarm();
     this.dockSetting = options.dock ?? this.options.dock ?? this.pack.bubble?.dock ?? "end";
     const wrapper = popover.wrapper;
     wrapper.classList.toggle(NO_AVATAR_CLASS, this.hidden);
