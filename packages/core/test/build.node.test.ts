@@ -143,10 +143,6 @@ function packedPaths(workspace: string): string[] {
 }
 
 describe("package contents", () => {
-  beforeAll(() => {
-    execFileSync("npm", ["run", "build"], { cwd: repoRoot, stdio: "ignore" });
-  }, 180_000);
-
   it.each(Object.keys(packContents))("%s packs exactly the intended files", (workspace) => {
     const { exact, required } = packContents[workspace]!;
     const paths = packedPaths(workspace);
