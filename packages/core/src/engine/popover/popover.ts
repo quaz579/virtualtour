@@ -1,7 +1,7 @@
 import { destroyDriverClick, onDriverClick } from "../core/click";
 import { PositionOptions, repositionPopover } from "./position";
 import type { DriveStep, EnginePresenter, RepositionInfo } from "../types";
-import { bringInView, layerFor, removeFromLayer } from "../core/utils";
+import { bringInView, removeFromLayer } from "../core/utils";
 import { fixedNames } from "../core/namespace";
 
 const P = fixedNames.popover;
@@ -268,9 +268,9 @@ export function updatePopoverContent(popover: PopoverDOM, anchor: Element, optio
   repositionOnImagesLoad(popover, anchor, options.position, options.onPositioned);
 }
 
-export function renderPopover(anchor: Element, options: PopoverRenderOptions): PopoverDOM {
+export function renderPopover(anchor: Element, layer: Element, options: PopoverRenderOptions): PopoverDOM {
   const popover = createPopover();
-  layerFor(anchor).appendChild(popover.wrapper);
+  layer.appendChild(popover.wrapper);
 
   const popoverWrapper = popover.wrapper;
   popoverWrapper.className = P.root;

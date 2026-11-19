@@ -5,9 +5,17 @@ export type StageDefinition = {
   height: number;
 };
 
+/** Per-corner radii of the cut-out, in CSS pixels. */
+export type StageCornerRadius = {
+  topLeft: number;
+  topRight: number;
+  bottomRight: number;
+  bottomLeft: number;
+};
+
 export type StageOptions = {
   padding: number;
-  radius: number;
+  radius: number | StageCornerRadius;
 };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -33,19 +41,31 @@ export function createStageSvg(className: string, path: string, fill: string, op
   return svg;
 }
 
-export type StageCutout = StageDefinition & { radius: number };
+export type StageCutout = StageDefinition & { radii: StageCornerRadius };
+
+function clampRadius(value: number | undefined, width: number, height: number): number {
+  const limited = Math.min(Number(value) || 0, width / 2, height / 2);
+  return Math.floor(Math.max(limited, 0));
+}
 
 export function stageCutout(stage: StageDefinition, options: StageOptions): StageCutout {
   const width = stage.width + options.padding * 2;
   const height = stage.height + options.padding * 2;
-  const limitedRadius = Math.min(options.radius, width / 2, height / 2);
+  const radius = options.radius;
+  const corner = (key: keyof StageCornerRadius) =>
+    clampRadius(typeof radius === "number" ? radius : radius[key], width, height);
 
   return {
     x: stage.x - options.padding,
     y: stage.y - options.padding,
     width,
     height,
-    radius: Math.floor(Math.max(limitedRadius, 0)),
+    radii: {
+      topLeft: corner("topLeft"),
+      topRight: corner("topRight"),
+      bottomRight: corner("bottomRight"),
+      bottomLeft: corner("bottomLeft"),
+    },
   };
 }
 
@@ -54,15 +74,15 @@ export function generateStageSvgPathString(stage: StageDefinition, options: Stag
   const windowY = window.innerHeight;
 
   const cutout = stageCutout(stage, options);
-  const normalizedRadius = cutout.radius;
+  const { topLeft: tl, topRight: tr, bottomRight: br, bottomLeft: bl } = cutout.radii;
 
-  const highlightBoxX = cutout.x + normalizedRadius;
-  const highlightBoxY = cutout.y;
-  const highlightBoxWidth = cutout.width - normalizedRadius * 2;
-  const highlightBoxHeight = cutout.height - normalizedRadius * 2;
+  const top = cutout.width - tl - tr;
+  const right = cutout.height - tr - br;
+  const bottom = cutout.width - br - bl;
+  const left = cutout.height - bl - tl;
 
   return `M${windowX},0L0,0L0,${windowY}L${windowX},${windowY}L${windowX},0Z
-    M${highlightBoxX},${highlightBoxY} h${highlightBoxWidth} a${normalizedRadius},${normalizedRadius} 0 0 1 ${normalizedRadius},${normalizedRadius} v${highlightBoxHeight} a${normalizedRadius},${normalizedRadius} 0 0 1 -${normalizedRadius},${normalizedRadius} h-${highlightBoxWidth} a${normalizedRadius},${normalizedRadius} 0 0 1 -${normalizedRadius},-${normalizedRadius} v-${highlightBoxHeight} a${normalizedRadius},${normalizedRadius} 0 0 1 ${normalizedRadius},-${normalizedRadius} z`;
+    M${cutout.x + tl},${cutout.y} h${top} a${tr},${tr} 0 0 1 ${tr},${tr} v${right} a${br},${br} 0 0 1 -${br},${br} h-${bottom} a${bl},${bl} 0 0 1 -${bl},-${bl} v-${left} a${tl},${tl} 0 0 1 ${tl},-${tl} z`;
 }
 
 type Rect = StageDefinition;
@@ -91,9 +111,10 @@ export function generateExtraCutoutsPathString(cutout: StageCutout, rects: Rect[
     });
   });
 
-  const r = cutout.radius;
+  const { topLeft, topRight, bottomRight, bottomLeft } = cutout.radii;
   for (const isRight of [0, 1]) {
     for (const isBottom of [0, 1]) {
+      const r = isBottom ? (isRight ? bottomRight : bottomLeft) : isRight ? topRight : topLeft;
       const cornerX = cutout.x + isRight * cutout.width;
       const cornerY = cutout.y + isBottom * cutout.height;
       const towardsCenterX = isRight ? -r : r;

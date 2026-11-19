@@ -1,5 +1,5 @@
 import type { Alignment, AllowedButtons, Placement, PopoverDOM, Side } from "./popover/popover";
-import type { StageDefinition } from "./overlay/stage";
+import type { StageCornerRadius, StageDefinition } from "./overlay/stage";
 
 export type DestroyReason = "done" | "close" | "escape" | "overlay" | "replaced" | "api";
 
@@ -110,9 +110,16 @@ export type Config = {
   smoothScroll?: boolean;
   allowClose?: boolean;
   allowScroll?: boolean;
+  /**
+   * Freezes the scroll position of the highlighted element's scrollable parent while a step is shown.
+   * Defaults to `false`: the parent keeps scrolling and the popover and cut-out follow it.
+   */
+  lockScrollParent?: boolean;
   overlayClickBehavior?: "close" | "nextStep" | "none" | DriverHook;
   stagePadding?: number;
-  stageRadius?: number;
+  stageRadius?: number | StageCornerRadius;
+  /** Cut out only the part of the highlighted element that its scrolling ancestors show. Defaults to `true`. */
+  clipStageToScrollParents?: boolean;
 
   disableActiveInteraction?: boolean | "clicks";
 
@@ -137,6 +144,19 @@ export type Config = {
   allowArrowKeys?: boolean;
   /** Whether the dimmed overlay is drawn. Defaults to `true`; `false` draws no overlay and no `data-vt-dim`. */
   overlay?: boolean;
+  /**
+   * Where the popover is inserted instead of `document.body`: an element, or a function returning
+   * one at mount time. Must be an element of the current document, outside any shadow root. A step
+   * whose target is inside an open `<dialog>` mounts in that dialog and ignores `mountIn`. A container
+   * that is a containing block for fixed descendants (transform, filter) offsets the popover.
+   */
+  mountIn?: Element | (() => Element);
+  /**
+   * Where the dimmed overlay is inserted instead of `document.body`. Same rules as `mountIn`. Outside
+   * `document.body` the overlay is inserted before the container's other children. The
+   * overlay stays `position: fixed`, so a container that creates a containing block misplaces it.
+   */
+  dimMountIn?: Element | (() => Element);
 
   presenter?: EnginePresenter;
   onReposition?: (info: RepositionInfo, opts: HookOpts) => void;
@@ -213,7 +233,8 @@ export type DriveStep = {
   waitForElement?: number;
   advanceDelay?: number;
   stagePadding?: number;
-  stageRadius?: number;
+  stageRadius?: number | StageCornerRadius;
+  clipStageToScrollParents?: boolean;
   popoverOffset?: number;
   data?: Record<string, any>;
 };

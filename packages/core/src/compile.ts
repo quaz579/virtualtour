@@ -12,14 +12,10 @@ type ScrollIntoViewValue = false | ScrollIntoViewOptions;
 
 type FutureConfigKeys =
   | "mountIn"
-  | "dimMountIn"
-  | "clipStageToScrollParents"
-  | "lockScrollParent"
-  | "stageRadius";
+  | "dimMountIn";
 
 type FutureStepKeys =
   | "popover"
-  | "stageRadius"
   | "popoverCrossOffset"
   | "popoverPadding"
   | "scrollIntoView";
@@ -39,7 +35,6 @@ export type EnginePopover = Omit<Popover, FuturePopoverKeys> & {
 /** Engine step options, including the per-step fields the engine gains later. */
 export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
   popover?: EnginePopover;
-  stageRadius?: number | Corners;
   popoverCrossOffset?: number;
   popoverPadding?: number;
   scrollIntoView?: ScrollIntoViewValue;
@@ -49,9 +44,6 @@ export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
 export type EngineConfig = Omit<Config, FutureConfigKeys> & {
   mountIn?: Element | (() => Element);
   dimMountIn?: Element | (() => Element);
-  clipStageToScrollParents?: boolean;
-  lockScrollParent?: boolean;
-  stageRadius?: number | Corners;
 };
 
 /** Result of {@link compileTour}. */
