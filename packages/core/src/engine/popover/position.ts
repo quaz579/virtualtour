@@ -1,4 +1,4 @@
-import type { Alignment, Placement, PopoverDOM, Side } from "./popover";
+import type { Alignment, Placement, PlacementRequest, PopoverDOM, Side } from "./popover";
 import type { RepositionInfo } from "../types";
 import { fixedNames } from "../core/namespace";
 import { clipRectByScrollParents } from "../core/utils";
@@ -6,14 +6,15 @@ import { clipRectByScrollParents } from "../core/utils";
 const popoverNames = fixedNames.popover;
 
 export type PositionOptions = {
-  side: Placement;
+  side: PlacementRequest;
   align: Alignment;
   offset: number;
   padding: number;
   boundaryPadding?: number;
-  boundary?: "viewport" | "scrollParents";
-  centered?: boolean;
-  hasTarget?: boolean;
+  boundary?: "viewport" | "scrollParents" | undefined;
+  flip?: boolean | undefined;
+  shift?: boolean | undefined;
+  hasTarget: boolean;
   sideAttribute?: string;
   strategy?: "fixed" | "absolute";
 };
@@ -39,12 +40,23 @@ function getPopoverDimensions(popover: PopoverDOM, offset: number): PopoverDimen
 
 type Bounds = { left: number; top: number; right: number; bottom: number };
 
+const EXPLICIT_FALLBACK: Side[] = ["left", "right", "top", "bottom"];
+const AUTO_ORDER: Side[] = ["bottom", "top", "right", "left"];
+
+const insetBounds = (b: Bounds, by: number): Bounds => ({
+  left: b.left + by,
+  top: b.top + by,
+  right: b.right - by,
+  bottom: b.bottom - by,
+});
+
 function resolveBounds(
   anchor: Element,
   options: PositionOptions,
+  centered: boolean,
   needWidth: number,
   needHeight: number
-): Bounds {
+): { viewport: Bounds; scroller: Bounds } {
   const inset = options.boundaryPadding || 0;
   const viewport = {
     left: inset,
@@ -53,48 +65,65 @@ function resolveBounds(
     bottom: window.innerHeight - inset,
   };
 
-  if (options.centered || options.boundary === "viewport") {
-    return viewport;
+  if (centered || options.boundary === "viewport") {
+    return { viewport, scroller: viewport };
   }
 
   const clipped = clipRectByScrollParents(anchor, new DOMRect(0, 0, window.innerWidth, window.innerHeight), true);
-  const bounds = { ...viewport };
+  const scroller = { ...viewport };
 
-  if (clipped.width >= needWidth) {
-    bounds.left = Math.max(viewport.left, clipped.left);
-    bounds.right = Math.min(viewport.right, clipped.right);
+  if (clipped.width - 2 * inset >= needWidth) {
+    scroller.left = Math.max(viewport.left, clipped.left + inset);
+    scroller.right = Math.min(viewport.right, clipped.right - inset);
   }
 
-  if (clipped.height >= needHeight) {
-    bounds.top = Math.max(viewport.top, clipped.top);
-    bounds.bottom = Math.min(viewport.bottom, clipped.bottom);
+  if (clipped.height - 2 * inset >= needHeight) {
+    scroller.top = Math.max(viewport.top, clipped.top + inset);
+    scroller.bottom = Math.min(viewport.bottom, clipped.bottom - inset);
   }
 
-  return bounds;
+  return { viewport, scroller };
 }
 
-function alignAlongEdge(
+function rawAlignedStart(
   alignment: Alignment,
   elementStart: number,
   elementSize: number,
   popoverSize: number,
-  boundsStart: number,
-  boundsEnd: number,
-  padding: number,
-  arrowSize: number
+  padding: number
 ): number {
-  let start: number;
   if (alignment === "start") {
-    start = elementStart - padding;
-  } else if (alignment === "end") {
-    start = elementStart - popoverSize + elementSize + padding;
-  } else if (alignment === "center") {
-    start = elementStart + elementSize / 2 - popoverSize / 2;
-  } else {
-    return 0;
+    return elementStart - padding;
+  }
+  if (alignment === "end") {
+    return elementStart - popoverSize + elementSize + padding;
   }
 
-  return Math.max(Math.min(start, boundsEnd - popoverSize - arrowSize), boundsStart + arrowSize);
+  return elementStart + elementSize / 2 - popoverSize / 2;
+}
+
+function clampAlongEdge(start: number, popoverSize: number, boundsStart: number, boundsEnd: number): number {
+  return Math.max(Math.min(start, boundsEnd - popoverSize), boundsStart);
+}
+
+function freeSpace(side: Side, element: Bounds, bounds: Bounds): number {
+  if (side === "top") {
+    return element.top - bounds.top;
+  }
+  if (side === "bottom") {
+    return bounds.bottom - element.bottom;
+  }
+  if (side === "left") {
+    return element.left - bounds.left;
+  }
+
+  return bounds.right - element.right;
+}
+
+function sidesByFreeSpace(element: Bounds, bounds: Bounds): Side[] {
+  return AUTO_ORDER.map((side, index) => ({ side, index, space: freeSpace(side, element, bounds) }))
+    .sort((a, b) => b.space - a.space || a.index - b.index)
+    .map(entry => entry.side);
 }
 
 function toAbsolute(wrapper: HTMLElement, width: number, height: number) {
@@ -114,8 +143,10 @@ function toAbsolute(wrapper: HTMLElement, width: number, height: number) {
 }
 
 export function repositionPopover(popover: PopoverDOM, anchor: Element, options: PositionOptions): RepositionInfo {
-  const { align: requiredAlignment, side } = options;
-  const requiredSide: Placement = options.centered ? "over" : side;
+  const { align: requiredAlignment } = options;
+  const flip = options.flip !== false;
+  const shift = options.shift !== false;
+  const centered = !options.hasTarget || options.side === "over";
   const popoverPadding = options.padding;
   const { style, classList } = popover.wrapper;
   if (popover.wrapper.hasAttribute(fixedNames.attr.strategy)) {
@@ -126,132 +157,167 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   const popoverDimensions = getPopoverDimensions(popover, options.offset);
   const popoverArrowDimensions = popover.arrow.getBoundingClientRect();
   const elementDimensions = anchor.getBoundingClientRect();
+  const arrowSize = popoverArrowDimensions.width || ARROW_SIZE;
+
+  const edgeRoom = arrowSize * 2;
+  const { viewport, scroller } = resolveBounds(
+    anchor,
+    options,
+    centered,
+    popoverDimensions.realWidth + edgeRoom,
+    popoverDimensions.realHeight + edgeRoom
+  );
 
   const topValue = elementDimensions.top - popoverDimensions.height;
   const bottomValue = window.innerHeight - (elementDimensions.bottom + popoverDimensions.height);
   const leftValue = elementDimensions.left - popoverDimensions.width;
   const rightValue = window.innerWidth - (elementDimensions.right + popoverDimensions.width);
 
-  const fits = (b: Bounds) => ({
+  const fitsIn = (b: Bounds): Record<Side, boolean> => ({
     top: topValue >= b.top,
     bottom: bottomValue >= window.innerHeight - b.bottom,
     left: leftValue >= b.left,
     right: rightValue >= window.innerWidth - b.right,
   });
-  const anyFits = (f: ReturnType<typeof fits>) => f.top || f.bottom || f.left || f.right;
 
-  const edgeRoom = popoverArrowDimensions.width * 2;
-  let bounds = resolveBounds(
-    anchor,
-    options,
-    popoverDimensions.realWidth + edgeRoom,
-    popoverDimensions.realHeight + edgeRoom
-  );
-  let fit = fits(bounds);
-  if (!anyFits(fit) && options.boundary !== "viewport") {
-    bounds = resolveBounds(anchor, { ...options, boundary: "viewport" }, 0, 0);
-    fit = fits(bounds);
+  const autoOrder = options.side === "auto" && !centered ? sidesByFreeSpace(elementDimensions, scroller) : undefined;
+  const requestedSide: Placement = centered ? "over" : (autoOrder?.[0] ?? (options.side as Placement));
+
+  let bounds = scroller;
+  let renderedSide: Placement = requestedSide;
+  let fellBack = false;
+
+  if (requestedSide !== "over") {
+    const fitScroller = fitsIn(scroller);
+    const fitViewport = scroller === viewport ? fitScroller : fitsIn(viewport);
+    const viewportOrder =
+      autoOrder && scroller !== viewport ? sidesByFreeSpace(elementDimensions, viewport) : autoOrder;
+    const pick = (fit: Record<Side, boolean>, order: Side[] | undefined): Side | undefined => {
+      const preferred = order?.[0] ?? requestedSide;
+      const chain = order ?? EXPLICIT_FALLBACK;
+
+      return fit[preferred] ? preferred : chain.find(candidate => fit[candidate]);
+    };
+
+    if (!flip) {
+      bounds = fitScroller[requestedSide] || !fitViewport[requestedSide] ? scroller : viewport;
+    } else {
+      const inScroller = pick(fitScroller, autoOrder);
+      const inViewport =
+        inScroller === undefined && scroller !== viewport ? pick(fitViewport, viewportOrder) : undefined;
+      if (inScroller !== undefined) {
+        renderedSide = inScroller;
+      } else if (inViewport !== undefined) {
+        renderedSide = inViewport;
+        bounds = viewport;
+      } else {
+        fellBack = true;
+        bounds = viewport;
+      }
+    }
+  } else {
+    bounds = viewport;
   }
 
-  let isTopOptimal = fit.top;
-  let isBottomOptimal = fit.bottom;
-  let isLeftOptimal = fit.left;
-  let isRightOptimal = fit.right;
+  const margined = insetBounds(bounds, arrowSize);
 
-  const arrowSize = popoverArrowDimensions.width;
-  const alignTop = () =>
-    alignAlongEdge(
-      requiredAlignment,
+  const alignAlong = (elementStart: number, elementSize: number, popoverSize: number, start: number, end: number) => {
+    const rawFor = (alignment: Alignment) =>
+      rawAlignedStart(alignment, elementStart, elementSize, popoverSize, popoverPadding);
+    const overflows = (raw: number) => raw < start || raw + popoverSize > end;
+
+    let alignment = requiredAlignment;
+    if (flip && alignment !== "center" && overflows(rawFor(alignment))) {
+      const opposite: Alignment = alignment === "start" ? "end" : "start";
+      if (!overflows(rawFor(opposite))) {
+        alignment = opposite;
+      }
+    }
+
+    const raw = rawFor(alignment);
+
+    return { alignment, value: shift ? clampAlongEdge(raw, popoverSize, start, end) : raw };
+  };
+
+  let renderedAlignment: Alignment = requiredAlignment;
+  const alignVertically = () =>
+    alignAlong(
       elementDimensions.top,
       elementDimensions.height,
       popoverDimensions.realHeight,
-      bounds.top,
-      bounds.bottom,
-      popoverPadding,
-      arrowSize
+      margined.top,
+      margined.bottom
     );
-  const alignLeft = () =>
-    alignAlongEdge(
-      requiredAlignment,
+  const alignHorizontally = () =>
+    alignAlong(
       elementDimensions.left,
       elementDimensions.width,
       popoverDimensions.realWidth,
-      bounds.left,
-      bounds.right,
-      popoverPadding,
-      arrowSize
+      margined.left,
+      margined.right
     );
-
-  const noneOptimal = !isTopOptimal && !isBottomOptimal && !isLeftOptimal && !isRightOptimal;
-  let popoverRenderedSide: Placement = requiredSide;
-
-  if (requiredSide === "top" && isTopOptimal) {
-    isRightOptimal = isLeftOptimal = isBottomOptimal = false;
-  } else if (requiredSide === "bottom" && isBottomOptimal) {
-    isRightOptimal = isLeftOptimal = isTopOptimal = false;
-  } else if (requiredSide === "left" && isLeftOptimal) {
-    isRightOptimal = isTopOptimal = isBottomOptimal = false;
-  } else if (requiredSide === "right" && isRightOptimal) {
-    isLeftOptimal = isTopOptimal = isBottomOptimal = false;
-  }
 
   const place = (edge: Side, value?: number) => {
     style[edge] = value === undefined ? "auto" : `${value}px`;
   };
-  const centeredLeft = window.innerWidth / 2 - popoverDimensions.realWidth / 2;
-  const maxLeft = bounds.right - popoverDimensions.realWidth - arrowSize;
-  const maxTop = bounds.bottom - popoverDimensions.realHeight - arrowSize;
-  const maxRight = window.innerWidth - bounds.left - popoverDimensions.realWidth - arrowSize;
-  const maxBottom = window.innerHeight - bounds.top - popoverDimensions.realHeight - arrowSize;
+  const centerIn = (start: number, end: number, size: number, clampStart: number, clampEnd: number) => {
+    const centeredStart = (start + end) / 2 - size / 2;
 
-  if (requiredSide === "over") {
-    place("left", centeredLeft);
-    place("right");
-    place("top", window.innerHeight / 2 - popoverDimensions.realHeight / 2);
-    place("bottom");
-  } else if (noneOptimal) {
-    place("left", centeredLeft);
-    place("right");
-    place("bottom", 10);
-    place("top");
-  } else if (isLeftOptimal) {
-    place("left", Math.min(leftValue, maxLeft));
-    place("top", alignTop());
-    place("bottom");
-    place("right");
+    return shift ? clampAlongEdge(centeredStart, size, clampStart, clampEnd) : centeredStart;
+  };
+  const clampMax = (value: number, max: number) => (shift ? Math.min(value, max) : value);
 
-    popoverRenderedSide = "left";
-  } else if (isRightOptimal) {
-    place("right", Math.min(rightValue, maxRight));
-    place("top", alignTop());
+  if (requestedSide === "over" || fellBack) {
+    place("left", centerIn(bounds.left, bounds.right, popoverDimensions.realWidth, margined.left, margined.right));
+    place("right");
+    if (requestedSide === "over") {
+      place("top", centerIn(bounds.top, bounds.bottom, popoverDimensions.realHeight, margined.top, margined.bottom));
+      place("bottom");
+    } else {
+      place(
+        "bottom",
+        clampMax(window.innerHeight - margined.bottom, window.innerHeight - margined.top - popoverDimensions.realHeight)
+      );
+      place("top");
+    }
+  } else if (renderedSide === "left") {
+    place("left", clampMax(leftValue, margined.right - popoverDimensions.realWidth));
+    const aligned = alignVertically();
+    renderedAlignment = aligned.alignment;
+    place("top", aligned.value);
+    place("bottom");
+    place("right");
+  } else if (renderedSide === "right") {
+    place("right", clampMax(rightValue, window.innerWidth - margined.left - popoverDimensions.realWidth));
+    const aligned = alignVertically();
+    renderedAlignment = aligned.alignment;
+    place("top", aligned.value);
     place("bottom");
     place("left");
-
-    popoverRenderedSide = "right";
-  } else if (isTopOptimal) {
-    place("top", Math.min(topValue, maxTop));
-    place("left", alignLeft());
+  } else if (renderedSide === "top") {
+    place("top", clampMax(topValue, margined.bottom - popoverDimensions.realHeight));
+    const aligned = alignHorizontally();
+    renderedAlignment = aligned.alignment;
+    place("left", aligned.value);
     place("bottom");
     place("right");
-
-    popoverRenderedSide = "top";
-  } else if (isBottomOptimal) {
-    place("left", alignLeft());
-    place("bottom", Math.min(bottomValue, maxBottom));
+  } else {
+    const aligned = alignHorizontally();
+    renderedAlignment = aligned.alignment;
+    place("left", aligned.value);
+    place("bottom", clampMax(bottomValue, window.innerHeight - margined.top - popoverDimensions.realHeight));
     place("top");
     place("right");
-
-    popoverRenderedSide = "bottom";
   }
 
-  if (options.strategy === "absolute" && requiredSide !== "over") {
+  if (options.strategy === "absolute" && requestedSide !== "over") {
     toAbsolute(popover.wrapper, popoverDimensions.realWidth, popoverDimensions.realHeight);
   }
 
-  renderPopoverArrow(popover, noneOptimal ? "over" : popoverRenderedSide, requiredAlignment, elementDimensions);
+  renderPopoverArrow(popover, fellBack ? "over" : renderedSide, renderedAlignment, elementDimensions);
 
-  const sideClass = popoverNames.sideClass(popoverRenderedSide);
-  const alignClass = popoverNames.alignClass(requiredAlignment);
+  const sideClass = popoverNames.sideClass(renderedSide);
+  const alignClass = popoverNames.alignClass(renderedAlignment);
   [...classList]
     .filter(className => className.startsWith(popoverNames.sidePrefix) || className.startsWith(popoverNames.alignPrefix))
     .filter(className => className !== sideClass && className !== alignClass)
@@ -264,14 +330,14 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     classList.add(alignClass);
   }
   if (options.sideAttribute) {
-    popover.wrapper.setAttribute(options.sideAttribute, popoverRenderedSide);
+    popover.wrapper.setAttribute(options.sideAttribute, renderedSide);
   }
 
   return {
-    side: popoverRenderedSide,
-    align: requiredAlignment,
+    side: renderedSide,
+    align: renderedAlignment,
     wrapperRect: popover.wrapper.getBoundingClientRect(),
-    targetRect: (options.hasTarget === undefined ? options.centered : !options.hasTarget) ? null : elementDimensions,
+    targetRect: options.hasTarget ? elementDimensions : null,
   };
 }
 

@@ -63,6 +63,8 @@ function createConfigStore() {
       popoverOffset: 10,
       popoverPadding: 0,
       popoverBoundary: "scrollParents",
+      popoverFlip: true,
+      popoverShift: true,
       showButtons: ["next", "previous", "close"],
       disableButtons: [],
       overlayColor: "#000",
