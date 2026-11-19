@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
@@ -98,7 +98,7 @@ describe("conformance", () => {
     expect(exampleFiles.length).toBeGreaterThanOrEqual(3);
   });
 
-  it.each(exampleFiles)("example %s validates against the tour schema and parses", (file) => {
+  it.each(exampleFiles.map((f) => [relative(repo, f), f] as const))("example %s validates against the tour schema and parses", (_name, file) => {
     const doc = read(file);
     expect(validateTour(doc), JSON.stringify(validateTour.errors)).toBe(true);
     expect(parses(doc)).toBe(true);

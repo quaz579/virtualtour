@@ -35,7 +35,7 @@ function placement(): TourConfig {
       { id: "right", title: "Right", body: "side: right", target: "#side-inbox", placement: { side: "right" } },
       { id: "bottom-end", title: "Bottom, end", body: "side: bottom, align: end", target: "#card-b", placement: { side: "bottom", align: "end" } },
       { id: "top", title: "Top", body: "side: top", target: "#form", placement: { side: "top" } },
-      { id: "flip", title: "Flips to fit", body: "Asked for left, but the profile button is at the edge: the popover flips.", target: "#profile", placement: { side: "right" } },
+      { id: "flip", title: "Flips to fit", body: "Asked for right, but the profile button is at the edge: the popover flips.", target: "#profile", placement: { side: "right" } },
       { id: "auto", title: "Auto", body: "side: auto picks the roomiest side.", target: "#footer-note", placement: "auto" },
       { id: "no-arrow", title: "No arrow", body: "arrow: false", target: "#card-c", placement: { side: "bottom" }, position: { arrow: false } },
     ],

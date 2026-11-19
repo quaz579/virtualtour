@@ -37,14 +37,12 @@ for (const id of ids) {
     await expect(popover(page)).toBeVisible();
     if (id.startsWith("avatar")) await expect(page.locator(".vt-avatar")).toBeVisible();
 
+    const current = () => page.evaluate(() => (window as unknown as { vtDemo: { tour?: { currentStep?: { id?: string } } } }).vtDemo.tour?.currentStep?.id ?? null);
     for (let i = 0; i < 12 && (await running(page)); i += 1) {
+      const before = await current();
       await expect(popover(page)).toBeVisible();
-      await page.evaluate(() => {
-        const tour = (window as unknown as { vtDemo: { tour: { advance(): void; forward(): Promise<void> } } }).vtDemo.tour;
-        tour.advance();
-        void tour.forward();
-      });
-      await page.waitForTimeout(150);
+      await page.evaluate(() => (window as unknown as { vtDemo: { tour: { advance(): void } } }).vtDemo.tour.advance());
+      await expect.poll(async () => (await running(page)) === false || (await current()) !== before, { timeout: 5000 }).toBe(true);
     }
     await expect.poll(() => running(page)).toBe(false);
     expect(await page.evaluate(() => (window as unknown as { vtDemo: { errors: string[] } }).vtDemo.errors)).toEqual([]);

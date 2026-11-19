@@ -69,8 +69,14 @@ function applyDir(value: string): void {
 
 applyTheme(params.get("theme") ?? "light");
 applyDir(params.get("dir") ?? "ltr");
-theme?.addEventListener("change", () => applyTheme(theme.value));
-dir?.addEventListener("change", () => applyDir(dir.value));
+theme?.addEventListener("change", () => {
+  applyTheme(theme.value);
+  state.tour?.refresh();
+});
+dir?.addEventListener("change", () => {
+  applyDir(dir.value);
+  state.tour?.refresh();
+});
 
 const initial = params.get("scenario");
 if (initial) void state.run(initial).catch((error: Error) => state.errors.push(error.message));
