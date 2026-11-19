@@ -53,6 +53,7 @@
   top: 0;
   right: 0;
   background-color: #fff;
+  --vt-base: 1;
 }
 
 .vt-popover-title {
@@ -69,7 +70,7 @@
   all: unset;
   position: absolute;
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   width: 32px;
   height: 28px;
   cursor: pointer;
@@ -194,12 +195,13 @@
   display: none;
 }
 
-.vt-popover-arrow-none {
+.vt-popover-arrow-none,
+.vt-no-arrow .vt-popover-arrow {
   display: none;
 }
 
 .vt-body {
-  margin-top: 8px;
+  margin-top: 5px;
   font-size: 14px;
   line-height: 1.5;
 }
