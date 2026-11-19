@@ -140,8 +140,13 @@ describe("dedupeExtras", () => {
 });
 
 describe("resolveExtras", () => {
-  it("resolves every selector with querySelectorAll, without repeats, and skips invalid selectors", () => {
-    expect(resolveExtras([".extra", "#e1", "[[bad"])).toEqual([el("e1"), el("e2")]);
+  it("resolves every selector with querySelectorAll, without repeats", () => {
+    expect(resolveExtras([".extra", "#e1"])).toEqual([el("e1"), el("e2")]);
+  });
+
+  it("throws on an invalid selector, as the engine's allowedElements lookup does", () => {
+    expect(() => resolveExtras([".extra", "[[bad"])).toThrow();
+    expect(() => document.querySelectorAll("[[bad")).toThrow();
   });
 });
 
@@ -234,14 +239,142 @@ describe("state classes", () => {
   });
 
   it("applyStateClasses and removeStateClasses work on bare elements", async () => {
-    applyStateClasses([el("b")], ["x-spotlit"]);
+    const added = applyStateClasses(el("b"), ["x-spotlit"]);
+    expect(added).toEqual(["x-spotlit"]);
     el("b").className = "";
     await Promise.resolve();
     expect(el("b").classList.contains("x-spotlit")).toBe(true);
-    removeStateClasses([el("b")], ["x-spotlit"]);
+    removeStateClasses(el("b"), added);
     el("b").className = "";
     await Promise.resolve();
     expect(el("b").classList.contains("x-spotlit")).toBe(false);
+  });
+
+  it("keeps a class the app already had when the tour deselects, and does not re-add one the app removed", async () => {
+    el("a").className = "active";
+    el("b").className = "active";
+    const tour = await started({
+      dim: true,
+      steps: [{ target: "#a", spotlight: { class: "active" } }, { target: "#b", spotlight: { class: "active" } }],
+    });
+    el("a").classList.remove("active");
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(el("a").classList.contains("active")).toBe(false);
+    await tour.forward();
+    await nextFrame();
+    expect(el("b").classList.contains("active")).toBe(true);
+    await tour.finish();
+    expect(el("b").classList.contains("active")).toBe(true);
+    expect(el("b").classList.contains("vt-spotlit")).toBe(false);
+  });
+
+  it("guards are per owner: a second owner on the same element does not disturb the first", async () => {
+    const first = {};
+    const second = {};
+    const one = applyStateClasses(el("b"), ["x-spotlit"], first);
+    const two = applyStateClasses(el("b"), ["y-spotlit"], second);
+    removeStateClasses(el("b"), two, second);
+    el("b").className = "";
+    await Promise.resolve();
+    expect(el("b").classList.contains("x-spotlit")).toBe(true);
+    removeStateClasses(el("b"), one, first);
+    el("b").className = "";
+    await Promise.resolve();
+    expect(el("b").classList.contains("x-spotlit")).toBe(false);
+  });
+
+  it("a tour that replaces another on the same element keeps guarding its own class", async () => {
+    const first = await started({ dim: true, steps: [{ target: "#a" }] });
+    const second = make({ namespace: "other", dim: true, steps: [{ target: "#a" }] });
+    await second.start();
+    await nextFrame();
+    expect(el("a").classList.contains("other-spotlit")).toBe(true);
+    await first.finish();
+    el("a").className = "framework-owned";
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(el("a").classList.contains("other-spotlit")).toBe(true);
+    expect(el("a").classList.contains("vt-spotlit")).toBe(false);
+  });
+
+  it("marks an extra that appears after the step shows once the popover repositions", async () => {
+    const tour = await started({ dim: true, steps: [{ target: "#a", spotlight: { extra: [".late"] } }] });
+    const late = document.createElement("div");
+    late.className = "late";
+    document.body.append(late);
+    expect(late.classList.contains("vt-spotlit")).toBe(false);
+    tour.refresh();
+    await nextFrame();
+    expect(late.classList.contains("vt-spotlit")).toBe(true);
+    await tour.finish();
+    expect(late.classList.contains("vt-spotlit")).toBe(false);
+  });
+
+  it("moves the classes to a target the engine re-binds after the app replaces it", async () => {
+    const tour = await started({ dim: true, steps: [{ target: "#a", spotlight: { class: "mark" } }] });
+    const old = el("a");
+    const fresh = document.createElement("div");
+    fresh.id = "a";
+    old.replaceWith(fresh);
+    for (let i = 0; i < 12 && !fresh.classList.contains("vt-spotlit"); i++) {
+      tour.refresh();
+      await nextFrame();
+    }
+    expect(fresh.classList.contains("vt-spotlit")).toBe(true);
+    expect(fresh.classList.contains("mark")).toBe(true);
+    await tour.finish();
+    expect(fresh.classList.contains("vt-spotlit")).toBe(false);
+  });
+
+  it("endRun releases the classes on its own when the engine's deselect hook does nothing", async () => {
+    const tour = await started({ dim: true, steps: [{ target: "#a", spotlight: { extra: ["#e1"], class: "mark" } }] });
+    const engine = engineOf(tour)!;
+    engine.setConfig({ ...engine.getConfig(), onDeselected: () => undefined });
+    await tour.finish();
+    for (const id of ["a", "e1"]) {
+      expect(el(id).classList.contains("vt-spotlit")).toBe(false);
+      expect(el(id).classList.contains("mark")).toBe(false);
+    }
+  });
+
+  it("the deselect hook releases the classes on its own when the run is not ending", async () => {
+    const tour = await started({ dim: true, steps: [{ target: "#a", spotlight: { extra: ["#e1"], class: "mark" } }] });
+    const engine = engineOf(tour)!;
+    const driveStep = engine.getConfig().steps![0]!;
+    engine.getConfig().onDeselected!(el("a"), driveStep, { reason: "close" } as never);
+    for (const id of ["a", "e1"]) {
+      expect(el(id).classList.contains("vt-spotlit")).toBe(false);
+      expect(el(id).classList.contains("mark")).toBe(false);
+    }
+  });
+
+  it("releases the classes when the current step is hidden", async () => {
+    const tour = await started({ dim: true, steps: [{ target: "#a" }, { target: "#b" }] });
+    expect(el("a").classList.contains("vt-spotlit")).toBe(true);
+    const engine = engineOf(tour)!;
+    engine.setConfig({ ...engine.getConfig(), onDeselected: () => undefined });
+    tour.hideCurrent();
+    expect(el("a").classList.contains("vt-spotlit")).toBe(false);
+  });
+
+  it("releases the classes when the visible step is dropped", async () => {
+    const tour = await started({ dim: true, steps: [{ id: "one", target: "#a" }, { id: "two", target: "#b" }] });
+    const engine = engineOf(tour)!;
+    engine.setConfig({ ...engine.getConfig(), onDeselected: () => undefined });
+    tour.dropStep("one");
+    expect(el("a").classList.contains("vt-spotlit")).toBe(false);
+    await nextFrame();
+    await nextFrame();
+    expect(el("b").classList.contains("vt-spotlit")).toBe(true);
+  });
+
+  it("an extra that contains the target gets the classes along with the target", async () => {
+    await started({ dim: true, steps: [{ target: "#a-inner", spotlight: { extra: ["#a"], class: "mark" } }] });
+    for (const id of ["a", "a-inner"]) {
+      expect(el(id).classList.contains("vt-spotlit")).toBe(true);
+      expect(el(id).classList.contains("mark")).toBe(true);
+    }
   });
 
   it("marks the target and shows the popover with dim:false and no overlay", async () => {

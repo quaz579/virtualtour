@@ -1,4 +1,4 @@
-const guards = new WeakMap<Element, MutationObserver>();
+const guards = new WeakMap<Element, Map<object, MutationObserver>>();
 
 /** The class VirtualTour adds to the target and the extras of a shown step, for a namespace. */
 export function spotlitClass(namespace: string): string {
@@ -7,18 +7,12 @@ export function spotlitClass(namespace: string): string {
 
 /**
  * Resolves every selector with `querySelectorAll` and returns the matches in selector-list order without
- * duplicates. A selector that does not parse is skipped.
+ * duplicates. A selector that does not parse throws, as it does for the engine's `allowedElements`.
  */
 export function resolveExtras(selectors: readonly string[] | undefined, root: ParentNode = document): Element[] {
   const found = new Set<Element>();
   for (const selector of selectors ?? []) {
-    let matches: NodeListOf<Element>;
-    try {
-      matches = root.querySelectorAll(selector);
-    } catch {
-      continue;
-    }
-    matches.forEach((element) => found.add(element));
+    root.querySelectorAll(selector).forEach((element) => found.add(element));
   }
   return Array.from(found);
 }
@@ -35,34 +29,40 @@ export function dedupeExtras(elements: readonly Element[], target?: Element | nu
   });
 }
 
-/** Adds the state classes to each element and keeps them there if a framework rewrites `className`. */
-export function applyStateClasses(elements: Iterable<Element>, classes: readonly string[]): void {
-  for (const element of elements) {
-    element.classList.add(...classes);
-    guardClasses(element, classes);
-  }
+/** Adds the state classes the element lacks and returns the ones it added, keeping them there if a framework rewrites `className`. */
+export function applyStateClasses(element: Element, classes: readonly string[], owner: object = element): string[] {
+  const added = classes.filter((name) => !element.classList.contains(name));
+  if (added.length > 0) element.classList.add(...added);
+  guardClasses(element, added, owner);
+  return added;
 }
 
-/** Removes the state classes from each element and stops guarding them. */
-export function removeStateClasses(elements: Iterable<Element>, classes: readonly string[]): void {
-  for (const element of elements) {
-    const guard = guards.get(element);
-    if (guard) {
-      guard.disconnect();
-      guards.delete(element);
-    }
-    element.classList.remove(...classes);
+/** Removes the given classes from the element and stops the owner's guard on it. */
+export function removeStateClasses(element: Element, added: readonly string[], owner: object = element): void {
+  const owners = guards.get(element);
+  const guard = owners?.get(owner);
+  if (guard) {
+    guard.disconnect();
+    owners?.delete(owner);
+    if (owners?.size === 0) guards.delete(element);
   }
+  if (added.length > 0) element.classList.remove(...added);
 }
 
-function guardClasses(element: Element, classes: readonly string[]): void {
-  if (guards.has(element) || typeof MutationObserver === "undefined") return;
+function guardClasses(element: Element, added: readonly string[], owner: object): void {
+  if (added.length === 0 || typeof MutationObserver === "undefined") return;
+  let owners = guards.get(element);
+  if (!owners) {
+    owners = new Map();
+    guards.set(element, owners);
+  }
+  owners.get(owner)?.disconnect();
   const guard = new MutationObserver(() => {
-    const missing = classes.filter((name) => !element.classList.contains(name));
+    const missing = added.filter((name) => !element.classList.contains(name));
     if (missing.length > 0) element.classList.add(...missing);
   });
   guard.observe(element, { attributes: true, attributeFilter: ["class"] });
-  guards.set(element, guard);
+  owners.set(owner, guard);
 }
 
 /** Splits a class option into individual class names. */

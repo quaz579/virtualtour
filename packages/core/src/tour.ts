@@ -4,6 +4,7 @@ import { DEFAULT_HOOK_TIMEOUT_MS, normalizeTourConfig, resolveStepConfig } from 
 import type { NormalizedTourConfig } from "./config";
 import { createEngine } from "./engine/driver";
 import type { Config, DriveStep, Driver, EnginePresenter, PopoverPatch, RepositionInfo as EngineRepositionInfo } from "./engine/driver";
+import { isDummyElement } from "./engine/core/utils";
 import type { PopoverDOM } from "./engine/popover/popover";
 import { TourEnvironmentError, TourNavigationError } from "./errors";
 import { Emitter } from "./events";
@@ -52,7 +53,7 @@ interface TourInternals {
   progress: ProgressTracker | null;
   starting: boolean;
   clearSanitized: () => void;
-  spotlit: Map<Element, string[]>;
+  spotlit: Map<Element, { wanted: string[]; added: string[] }>;
 }
 
 const internals = new WeakMap<object, TourInternals>();
@@ -308,6 +309,7 @@ export class Tour {
     state.engine = null;
     state.mounted = null;
     for (const step of state.steps) leaveStep(this, step);
+    releaseSpotlit(this, state);
     settle(state);
   }
 
@@ -372,8 +374,8 @@ function detachAdvance(state: TourInternals, only?: TourStep): void {
   advance.detach();
 }
 
-function releaseSpotlit(state: TourInternals): void {
-  for (const [element, classes] of state.spotlit) removeStateClasses([element], classes);
+function releaseSpotlit(tour: Tour, state: TourInternals): void {
+  for (const [element, held] of state.spotlit) removeStateClasses(element, held.added, tour);
   state.spotlit.clear();
 }
 
@@ -381,21 +383,26 @@ function markSpotlit(tour: Tour, step: TourStep, target: Element | undefined): v
   const state = internalsOf(tour);
   const spotlight = step.config.spotlight;
   const marker = spotlitClass(state.normalized.namespace);
-  const classes = [marker, ...classList(spotlight?.class)];
-  const desired = new Map<Element, string[]>();
-  if (target) desired.set(target, classes);
-  for (const extra of dedupeExtras(resolveExtras(spotlight?.extra), target)) desired.set(extra, classes);
+  const wanted = [marker, ...classList(spotlight?.class)];
+  const desired = new Set<Element>();
+  if (target) desired.add(target);
+  for (const extra of dedupeExtras(resolveExtras(spotlight?.extra), target)) desired.add(extra);
   for (const [element, held] of state.spotlit) {
-    const next = desired.get(element);
-    if (next && next.join(" ") === held.join(" ")) continue;
-    removeStateClasses([element], held);
+    if (desired.has(element) && held.wanted.join(" ") === wanted.join(" ")) continue;
+    removeStateClasses(element, held.added, tour);
     state.spotlit.delete(element);
   }
-  for (const [element, next] of desired) {
+  for (const element of desired) {
     if (state.spotlit.has(element)) continue;
-    applyStateClasses([element], next);
-    state.spotlit.set(element, next);
+    state.spotlit.set(element, { wanted, added: applyStateClasses(element, wanted, tour) });
   }
+}
+
+function remarkSpotlit(tour: Tour, state: TourInternals): void {
+  const step = state.steps[state.anchorIndex];
+  const active = state.engine?.getState("activeElement");
+  if (!step || state.ending) return;
+  markSpotlit(tour, step, active && !isDummyElement(active) ? active : undefined);
 }
 
 function stepOf(tour: Tour, driveStep: DriveStep | undefined): TourStep | undefined {
@@ -596,9 +603,12 @@ function ensureEngine(tour: Tour): Driver {
     },
     onDeselected(_element: Element | undefined, driveStep: DriveStep, opts: { reason?: string | undefined }) {
       if (!owns()) return;
-      if (opts.reason !== undefined) releaseSpotlit(state);
+      if (opts.reason !== undefined) releaseSpotlit(tour, state);
       const step = stepOf(tour, driveStep);
       if (step) leaveStep(tour, step);
+    },
+    onReposition() {
+      if (owns()) remarkSpotlit(tour, state);
     },
     onNextClick() {
       if (owns()) reportFailure(tour.forward());
@@ -937,7 +947,7 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
   detachAdvance(state);
   const endStep = hookStep ?? state.steps[state.currentIndex] ?? state.steps[state.anchorIndex];
   for (const step of state.steps) leaveStep(tour, step);
-  releaseSpotlit(state);
+  releaseSpotlit(tour, state);
   if (kind === "finished") {
     state.progress?.finished();
     if (endStep) emitStep(endStep, "finished", { step: endStep });
