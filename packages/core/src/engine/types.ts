@@ -1,4 +1,4 @@
-import type { Alignment, AllowedButtons, Placement, PopoverDOM, Side } from "./popover/popover";
+import type { Alignment, AllowedButtons, Placement, PopoverDOM } from "./popover/popover";
 import type { StageCornerRadius, StageDefinition } from "./overlay/stage";
 
 export type DestroyReason = "done" | "close" | "escape" | "overlay" | "replaced" | "api";
@@ -166,6 +166,13 @@ export type Config = {
 
   popoverClass?: string;
   popoverOffset?: number;
+  /** Gap kept between the popover and the boundary edges, in pixels. Defaults to `0`. */
+  popoverPadding?: number;
+  /**
+   * What the popover must stay inside. `"scrollParents"` (default) is the viewport narrowed by the scrolling
+   * ancestors of the target; `"viewport"` is the viewport alone.
+   */
+  popoverBoundary?: "viewport" | "scrollParents";
   showButtons?: AllowedButtons[];
   disableButtons?: AllowedButtons[];
   showProgress?: boolean;
@@ -194,7 +201,8 @@ export type Popover = {
   title?: string | undefined;
   description?: string | undefined;
   label?: string | undefined;
-  side?: Side;
+  /** Side of the target the popover sits on. `"over"` keeps the target highlighted and centers the popover. */
+  side?: Placement;
   align?: Alignment;
 
   showButtons?: AllowedButtons[];
@@ -239,6 +247,8 @@ export type DriveStep = {
   stageRadius?: number | StageCornerRadius;
   clipStageToScrollParents?: boolean;
   popoverOffset?: number;
+  /** Overrides `Config.popoverPadding` for this step. */
+  popoverPadding?: number;
   data?: Record<string, any>;
 };
 

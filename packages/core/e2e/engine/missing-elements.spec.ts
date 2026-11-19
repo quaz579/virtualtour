@@ -258,6 +258,7 @@ test.describe("an element that comes back", () => {
     await page.evaluate(() => {
       window.tour = window.__engine.createEngine({
         animate: false,
+        popoverBoundary: "viewport",
         onElementMissing: () => {
           window.log.push("missing");
         },
