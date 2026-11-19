@@ -305,6 +305,18 @@ describe("focus return when steps change mid-tour", () => {
     engine.destroy();
   });
 
+  it("does not move focus on setSteps when the user has focused another control", async () => {
+    document.body.innerHTML = PAGE;
+    document.querySelector<HTMLElement>("#a")!.focus();
+    const engine = createEngine({ animate: false, steps: [{ element: "#t", popover: { title: "A" } }] });
+    engine.drive(0);
+    await nextFrame();
+    document.querySelector<HTMLElement>("#r")!.focus();
+    engine.setSteps([{ element: "#t", popover: { title: "C" } }]);
+    expect(document.activeElement?.id).toBe("r");
+    engine.destroy();
+  });
+
   it("returns focus to the trigger after setSteps followed by drive and finish", async () => {
     document.body.innerHTML = PAGE;
     document.querySelector<HTMLElement>("#a")!.focus();

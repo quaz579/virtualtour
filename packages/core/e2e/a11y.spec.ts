@@ -277,7 +277,6 @@ test.describe("live region", () => {
   });
 });
 
-
 test.describe("avatar presenter", () => {
   async function openLayout(page: Page, query: string, options: object = {}) {
     await page.goto(`/fixtures/avatar-layout.html${query}`);

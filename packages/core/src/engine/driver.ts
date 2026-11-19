@@ -605,7 +605,9 @@ export function createEngine(options: Config = {}): Driver {
     setConfig,
     setSteps: (steps: DriveStep[]) => {
       if (ctx.getState("isInitialized")) {
-        const returnTo = ctx.getState("__activeOnDestroyed") as HTMLElement | undefined;
+        const focused = document.activeElement;
+        const holdsFocus = !focused || focused === document.body || !!ctx.getState("popover")?.wrapper.contains(focused);
+        const returnTo = holdsFocus ? (ctx.getState("__activeOnDestroyed") as HTMLElement | undefined) : undefined;
         removeTour();
         returnTo?.focus();
       } else {
