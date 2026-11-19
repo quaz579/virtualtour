@@ -64,7 +64,17 @@ export class SpritePlayer {
     el.style.height = `${frameHeight}px`;
     el.style.backgroundImage = cssUrl(pack.sheetUrl);
     el.style.backgroundRepeat = "no-repeat";
-    if (scale !== 1 && columns !== undefined) el.style.backgroundSize = `${columns * frameWidth}px auto`;
+    if (scale !== 1) {
+      if (columns !== undefined) {
+        el.style.backgroundSize = `${columns * frameWidth}px auto`;
+      } else if (typeof Image !== "undefined") {
+        const probe = new Image();
+        probe.onload = () => {
+          if (!this.disposed) el.style.backgroundSize = `${probe.naturalWidth / scale}px ${probe.naturalHeight / scale}px`;
+        };
+        probe.src = pack.sheetUrl;
+      }
+    }
     if (pixelArt) el.style.imageRendering = "pixelated";
     this.show(pack.roles.rest, this.pack.stillOf(pack.roles.rest));
   }
@@ -82,10 +92,10 @@ export class SpritePlayer {
    */
   play(name: string, opts: { loop?: boolean } = {}): Promise<void> {
     const frames = Object.prototype.hasOwnProperty.call(this.pack.frames, name) ? this.pack.frames[name] : undefined;
+    if (this.disposed) return Promise.resolve();
     if (!frames || frames.length === 0) {
       return Promise.reject(new AvatarPackError(`animations.${name}`, "is not defined in this pack"));
     }
-    if (this.disposed) return Promise.resolve();
     this.interrupt();
     if (this.reducedMotion()) {
       this.show(name, this.pack.stillOf(name));
@@ -113,14 +123,7 @@ export class SpritePlayer {
         hiddenAt: typeof document !== "undefined" && document.hidden ? startedAt : null,
       };
       this.run = run;
-      const onVisibility = (): void => {
-        if (document.hidden) {
-          run.hiddenAt = performance.now();
-        } else if (run.hiddenAt !== null) {
-          run.startedAt += performance.now() - run.hiddenAt;
-          run.hiddenAt = null;
-        }
-      };
+      const onVisibility = (): void => this.syncVisibility(run);
       const unsubscribeFrame = subscribe((now) => this.tick(run, now));
       if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisibility);
       run.unsubscribe = () => {
@@ -153,8 +156,8 @@ export class SpritePlayer {
    * @throws {AvatarPackError} when the pack does not define `name`.
    */
   still(name: string): void {
-    const index = this.pack.stillOf(name);
     if (this.disposed) return;
+    const index = this.pack.stillOf(name);
     this.interrupt();
     this.show(name, index);
   }
@@ -176,8 +179,19 @@ export class SpritePlayer {
     run.resolve();
   }
 
+  private syncVisibility(run: Run): void {
+    if (typeof document === "undefined") return;
+    if (document.hidden) {
+      if (run.hiddenAt === null) run.hiddenAt = performance.now();
+    } else if (run.hiddenAt !== null) {
+      run.startedAt += performance.now() - run.hiddenAt;
+      run.hiddenAt = null;
+    }
+  }
+
   private tick(run: Run, now: number): void {
     if (this.run !== run) return;
+    this.syncVisibility(run);
     const elapsed = Math.max(0, now - run.startedAt);
     if (!run.loop && elapsed >= run.total) {
       this.run = null;

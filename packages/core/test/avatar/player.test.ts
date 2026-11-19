@@ -109,6 +109,27 @@ describe("SpritePlayer element", () => {
     expect(el.style.backgroundSize).toBe("128px auto");
   });
 
+  it("derives background-size from the loaded sheet when scale is set without columns", () => {
+    const loads: { onload: (() => void) | null; naturalWidth: number; naturalHeight: number; src: string }[] = [];
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        naturalWidth = 256;
+        naturalHeight = 128;
+        src = "";
+        constructor() {
+          loads.push(this);
+        }
+      },
+    );
+    const sheet = { src: "sheet.png", frameWidth: 32, frameHeight: 24, scale: 2 };
+    const { el } = make({ pack: { ...definition, sheet } });
+    expect(el.style.backgroundSize).toBe("");
+    loads[0]?.onload?.();
+    expect(el.style.backgroundSize).toBe("128px 64px");
+  });
+
   it("escapes quotes, backslashes and newlines in the sheet URL", () => {
     const { pack } = make();
     const hostile = { ...pack, sheetUrl: "https://example.test/a'b\\c\nd.png" };
@@ -248,6 +269,23 @@ describe("SpritePlayer timing", () => {
     }
   });
 
+  it("resyncs the pause from document.hidden on a tick when visibilitychange never fired", () => {
+    const { el, player } = make();
+    let hidden = true;
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
+    try {
+      void player.play("wave");
+      advanceTo(10);
+      clock = 10_000;
+      hidden = false;
+      advanceTo(10_050);
+      expect(pos(el)).toBe("-32px 0px");
+      expect(player.current).toBe("wave");
+    } finally {
+      delete (document as unknown as Record<string, unknown>)["hidden"];
+    }
+  });
+
   it("never uses setTimeout or setInterval", () => {
     const timeout = vi.spyOn(globalThis, "setTimeout");
     const interval = vi.spyOn(globalThis, "setInterval");
@@ -353,6 +391,14 @@ describe("SpritePlayer roles, stills and errors", () => {
     expect(player.current).toBe("spin");
   });
 
+  it("play rejects for inherited keys such as constructor and toString", async () => {
+    const { player } = make();
+    for (const key of ["constructor", "toString", "hasOwnProperty", "__proto__"]) {
+      await expect(player.play(key)).rejects.toBeInstanceOf(AvatarPackError);
+    }
+    expect(player.current).toBeNull();
+  });
+
   it("keeps state when the element moves between parents", () => {
     const { el, player } = make();
     void player.play("wave");
@@ -367,6 +413,13 @@ describe("SpritePlayer roles, stills and errors", () => {
 });
 
 describe("SpritePlayer dispose", () => {
+  it("is a silent no-op for every call after dispose, even with bad names", async () => {
+    const { player } = make();
+    player.dispose();
+    await expect(player.play("nope")).resolves.toBeUndefined();
+    expect(() => player.still("nope")).not.toThrow();
+  });
+
   it("resolves pending plays, unsubscribes, clears inline styles and ignores later calls", async () => {
     const { el, player } = make();
     const running = player.play("spin");

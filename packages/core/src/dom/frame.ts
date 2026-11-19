@@ -7,7 +7,12 @@ function tick(): void {
   handle = null;
   const now = performance.now();
   for (const callback of Array.from(subscribers)) {
-    if (subscribers.has(callback)) callback(now);
+    if (!subscribers.has(callback)) continue;
+    try {
+      callback(now);
+    } catch (error) {
+      console.error(error);
+    }
   }
   if (subscribers.size > 0 && handle === null) handle = requestAnimationFrame(tick);
 }

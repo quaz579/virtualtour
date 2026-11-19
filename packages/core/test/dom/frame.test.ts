@@ -95,9 +95,12 @@ describe("frame scheduler", () => {
   it("does not call a subscriber removed earlier in the same frame, and runs one added mid-frame next frame", () => {
     const order: string[] = [];
     let offB: () => void = () => undefined;
+    let added = false;
     const offA = subscribe(() => {
       order.push("a");
       offB();
+      if (added) return;
+      added = true;
       const offC = subscribe(() => {
         order.push("c");
         offC();
@@ -109,5 +112,21 @@ describe("frame scheduler", () => {
     flush();
     expect(order).toEqual(["a", "a", "c"]);
     offA();
+  });
+
+  it("keeps the loop and the other subscribers alive when one subscriber throws", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const seen: string[] = [];
+    const bad = subscribe(() => {
+      throw new Error("boom");
+    });
+    const good = subscribe(() => seen.push("good"));
+    flush();
+    flush();
+    expect(seen).toEqual(["good", "good"]);
+    expect(errors).toHaveBeenCalledTimes(2);
+    expect(queue.size).toBe(1);
+    bad();
+    good();
   });
 });
