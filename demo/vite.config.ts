@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   root: __dirname,
   define: { __DEV__: "true" },
+  resolve: { alias: { virtualtour: resolve(__dirname, "../packages/core/src/index.ts") } },
   server: { port: Number(process.env["VT_E2E_PORT"] || 4173), strictPort: true, fs: { allow: [resolve(__dirname, "..")] } },
   build: {
     rollupOptions: {
@@ -20,6 +21,7 @@ export default defineConfig({
         sanitize: resolve(__dirname, "fixtures/sanitize.html"),
         persist: resolve(__dirname, "fixtures/persist.html"),
         avatarPlayer: resolve(__dirname, "fixtures/avatar-player.html"),
+        vue: resolve(__dirname, "fixtures/vue.html"),
       },
     },
   },
