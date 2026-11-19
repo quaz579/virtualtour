@@ -151,8 +151,8 @@ describe("STYLES.md matches the shipped CSS", () => {
 
   it("documents the theme variables with their light defaults", () => {
     const declared = new Map<string, string>();
-    postcss.parse(themeCss).walkRules(":where(:root)", (rule) => {
-      if (rule.parent?.type !== "root") return;
+    postcss.parse(themeCss).walkRules((rule) => {
+      if (rule.parent?.type !== "root" || !LIGHT_BASE.test(rule.selector)) return;
       rule.walkDecls(/^--vt-/, (decl) => {
         declared.set(decl.prop, decl.value);
       });
@@ -165,6 +165,20 @@ describe("STYLES.md matches the shipped CSS", () => {
     }
   });
 });
+
+const LIGHT_BASE = /^:where\(:root(, \[data-vt-theme="light"\])?\)$/;
+
+function themeVars(match: (selector: string, atMedia: boolean) => boolean): Map<string, string> {
+  const out = new Map<string, string>();
+  postcss.parse(themeCss).walkRules((rule) => {
+    const atMedia = rule.parent?.type === "atrule";
+    if (!match(rule.selector, atMedia)) return;
+    rule.walkDecls(/^--vt-/, (decl) => {
+      out.set(decl.prop, decl.value);
+    });
+  });
+  return out;
+}
 
 function luminance(hex: string): number {
   const channels = [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16) / 255);
@@ -189,7 +203,7 @@ function schemeColors(selectorPattern: RegExp): Record<string, string> {
 }
 
 describe("theme.css colors", () => {
-  const light = { ...schemeColors(/^:where\(:root\)$/) };
+  const light = { ...schemeColors(LIGHT_BASE) };
   const dark = { ...light, ...schemeColors(/^:where\(\[data-vt-theme="dark"\]\)$/) };
 
   it.each([
@@ -203,10 +217,14 @@ describe("theme.css colors", () => {
     expect(contrast(accent as string, bg as string)).toBeGreaterThanOrEqual(3);
   });
 
-  it("the forced light block matches the root defaults", () => {
-    const forced = schemeColors(/^:where\(\[data-vt-theme="light"\]\)$/);
-    expect(Object.keys(forced).sort()).toEqual(["accent", "bg", "fg", "muted"]);
-    expect(forced).toEqual(light);
+  it("the light block sets every variable the dark blocks set, and the root selector list includes it", () => {
+    const lightBlock = themeVars((selector) => selector === ':where(:root, [data-vt-theme="light"])');
+    const darkVars = themeVars((selector) => selector === ':where([data-vt-theme="dark"])');
+    const mediaVars = themeVars((selector, atMedia) => atMedia && selector.includes("data-vt-theme"));
+    expect(darkVars.size).toBeGreaterThan(5);
+    expect([...mediaVars.keys()].sort()).toEqual([...darkVars.keys()].sort());
+    expect([...lightBlock.keys()].filter((name) => darkVars.has(name)).sort()).toEqual([...darkVars.keys()].sort());
+    for (const name of darkVars.keys()) expect(lightBlock.get(name), name).not.toBe(darkVars.get(name));
   });
 
   it("scheme selectors have zero specificity so author overrides win", () => {

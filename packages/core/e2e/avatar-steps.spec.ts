@@ -68,3 +68,27 @@ test("a pack that fails to load falls back to the dialog and reports once", asyn
   await expect(page.locator(".vt-popover")).toHaveClass(/vt-dialog/);
   expect(await page.evaluate(() => (window as unknown as { vtStepsErrors: string[] }).vtStepsErrors)).toHaveLength(1);
 });
+
+for (const how of ["exit", "finish"] as const) {
+  test(`${how} returns focus to the element focused before the tour started`, async ({ page }) => {
+    await open(page);
+    await page.locator("#trigger").focus();
+    await run(page);
+    await expect(avatar(page)).toBeVisible();
+    await expect(page.locator(".vt-popover-title")).toHaveText("Welcome");
+    await page.evaluate((h) => void (window as unknown as { vtStepsTour: Record<string, () => unknown> }).vtStepsTour[h]!(), how);
+    await expect(avatar(page)).toHaveCount(0);
+    await expect(page.locator("#trigger")).toBeFocused();
+  });
+}
+
+test("ending the tour does not steal focus the user moved elsewhere", async ({ page }) => {
+  await open(page);
+  await page.locator("#trigger").focus();
+  await run(page);
+  await expect(avatar(page)).toBeVisible();
+  await page.locator("#elsewhere").focus();
+  await page.evaluate(() => void (window as unknown as { vtStepsTour: { finish(): void } }).vtStepsTour.finish());
+  await expect(avatar(page)).toHaveCount(0);
+  await expect(page.locator("#elsewhere")).toBeFocused();
+});

@@ -4,12 +4,12 @@ Gzip sizes of the built entries, measured after whitespace minification (what `d
 
 | Entry | File | Gzip (bytes) | Soft target (KB) |
 |---|---|---|---|
-| core | dist/index.js | 34926 | 35 |
+| core | dist/index.js | 34945 | 35 |
 | engine | src/engine/driver.ts | 19712 | 20 |
 | avatar | dist/avatar.js | 12103 | 12 |
 | motion | dist/motion.js | 991 | 2 |
 | base.css | dist/base.css | 2083 | none |
-| theme.css | dist/theme.css | 1051 | none |
+| theme.css | dist/theme.css | 1104 | none |
 
 ## Targets
 

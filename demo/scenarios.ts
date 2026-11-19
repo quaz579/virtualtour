@@ -95,7 +95,7 @@ function motion(): Tour {
 
 const avatarSteps: TourConfig["steps"] = [
   { id: "hello", title: "Hi there", body: "I am your guide." },
-  { id: "search", title: "Search", body: "Look over here.", target: "#search", placement: { side: "bottom", align: "start" } },
+  { id: "search", title: "Search", body: "Look over here.", target: "#search", placement: { side: "right", align: "end" } },
   { id: "cards", title: "Cards", body: "Numbers live here.", target: "#card-b", placement: { side: "bottom" }, extensions: { avatar: { animation: "think" } } },
   { id: "bye", title: "Done", body: "Thanks for following along." },
 ];

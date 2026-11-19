@@ -56,7 +56,7 @@ Which fork work units changed each engine file (unit IDs from `docs/plan/15-work
 
 | File under `packages/core/src/engine/` | Fate | Work units |
 |---|---|---|
-| `driver.ts` | Changed: `createEngine()`, data attributes on `<body>`, `overlay: false`, escape and arrow switches, presenter hooks, `onStepCompleted`, `onDestroyed` before the first step settles, focus returns only while the tour holds it | WU-01, 05, 08, 19, 26, 27, 35, 46 |
+| `driver.ts` | Changed: `createEngine()`, data attributes on `<body>`, `overlay: false`, escape and arrow switches, presenter hooks, `onStepCompleted`, `onDestroyed` before the first step settles, focus returns only while the tour holds it, `setSteps` mid-tour returns focus to the start element | WU-01, 05, 08, 19, 26, 27, 35, 46 |
 | `types.ts` | Changed: new `Config`, `DriveStep` and `Popover` keys | WU-01, 05, 08, 14, 14b, 15, 16, 17, 18, 22, 23, 27, 28, 29, 33, 35 |
 | `core/context.ts` | Changed: defaults and state for the new keys | WU-01, 05, 08, 15, 16, 22, 27, 28 |
 | `core/options.ts` | Kept | WU-01 |
@@ -69,9 +69,9 @@ Which fork work units changed each engine file (unit IDs from `docs/plan/15-work
 | `popover/live-region.ts` | Kept (class name only) | WU-01, 05 |
 | `overlay/overlay.ts` | Changed: scroll-parent clip, extra cutouts (path reused while rects are unchanged since WU-46), `mountIn`, reduced motion | WU-01, 05, 08, 15, 18, 21, 46 |
 | `overlay/stage.ts` | Changed: four radii, extra-rect dedupe | WU-01, 17, 21 |
-| `tour/highlight.ts` | Changed: data attributes, reduced motion, `lockScrollParent`, `bringInView` options, presenter calls, focus handling | WU-01, 05, 08, 16, 18, 19, 23, 36 |
+| `tour/highlight.ts` | Changed: data attributes, reduced motion, `lockScrollParent`, `bringInView` options, presenter calls, focus handling, `aria-haspopup`, `aria-expanded` and `aria-controls` on popup-capable targets (restored when the step ends; attributes the page set are left alone) | WU-01, 05, 08, 16, 18, 19, 23, 36 |
 | `tour/step.ts` | Changed: per-step position options, `label`, `over` for targets, sanitized content, presenter calls | WU-01, 05, 08, 14, 14b, 18, 22, 23, 27, 28, 29, 33, 35 |
-| `tour/lifecycle.ts` | Changed: focus return target, action steps, accessibility audit fixes | WU-01, 27, 36 |
+| `tour/lifecycle.ts` | Changed: `enterStep` keeps the first element that had focus as the return target for the whole run, including after `setSteps` mid-tour; action steps | WU-01, 27, 36 |
 | `tour/wait.ts` | Changed: wait budget and timer clamp | WU-01, 26, 27 |
 | `tour/removal.ts` | Changed: timer clamp | WU-01, 26 |
 | `tour/allowed.ts` | Changed: extra cut-outs redraw | WU-01, 05, 21 |

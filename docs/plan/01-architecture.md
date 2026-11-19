@@ -609,7 +609,9 @@ Step:  created ──show()──▶ shown ──hide()──▶ hidden ──sh
 | S shown again later | same | S `will-show` → S `shown` (no `disposed`) |
 | action step S completed | `onStepCompleted(S)` | S `completed` → tour `step-completed`; then, after `advanceDelay`, the engine calls `onNextClick` → navigator |
 | `hideCurrent()` | `destroy()` with the `hiding` flag set | S `will-hide` → S `hidden`; no `exited`; tour stays `running`; the next navigation creates a fresh engine at the chosen index |
-| `dropStep(S)` while S is visible | `setConfig({steps})` then `moveTo(j)` | S `will-hide` → S `hidden` → S `disposed` → show first remaining step; if none remain → `exit()` without prompt |
+| `dropStep(S)` while S is visible | `leaveStep(S)`, splice, `S.dispose()`, engine steps re-synced; then a queued forward navigation from the dropped position | S `will-hide` → S `hidden` → S `disposed` (all synchronous inside the call, so `disposed` fires before any replacement step is shown) → on the navigation queue: first remaining step shown (`will-show` → `shown` → `step-shown`); if none remain → tour `exited` {reason: `api`} sequence, no prompt |
+| `dropStep(S)` while S is not on screen | splice, `S.dispose()` | S `disposed` only |
+| tour event while subscribers exist | `emitTour` | the tour's own listeners first, then the registry relay row: the same event and payload to `tours.on(...)` subscribers |
 | `finish()` / Done on last step | `destroy()` reason `done` → `onDeselected(S)` → `onDestroyed` | S `will-hide` → S `hidden` → S `finished` → tour `finished` → every step `disposed` (array order) → registry `current = null` → tour `deactivated` |
 | `exit()` accepted or no prompt | `destroy()` reason ≠ `done` | S `will-hide` → S `hidden` → S `exited` → tour `exited` {reason} → every step `disposed` → `current = null` → tour `deactivated` |
 | Escape / close button / overlay click (`clickOutside: 'exit'`) | `onDestroyStarted(reason)` | the prompt runs; accepted → `destroy()` → as the `exit()` row; declined → nothing |
@@ -625,8 +627,9 @@ Rules:
 
 - `disposed` fires exactly once per step per run. Re-rendering never emits it.
 - Registry relays each tour event after the tour's own listeners ran.
-- Handlers run synchronously in subscription order; exceptions are caught, reported with
-  `console.error` in dev, and do not break navigation.
+- Handlers run synchronously in subscription order; exceptions are caught, always reported with
+  `console.error` (`[virtualtour] Handler for "<event>" threw:`, in every build, not only dev), and do not
+  break navigation or stop later handlers, including the registry relay.
 - Navigation calls are serialized in `navigator.ts`: a `forward()` issued while a `prepare()`
   or `waitFor` is pending queues behind it (one pending navigation at most; a newer call
   replaces an older queued one). `exit()`/`finish()` abort any pending wait through an

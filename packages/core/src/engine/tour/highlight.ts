@@ -33,7 +33,7 @@ const POPUP_CAPABLE = [
   'input[type="submit" i]',
   'input[type="reset" i]',
   'input[type="image" i]',
-  ...["button", "link", "menuitem", "menuitemcheckbox", "tab", "combobox", "switch", "checkbox", "treeitem"].map(
+  ...["button", "link", "menuitem", "menuitemcheckbox", "tab", "combobox", "treeitem"].map(
     role => `[role="${role}" i]`
   ),
 ].join(", ");

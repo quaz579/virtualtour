@@ -68,6 +68,22 @@ const tours: Record<string, TourConfig> = {
       { id: "s4", title: "Fourth", body: "Four of four." },
     ],
   },
+  live: {
+    name: "a11y-live",
+    steps: [
+      { id: "l1", target: "#t1", title: "Live one", body: "Live body one." },
+      {
+        id: "l2",
+        target: "#t3",
+        title: "Live two",
+        body: "Press the highlighted button.",
+        instruction: "Press Target three.",
+        advanceDelay: 1500,
+        autoAdvance: { event: "click" },
+      },
+      { id: "l3", target: "#t2", title: "Live three", body: "Last." },
+    ],
+  },
   keysOff: {
     name: "a11y-keys-off",
     keys: { escape: false, arrows: false },
@@ -78,6 +94,7 @@ const tours: Record<string, TourConfig> = {
   },
   motion: {
     name: "a11y-motion",
+    dim: true,
     steps: [
       { id: "m1", target: "#t1", title: "Motion one", body: "First." },
       { id: "m2", target: "#t2", title: "Motion two", body: "Second." },
