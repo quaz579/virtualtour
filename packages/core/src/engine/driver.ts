@@ -39,6 +39,7 @@ import {
   shouldSkipStep,
   updateStepPopover,
 } from "./tour/step";
+import { prefersReducedMotion } from "./core/env";
 import { isDummyElement, resolveElement } from "./core/utils";
 import "./styles/engine.css";
 
@@ -387,7 +388,7 @@ export function createEngine(options: Config = {}): Driver {
 
     ctx.setState("isInitialized", true);
     const { names } = ctx;
-    const isAnimated = !!ctx.getConfig("animate");
+    const isAnimated = !!ctx.getConfig("animate") && !prefersReducedMotion();
     document.body.classList.add(names.active, isAnimated ? names.fade : names.simple);
     document.body.setAttribute(names.attr.active, "");
     document.body.toggleAttribute(names.attr.dim, ctx.getConfig("overlay") !== false);
