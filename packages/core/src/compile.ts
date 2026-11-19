@@ -9,8 +9,6 @@ import type { CornerRadius, StepConfig, TourStepLike } from "./types";
 
 type Corners = Required<CornerRadius>;
 
-type ScrollIntoViewValue = false | ScrollIntoViewOptions;
-
 type FutureConfigKeys =
   | "mountIn"
   | "dimMountIn";
@@ -18,8 +16,7 @@ type FutureConfigKeys =
 type FutureStepKeys =
   | "popover"
   | "popoverCrossOffset"
-  | "popoverPadding"
-  | "scrollIntoView";
+  | "popoverPadding";
 
 type FuturePopoverKeys = "side" | "arrow" | "arrowMinInset" | "flip" | "shift" | "strategy";
 
@@ -38,7 +35,6 @@ export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
   popover?: EnginePopover;
   popoverCrossOffset?: number;
   popoverPadding?: number;
-  scrollIntoView?: ScrollIntoViewValue;
 };
 
 /** Engine config, including the keys the engine gains later. */
