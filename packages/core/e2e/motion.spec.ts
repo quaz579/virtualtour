@@ -8,7 +8,7 @@ test.beforeEach(({}, testInfo) => {
   );
 });
 
-type Win = { vtTour: { forward(): Promise<void>; backward(): Promise<void>; nudge(message?: string): void } };
+type Win = { vtTour: { forward(): Promise<void>; backward(): Promise<void>; nudge(message?: string): void; hideCurrent(): void } };
 
 async function open(page: Page, query = ""): Promise<void> {
   await page.goto(`/fixtures/motion.html${query}`);
@@ -148,4 +148,19 @@ test("a nudge after a glide animates exactly as it does without the add-on", asy
   const withGlide = await nudged("?duration=300");
   const without = await nudged("?duration=300&noglide=1");
   expect(Math.min(...withGlide)).toBe(Math.min(...without));
+});
+
+test("showing a step after hideCurrent does not glide from the page corner", async ({ page }) => {
+  await open(page, "?duration=600");
+  const result = await page.evaluate(async () => {
+    const w = window as unknown as Win;
+    w.vtTour.hideCurrent();
+    const pending = w.vtTour.forward();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const el = document.querySelector<HTMLElement>(".vt-popover");
+    const glided = el?.classList.contains("vt-glide") ?? false;
+    await pending;
+    return glided;
+  });
+  expect(result).toBe(false);
 });

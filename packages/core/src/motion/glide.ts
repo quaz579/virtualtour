@@ -52,7 +52,7 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
     stopHide = step.once("will-hide", () => {
       stopHide = null;
       const element = step.element;
-      if (!element) {
+      if (!element?.isConnected) {
         departure = null;
         return;
       }
@@ -77,12 +77,18 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
     if (typeof element.animate !== "function") return;
     if (prefersReducedMotion() || !document.body.hasAttribute(FADE_ATTR)) return;
     if (from.centered !== isCentered(step) || from.dialog !== element.classList.contains(DIALOG_CLASS)) return;
+    for (const entering of element.getAnimations?.() ?? []) {
+      try {
+        entering.finish();
+      } catch {
+        continue;
+      }
+    }
     const rect = element.getBoundingClientRect();
     const dx = from.left - rect.left;
     const dy = from.top - rect.top;
     if (dx === 0 && dy === 0) return;
     element.classList.add(GLIDE_CLASS);
-    for (const entering of element.getAnimations?.() ?? []) entering.finish();
     const animation = element.animate(
       [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0px, 0px)" }],
       { duration: durationMs, easing },

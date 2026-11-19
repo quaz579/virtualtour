@@ -136,6 +136,48 @@ describe("glide", () => {
     expect(animations).toHaveLength(0);
   });
 
+  it("does not glide from the page corner after hideCurrent", async () => {
+    const tour = await start({ steps });
+    glide(tour);
+    tour.hideCurrent();
+    await tour.forward();
+    expect(animations).toHaveLength(0);
+  });
+
+  it("keeps going when an entrance animation cannot be finished", async () => {
+    stubEntering();
+    const tour = await start({ steps });
+    glide(tour);
+    const original = HTMLElement.prototype.getAnimations;
+    HTMLElement.prototype.getAnimations = () => [
+      {
+        finish() {
+          throw new Error("infinite");
+        },
+      } as unknown as Animation,
+    ];
+    await tour.forward();
+    HTMLElement.prototype.getAnimations = original;
+    expect(animations).toHaveLength(1);
+  });
+
+  it("reads the new position after the entrance animations are finished", async () => {
+    stubEntering();
+    const order: string[] = [];
+    const tour = await start({ steps });
+    glide(tour);
+    const rectSpy = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getAnimations = () => [{ finish: () => order.push("finish") } as unknown as Animation];
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      order.push("rect");
+      return rectSpy.call(this);
+    };
+    await tour.forward();
+    HTMLElement.prototype.getBoundingClientRect = rectSpy;
+    expect(order.indexOf("finish")).toBeLessThan(order.lastIndexOf("rect"));
+    expect(order.indexOf("finish")).toBeGreaterThanOrEqual(0);
+  });
+
   it("does not glide across an exit and restart", async () => {
     const tour = await start({ steps });
     glide(tour);
