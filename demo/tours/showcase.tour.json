@@ -1,0 +1,31 @@
+{
+  "$schema": "../../packages/core/schemas/tour.v1.schema.json",
+  "format": "virtualtour-tour/1",
+  "id": "json-showcase",
+  "name": "Tour defined as JSON",
+  "dim": { "padding": 8, "radius": 8 },
+  "counter": true,
+  "animate": true,
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Defined in JSON",
+      "body": ["This whole tour is a data file.", "No code was written for these steps."]
+    },
+    {
+      "id": "search",
+      "title": "Search",
+      "body": "Targets are plain selectors.",
+      "target": "#search",
+      "placement": { "side": "bottom", "align": "start" }
+    },
+    {
+      "id": "cards",
+      "title": "Cards",
+      "body": "Placement and spotlight options work the same way.",
+      "target": "#card-a",
+      "placement": { "side": "right" },
+      "spotlight": { "padding": 14, "radius": 16 }
+    }
+  ]
+}

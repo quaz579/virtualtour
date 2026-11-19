@@ -19,7 +19,11 @@ const validateTour = ajv().compile(tourSchema);
 const validateAvatar = ajv().compile(avatarSchema);
 
 const examplesDir = join(repo, "docs/examples/tours");
-const exampleFiles = readdirSync(examplesDir).filter((f) => f.endsWith(".json"));
+const demoToursDir = join(repo, "demo/tours");
+const exampleFiles = [
+  ...readdirSync(examplesDir).filter((f) => f.endsWith(".json")).map((f) => join(examplesDir, f)),
+  ...readdirSync(demoToursDir).filter((f) => f.endsWith(".json")).map((f) => join(demoToursDir, f)),
+];
 
 function handlerNamesIn(value: unknown, into = new Set<string>()): Set<string> {
   if (Array.isArray(value)) value.forEach((v) => handlerNamesIn(v, into));
@@ -95,7 +99,7 @@ describe("conformance", () => {
   });
 
   it.each(exampleFiles)("example %s validates against the tour schema and parses", (file) => {
-    const doc = read(join(examplesDir, file));
+    const doc = read(file);
     expect(validateTour(doc), JSON.stringify(validateTour.errors)).toBe(true);
     expect(parses(doc)).toBe(true);
   });
