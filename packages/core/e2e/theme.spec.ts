@@ -124,6 +124,21 @@ for (const scheme of ["light", "dark"] as const) {
   });
 }
 
+test("a keyboard-focused close button gets the ring", async ({ page }) => {
+  await open(page);
+  await tabTo(page, ".vt-popover-close-btn");
+  expect(await page.locator(".vt-popover-close-btn:focus-visible").evaluate((element) => getComputedStyle(element).outlineWidth)).toBe("2px");
+});
+
+for (const scheme of ["light", "dark"] as const) {
+  test(`the arrow follows the ${scheme} popover background`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await open(page);
+    const arrow = parseColor(await style(page, ".vt-popover-arrow", "border-top-color").then(async (top) => (top.includes("0, 0, 0, 0") ? style(page, ".vt-popover-arrow", "border-bottom-color") : top)));
+    expect(arrow).toEqual((await colors(page)).background);
+  });
+}
+
 test("a keyboard-focused engine footer button also gets the ring", async ({ page }) => {
   await open(page);
   await tabTo(page, ".vt-popover-footer-btn");

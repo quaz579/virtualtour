@@ -257,6 +257,7 @@ describe("theme.css colors", () => {
       });
     });
     expect(outline).toBe("2px solid var(--vt-accent)");
+    expect(themeCss).toMatch(/\.vt-popover-close-btn:focus-visible,\s*\.vt-popover-footer-btn:focus-visible \{\s*outline/);
   });
 });
 

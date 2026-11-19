@@ -99,7 +99,9 @@
   box-shadow: inset 0 0 0 100vmax rgb(127 127 127 / 0.15);
 }
 
-.vt-button--secondary {
+.vt-button--secondary,
+.vt-button--secondary:hover,
+.vt-button--secondary:focus-visible {
   background-color: transparent;
   color: var(--vt-muted);
 }

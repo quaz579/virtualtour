@@ -15,7 +15,7 @@ Set the variables on `:root` (or any ancestor of the popover) to restyle every p
 
 The theme sets the instruction and feedback variables in dark mode only; light mode uses the engine's built-in colors. The entrance animation replaces the engine fade on the popover, so `--vt-enter-duration` (not `--vt-animation-duration`) times it once `theme.css` is loaded.
 
-Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt-theme="light"` on `<html>` or `<body>` to force one scheme regardless of the visitor's setting.
+Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt-theme="light"` on `<html>` to force one scheme regardless of the visitor's setting.
 
 | Variable | Default (light) | Used for |
 |---|---|---|
@@ -37,7 +37,6 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 |---|---|
 | `--vt-base` | Marker the missing-stylesheet check reads. Do not override. |
 | `--vt-popover-font-family` | Popover font in `base.css` |
-
 | `--vt-animation-duration` | Overlay and popover fade |
 | `--vt-allowed-z-index` | Stacking of extra elements |
 | `--vt-nudge-duration`, `--vt-nudge-distance`, `--vt-nudge-color` | Nudge animation |
@@ -94,7 +93,7 @@ Names you set yourself. The engine never emits them.
 | Name | Where | Effect |
 |---|---|---|
 | `vt-no-arrow` | step `classes` | Hides the arrow on one popover |
-| `data-vt-theme` | `<html>`, `<body>` | `dark` or `light` forces a scheme |
+| `data-vt-theme` | `<html>` | `dark` or `light` forces a scheme |
 | `data-vt-progress-bar` | popover | Shows the progress bar; `--vt-progress-index` and `--vt-progress-total` set its width |
 
 ### Reserved (avatar mode)
