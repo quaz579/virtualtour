@@ -228,7 +228,7 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
 
   clearParentMarks(ctx);
 
-  bringInView(toElement, ctx.getConfig("smoothScroll"));
+  bringInView(toElement, stepOption(ctx, toStep, "scrollIntoView"), ctx.getConfig("smoothScroll"));
   if (!hasDelayedPopover && toStep.popover) {
     renderStepPopover(ctx, toElement, toStep);
   }
