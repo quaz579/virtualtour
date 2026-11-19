@@ -26,6 +26,7 @@ export default defineConfig({
         overlay: resolve(__dirname, "fixtures/overlay.html"),
         avatarPlayer: resolve(__dirname, "fixtures/avatar-player.html"),
         avatarSteps: resolve(__dirname, "fixtures/avatar-steps.html"),
+        motion: resolve(__dirname, "fixtures/motion.html"),
         avatarLayout: resolve(__dirname, "fixtures/avatar-layout.html"),
         vue: resolve(__dirname, "fixtures/vue.html"),
         react: resolve(__dirname, "fixtures/react.html"),
