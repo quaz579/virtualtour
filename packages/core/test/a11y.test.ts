@@ -15,7 +15,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const PAGE = `<button id="t" type="button">Target</button><p id="p">Paragraph</p><a id="a" href="#x">Link</a><div id="r" role="button" tabindex="0">Role</div>`;
+const PAGE = `<button id="t" type="button">Target</button><p id="p">Paragraph</p><a id="a" href="#x">Link</a><div id="r" role="button" tabindex="0">Role</div><select id="s"><option>One</option></select><input id="ib" type="submit" value="Go" /><details><summary id="sum">More</summary>Text</details><input id="tx" type="text" aria-label="Text" /><div id="rc" role="Button" tabindex="0">Mixed</div>`;
 
 async function show(config: TourConfig): Promise<Tour> {
   document.body.innerHTML = PAGE;
@@ -129,6 +129,11 @@ describe("popup attributes on targets", () => {
     ["a button", "#t", true],
     ["a link with an href", "#a", true],
     ["an element with a button role", "#r", true],
+    ["a select", "#s", true],
+    ["a submit input", "#ib", true],
+    ["a summary", "#sum", true],
+    ["a button role written in mixed case", "#rc", true],
+    ["a text input", "#tx", false],
     ["a paragraph", "#p", false],
   ];
 

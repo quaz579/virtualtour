@@ -119,6 +119,22 @@ test("arrows and Escape typed inside a field on the page go to the app, not the 
   expect(await log(page)).toEqual(["shown:s1", "shown:s2", "shown:s3"]);
 });
 
+test("arrows inside a widget within the target go to the app", async ({ page }) => {
+  await page.goto("/fixtures/a11y.html");
+  await page.locator("html[data-ready=true]").waitFor();
+  await page.evaluate(() => {
+    const tour = window.vtBuild("four");
+    tour.steps[0]!.configure({ target: "#widget" });
+    void tour.start();
+  });
+  await expect.poll(() => log(page)).toContain("shown:s1");
+  await page.locator("#widget-input").focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Escape");
+  await expect(popover(page)).toBeVisible();
+  expect(await log(page)).toEqual(["shown:s1"]);
+});
+
 test("Tab cycles close, buttons and target without leaving the tour, and Shift+Tab reverses", async ({ page }) => {
   await open(page, "buttons", "buttons");
   const seen = new Set<string>();

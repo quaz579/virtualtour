@@ -13,12 +13,12 @@ Placeholder: the full guide arrives with the docs work. This page records what t
 | Keyboard | Escape exits and the arrow keys move between steps. Both are ignored while focus is in an input or widget on the page, and `keys.escape: false` or `keys.arrows: false` turns them off. |
 | Reduced motion | With `prefers-reduced-motion: reduce` the tour runs in `vt-simple` mode: no fade, no tween, and the nudge flashes instead of shaking. |
 | Live region | A polite live region announces step text when it changes through `configure()` and when an action step gives feedback. |
-| Target attributes | A button, a link or an element with an interactive role gets `aria-haspopup`, `aria-expanded` and `aria-controls` while it is the target. Other elements are left alone because those attributes are invalid on them. |
+| Target attributes | A button, a link, a `select`, a `summary`, a button-type `input` or an element with an interactive role (button, link, menu item, tab, combobox, switch, checkbox or tree item) gets `aria-haspopup`, `aria-expanded` and `aria-controls` while it is the target. Other elements are left alone because those attributes are invalid on them. |
 | Zoom | At 200% zoom the popover stays inside the viewport and every control stays operable. |
 
 ## Automated checks
 
-`test/a11y.test.ts` covers the name and description attribute matrix, named controls, focus return, keyboard and the live region. `e2e/a11y.spec.ts` runs the axe-core engine against a titled step, an untitled labeled step, a centered step, a spotlit step, an action step and a step with custom buttons in Chromium, Firefox and WebKit, and completes a four-step tour with the keyboard alone.
+`test/a11y.test.ts` covers the name and description attribute matrix, named controls, focus return, keyboard and the live region. `e2e/a11y.spec.ts` runs the axe-core engine against a titled step, an untitled labeled step, a centered step, a spotlit step, an action step and a step with custom buttons in Chromium, Firefox and WebKit (and Edge where installed), and completes a four-step tour with the keyboard alone.
 
 ## Manual screen reader script
 
