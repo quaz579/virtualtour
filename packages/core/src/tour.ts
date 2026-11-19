@@ -12,6 +12,7 @@ import { listenForAdvance } from "./advance/auto-advance";
 import { resolveTarget, waitForTarget } from "./dom/target";
 import { chain, NavigationQueue, raceAbort, resolveStepIndex, selectEligible } from "./navigator";
 import type { NavigationOutcome } from "./navigator";
+import { applyStateClasses, classList, dedupeExtras, removeStateClasses, resolveExtras, spotlitClass } from "./spotlight/options";
 import { ProgressTracker } from "./persist/progress";
 import { DialogPresenter } from "./presenter";
 import { memoizeSanitizer } from "./render/content";
@@ -51,6 +52,7 @@ interface TourInternals {
   progress: ProgressTracker | null;
   starting: boolean;
   clearSanitized: () => void;
+  spotlit: Map<Element, string[]>;
 }
 
 const internals = new WeakMap<object, TourInternals>();
@@ -100,6 +102,7 @@ export class Tour {
       progress: normalized.progress ? new ProgressTracker(normalized.id, normalized.progress) : null,
       starting: false,
       clearSanitized,
+      spotlit: new Map(),
     };
     internals.set(this, state);
     if (normalized.progress && config.id === undefined && (typeof __DEV__ === "undefined" || __DEV__)) {
@@ -369,6 +372,32 @@ function detachAdvance(state: TourInternals, only?: TourStep): void {
   advance.detach();
 }
 
+function releaseSpotlit(state: TourInternals): void {
+  for (const [element, classes] of state.spotlit) removeStateClasses([element], classes);
+  state.spotlit.clear();
+}
+
+function markSpotlit(tour: Tour, step: TourStep, target: Element | undefined): void {
+  const state = internalsOf(tour);
+  const spotlight = step.config.spotlight;
+  const marker = spotlitClass(state.normalized.namespace);
+  const classes = [marker, ...classList(spotlight?.class)];
+  const desired = new Map<Element, string[]>();
+  if (target) desired.set(target, classes);
+  for (const extra of dedupeExtras(resolveExtras(spotlight?.extra), target)) desired.set(extra, classes);
+  for (const [element, held] of state.spotlit) {
+    const next = desired.get(element);
+    if (next && next.join(" ") === held.join(" ")) continue;
+    removeStateClasses([element], held);
+    state.spotlit.delete(element);
+  }
+  for (const [element, next] of desired) {
+    if (state.spotlit.has(element)) continue;
+    applyStateClasses([element], next);
+    state.spotlit.set(element, next);
+  }
+}
+
 function stepOf(tour: Tour, driveStep: DriveStep | undefined): TourStep | undefined {
   const step = driveStep?.data?.["vt"] as TourStep | undefined;
   return step && internalsOf(tour).steps.includes(step) ? step : undefined;
@@ -538,11 +567,12 @@ function ensureEngine(tour: Tour): Driver {
     ...compiled.base,
     steps: compiled.steps,
     presenter: enginePresenterFor(tour, presenter),
-    onHighlightStarted(_element: Element | undefined, driveStep: DriveStep) {
+    onHighlightStarted(element: Element | undefined, driveStep: DriveStep) {
       if (!owns()) return;
       const step = stepOf(tour, driveStep);
       if (!step) return;
       state.anchorIndex = state.steps.indexOf(step);
+      markSpotlit(tour, step, element);
       emitStep(step, "will-show", { step });
     },
     onHighlighted(element: Element | undefined, driveStep: DriveStep) {
@@ -564,8 +594,9 @@ function ensureEngine(tour: Tour): Driver {
       emitTour(tour, "step-shown", { tour, step, previous: state.previousStep });
       settle(state);
     },
-    onDeselected(_element: Element | undefined, driveStep: DriveStep) {
+    onDeselected(_element: Element | undefined, driveStep: DriveStep, opts: { reason?: string | undefined }) {
       if (!owns()) return;
+      if (opts.reason !== undefined) releaseSpotlit(state);
       const step = stepOf(tour, driveStep);
       if (step) leaveStep(tour, step);
     },
@@ -906,6 +937,7 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
   detachAdvance(state);
   const endStep = hookStep ?? state.steps[state.currentIndex] ?? state.steps[state.anchorIndex];
   for (const step of state.steps) leaveStep(tour, step);
+  releaseSpotlit(state);
   if (kind === "finished") {
     state.progress?.finished();
     if (endStep) emitStep(endStep, "finished", { step: endStep });
