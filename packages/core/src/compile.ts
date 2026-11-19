@@ -5,6 +5,7 @@ import type { Config, DriveStep, Popover } from "./engine/types";
 import type { AllowedButtons, Alignment } from "./engine/popover/popover";
 import { resolveBody, resolveText, resolveTitle } from "./render/content";
 import type { Sanitizer } from "./render/content";
+import { parsableSelectors } from "./spotlight/options";
 import type { CornerRadius, StepConfig, TourStepLike } from "./types";
 
 type Corners = Required<CornerRadius>;
@@ -134,7 +135,8 @@ function compileStep(
 
   if (spotlight.padding !== undefined) out.stagePadding = spotlight.padding;
   if (spotlight.radius !== undefined) out.stageRadius = toCorners(spotlight.radius, dimRadius);
-  if (spotlight.extra && spotlight.extra.length > 0) out.allowedElements = spotlight.extra.slice();
+  const extras = parsableSelectors(spotlight.extra);
+  if (extras.length > 0) out.allowedElements = extras;
   if (spotlight.targetInteractive === false) out.disableActiveInteraction = true;
   else if (spotlight.targetInteractive === "hover-only") out.disableActiveInteraction = "clicks";
 

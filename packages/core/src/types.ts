@@ -87,7 +87,11 @@ export interface SpotlightOptions {
   padding?: number;
   /** Overrides `dim.radius` for this step. */
   radius?: number | CornerRadius;
-  /** Extra selectors to cut out and keep interactive. */
+  /**
+   * Extra selectors to cut out and keep interactive. They also receive the state classes; the matches are
+   * re-resolved when the popover repositions (resize, scroll, `refresh()`, a re-bound target), so an extra rendered
+   * later is classed only after the next reposition, while the engine cut-out picks it up on its own.
+   */
   extra?: string[];
   /** Class added to the target and the extras. */
   class?: string;
