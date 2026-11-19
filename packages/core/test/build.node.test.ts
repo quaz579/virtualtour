@@ -17,14 +17,13 @@ const builtToday = [
   "dist/motion.d.ts",
   "dist/base.css",
   "dist/theme.css",
+  "dist/avatar.css",
   "dist/thumbtack/pack.json",
   "dist/thumbtack/sheet.png",
   "dist/thumbtack/LICENSE-ART.md",
 ];
 
-const notBuiltYet = [
-  "./dist/avatar.css",
-];
+const notBuiltYet: string[] = [];
 
 function exportTargets(value: unknown): string[] {
   if (typeof value === "string") return [value];
@@ -76,6 +75,10 @@ describe("build output", () => {
     expect(readFileSync(join(dist, "base.css"), "utf8")).toMatch(/--vt-base:\s*1/);
   });
 
+  it("ships avatar.css unchanged", () => {
+    expect(readFileSync(join(dist, "avatar.css"), "utf8")).toBe(readFileSync(join(root, "src/styles/avatar.css"), "utf8"));
+  });
+
   it("keeps the missing-stylesheet warning out of the production build only", () => {
     const warning = "base.css is not loaded";
     expect(readFileSync(join(dist, "index.js"), "utf8")).not.toContain(warning);
@@ -87,8 +90,9 @@ describe("build output", () => {
     expect(pkg).not.toHaveProperty("dependencies");
   });
 
-  it("ships the avatar pack schema", () => {
+  it("ships both schemas", () => {
     expect(existsSync(join(root, "schemas/avatar-pack.v1.schema.json"))).toBe(true);
+    expect(existsSync(join(root, "schemas/tour.v1.schema.json"))).toBe(true);
   });
 
   it("every export target is either built or explicitly pending", () => {

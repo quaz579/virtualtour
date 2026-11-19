@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour avatar layout fixture</title>
+    <style>
+      body {
+        margin: 0;
+        height: 2400px;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      .t {
+        position: absolute;
+        box-sizing: border-box;
+        width: 200px;
+        height: 40px;
+        margin: 0;
+        border: 1px solid #888;
+      }
+      #center {
+        left: 540px;
+        top: 360px;
+      }
+      #near-bottom {
+        left: 540px;
+        top: 660px;
+      }
+      #near-right {
+        left: 1060px;
+        top: 360px;
+        width: 200px;
+      }
+      #near-left {
+        left: 20px;
+        top: 360px;
+      }
+      dialog {
+        position: fixed;
+        left: 300px;
+        top: 200px;
+        width: 400px;
+        height: 240px;
+        padding: 20px;
+      }
+      #in-dialog {
+        position: static;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 8px 20px">Avatar layout fixture</h1>
+    <button class="t" id="center">Center target</button>
+    <button class="t" id="near-bottom">Near the bottom</button>
+    <button class="t" id="near-right">Near the right edge</button>
+    <button class="t" id="near-left">Near the left edge</button>
+    <dialog id="modal">
+      <p>A modal dialog.</p>
+      <button class="t" id="in-dialog">Inside the dialog</button>
+    </dialog>
+
+    <script type="module" src="./avatar-layout.ts"></script>
+  </body>
+</html>

@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   root: __dirname,
-  define: { __DEV__: "true" },
+  define: { __DEV__: "true", __VT_CORE_DIST__: JSON.stringify(resolve(__dirname, "../packages/core/dist")) },
   esbuild: { jsx: "automatic" },
   resolve: { alias: { virtualtour: resolve(__dirname, "../packages/core/src/index.ts") } },
   server: { port: Number(process.env["VT_E2E_PORT"] || 4173), strictPort: true, fs: { allow: [resolve(__dirname, "..")] } },
@@ -26,9 +26,14 @@ export default defineConfig({
         persist: resolve(__dirname, "fixtures/persist.html"),
         overlay: resolve(__dirname, "fixtures/overlay.html"),
         avatarPlayer: resolve(__dirname, "fixtures/avatar-player.html"),
+        avatarSteps: resolve(__dirname, "fixtures/avatar-steps.html"),
+        motion: resolve(__dirname, "fixtures/motion.html"),
+        avatarLayout: resolve(__dirname, "fixtures/avatar-layout.html"),
+        avatarMotion: resolve(__dirname, "fixtures/avatar-motion.html"),
         vue: resolve(__dirname, "fixtures/vue.html"),
         react: resolve(__dirname, "fixtures/react.html"),
         theme: resolve(__dirname, "fixtures/theme.html"),
+        avatarClassic: resolve(__dirname, "fixtures/avatar-classic.html"),
       },
     },
   },

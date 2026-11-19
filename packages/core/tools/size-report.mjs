@@ -8,9 +8,9 @@ import { build } from "vite";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sizeFile = resolve(root, "../../SIZE.md");
 const entries = [
-  { name: "core", file: "dist/index.js", target: 21 },
+  { name: "core", file: "dist/index.js", target: 21, chunks: true },
   { name: "engine", file: "src/engine/driver.ts", target: 21, engine: true },
-  { name: "avatar", file: "dist/avatar.js", target: 6 },
+  { name: "avatar", file: "dist/avatar.js", target: 6, chunks: true },
   { name: "motion", file: "dist/motion.js", target: 2 },
   { name: "base.css", file: "dist/base.css", target: null },
   { name: "theme.css", file: "dist/theme.css", target: null },
@@ -18,6 +18,22 @@ const entries = [
 
 function kb(bytes) {
   return (bytes / 1024).toFixed(2);
+}
+
+function withStaticChunks(file) {
+  const seen = new Set();
+  const parts = [];
+  const visit = (path) => {
+    if (seen.has(path)) return;
+    seen.add(path);
+    const code = readFileSync(path);
+    parts.push(code);
+    for (const match of code.toString("utf8").matchAll(/(?:from|import)\s*["'](\.\/[^"']+\.js)["']/g)) {
+      visit(join(dirname(path), match[1]));
+    }
+  };
+  visit(file);
+  return Buffer.concat(parts);
 }
 
 function readBaseline() {
@@ -63,7 +79,7 @@ for (const entry of entries) {
     warnings.push(`warning: ${entry.file} was not built`);
     continue;
   }
-  const raw = entry.engine ? await bundleEngine() : readFileSync(path);
+  const raw = entry.engine ? await bundleEngine() : entry.chunks ? withStaticChunks(path) : readFileSync(path);
   const gzip = gzipSync(raw, { level: 9 }).length;
   const before = baseline.get(entry.name);
   const delta = before === undefined ? "n/a" : `${gzip - before >= 0 ? "+" : ""}${gzip - before}`;
