@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour classic pack loader fixture</title>
+    <style>
+      body {
+        margin: 0;
+        height: 1200px;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      .t {
+        position: absolute;
+        box-sizing: border-box;
+        width: 200px;
+        height: 40px;
+        margin: 0;
+        border: 1px solid #888;
+      }
+      #first {
+        left: 300px;
+        top: 300px;
+      }
+      #second {
+        left: 700px;
+        top: 450px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 8px 20px">Classic pack loader fixture</h1>
+    <button class="t" id="first">First target</button>
+    <button class="t" id="second">Second target</button>
+
+    <script type="module" src="./avatar-classic.ts"></script>
+  </body>
+</html>
