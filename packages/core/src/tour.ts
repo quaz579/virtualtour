@@ -236,8 +236,9 @@ export class Tour {
       await navigateGuarded(this, () => runNavigation(this, "forward"));
       return;
     }
+    const runId = state.runId;
     await navigateGuarded(this, () => {
-      const runId = state.runId;
+      if (!state.running || state.ending || state.runId !== runId) return Promise.resolve();
       const outcome = advanceFrom(this, resumeAt - 1, "forward");
       return Promise.resolve(chain(outcome, (o) => concludeNavigation(this, runId, o)));
     });

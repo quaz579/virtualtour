@@ -351,25 +351,69 @@ describe("tour progress", () => {
     expect(warn).toHaveBeenCalled();
   });
 
-  it("orders async saves", async () => {
-    const order: string[] = [];
+  it("runs async saves one after another in order", async () => {
+    const events: string[] = [];
     const store: ProgressStore = {
       load: () => null,
-      save: (record) =>
-        new Promise<void>((resolve) =>
+      save: (record) => {
+        const label = record.lastStepId ?? "done";
+        events.push(`begin:${label}`);
+        return new Promise<void>((resolve) =>
           setTimeout(() => {
-            order.push(record.lastStepId ?? "done");
+            events.push(`end:${label}`);
             resolve();
-          }, record.lastStepId === "a" ? 20 : 0)
-        ),
+          }, record.lastStepId === "a" ? 30 : 0)
+        );
+      },
       clear: () => {},
     };
     const tour = make({ progress: { store } });
     await tour.start();
     await tour.forward();
     tour.finish();
-    await new Promise((r) => setTimeout(r, 60));
-    expect(order).toEqual(["a", "b", "done"]);
+    await new Promise((r) => setTimeout(r, 100));
+    expect(events).toEqual(["begin:a", "end:a", "begin:b", "end:b", "begin:done", "end:done"]);
+  });
+
+  it("start() waits for pending saves before loading", async () => {
+    const records = new Map<string, ProgressRecord>();
+    const store: ProgressStore = {
+      load: (id) => records.get(id) ?? null,
+      save: (record) => new Promise<void>((resolve) => setTimeout(() => { records.set(record.tourId, record); resolve(); }, 20)),
+      clear: () => {},
+    };
+    const first = make({ progress: { store } });
+    await first.start();
+    first.finish();
+    const log = watch(first);
+    await first.start();
+    expect(log).toEqual(["bypassed:completed"]);
+  });
+
+  it("ignores a record whose fields have the wrong type", async () => {
+    const store: ProgressStore = {
+      load: () => ({ tourId: "intro", updatedAt: "x", completedAt: true, lastStepId: 4 }) as unknown as ProgressRecord,
+      save: () => {},
+      clear: () => {},
+    };
+    const tour = make({ progress: { store, resume: true } });
+    const log = watch(tour);
+    await tour.start();
+    expect(log).toEqual(["started", "shown:a"]);
+  });
+
+  it("a goTo during a pending load wins and start() does not start a second run", async () => {
+    const store: ProgressStore = {
+      load: () => new Promise((resolve) => setTimeout(() => resolve({ tourId: "intro", completedAt: "x", updatedAt: "x" }), 30)),
+      save: () => {},
+      clear: () => {},
+    };
+    const tour = make({ progress: { store } });
+    const log = watch(tour);
+    const pending = tour.start();
+    await tour.goTo("c");
+    await pending;
+    expect(log).toEqual(["started", "shown:c"]);
   });
 
   it("warns in dev when progress is set without an id", () => {

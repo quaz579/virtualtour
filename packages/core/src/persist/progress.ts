@@ -8,14 +8,16 @@ function warn(message: string, error?: unknown): void {
   else console.warn(`[virtualtour] ${message}`, error);
 }
 
-function isThenable(value: unknown): value is PromiseLike<unknown> {
-  return typeof value === "object" && value !== null && typeof (value as { then?: unknown }).then === "function";
-}
-
-function isRecord(value: unknown, tourId: string): value is ProgressRecord {
-  if (typeof value !== "object" || value === null) return false;
-  const record = value as Partial<ProgressRecord>;
-  return record.tourId === tourId && typeof record.updatedAt === "string";
+function cleanRecord(value: unknown, tourId: string): ProgressRecord | null {
+  if (typeof value !== "object" || value === null) return null;
+  const data = value as Record<string, unknown>;
+  if (data["tourId"] !== tourId || typeof data["updatedAt"] !== "string") return null;
+  const record: ProgressRecord = { tourId, updatedAt: data["updatedAt"] };
+  for (const key of ["lastStepId", "completedAt", "exitedAt"] as const) {
+    const field = data[key];
+    if (typeof field === "string") record[key] = field;
+  }
+  return record;
 }
 
 /** Reads and writes one tour's progress through its store. Internal. */
@@ -39,12 +41,13 @@ export class ProgressTracker {
   /** The stored record, or `null` when there is none or the store failed. Never rejects. */
   async load(): Promise<ProgressRecord | null> {
     let loaded: unknown = null;
+    if (this.pending) await this.pending;
     try {
       loaded = await this.config.store.load(this.tourId);
     } catch (error) {
       warn(`Progress store load failed for tour "${this.tourId}"; starting without saved progress.`, error);
     }
-    this.record = isRecord(loaded, this.tourId) ? loaded : null;
+    this.record = cleanRecord(loaded, this.tourId);
     return this.record;
   }
 
@@ -73,18 +76,18 @@ export class ProgressTracker {
 
   private write(record: ProgressRecord): void {
     this.record = record;
-    const run = (): Promise<void> | undefined => {
+    const fail = (error: unknown): void => warn(`Progress store save failed for tour "${this.tourId}".`, error);
+    const run = (): void | Promise<void> => {
       try {
         const result = this.config.store.save(record);
-        if (isThenable(result)) return Promise.resolve(result).then(undefined, (error: unknown) => warn(`Progress store save failed for tour "${this.tourId}".`, error));
+        if (result) return Promise.resolve(result).catch(fail);
       } catch (error) {
-        warn(`Progress store save failed for tour "${this.tourId}".`, error);
+        fail(error);
       }
-      return undefined;
     };
-    const queued = this.pending ? this.pending.then(run) : run();
-    if (!queued) return;
-    const settled: Promise<void> = queued.then(() => {
+    const started = this.pending ? this.pending.then(run) : run();
+    if (!started) return;
+    const settled: Promise<void> = started.then(() => {
       if (this.pending === settled) this.pending = null;
     });
     this.pending = settled;
