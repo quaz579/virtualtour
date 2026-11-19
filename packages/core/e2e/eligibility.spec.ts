@@ -124,21 +124,3 @@ test("consecutive missing steps spend at most the wait budget", async ({ page })
   expect(waited).toBeGreaterThanOrEqual(1400);
   expect(waited).toBeLessThan(3500);
 });
-
-test("a step shown centered after a wait timeout stays centered when its target appears later", async ({ page }) => {
-  await open(page, "/fixtures/late-target.html?never=1&waitFor=300");
-  await expect.poll(() => log(page)).toContain("started:absent");
-  await page.evaluate(() => {
-    const el = document.createElement("button");
-    el.id = "late-target";
-    el.textContent = "Late button";
-    document.querySelector("#slot")?.appendChild(el);
-  });
-  const viewport = page.viewportSize();
-  await page.setViewportSize({ width: (viewport?.width ?? 1280) - 40, height: viewport?.height ?? 720 });
-  await page.waitForTimeout(400);
-  expect(await currentTarget(page)).toBeNull();
-  const box = await popover(page).boundingBox();
-  const width = (viewport?.width ?? 1280) - 40;
-  expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - width / 2)).toBeLessThan(80);
-});

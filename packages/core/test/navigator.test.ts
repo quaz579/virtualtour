@@ -774,6 +774,15 @@ describe("navigator hardening", () => {
     expect(warn.mock.calls.some((c) => String(c[0]).includes("waitBudget"))).toBe(true);
   });
 
+  it("the first waiting step always gets its full waitFor even above the budget", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([{ id: "a" }, { id: "b", target: "#late", waitFor: 400 }], { waitBudget: 50 });
+    await tour.start();
+    insertLater("late", 200);
+    await tour.forward();
+    expect(tour.currentStep?.resolvedTarget).toBe(document.querySelector("#late"));
+  });
+
   it("a step that is out of budget still shows centered when it is not a skip step", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const tour = make(

@@ -559,6 +559,7 @@ function markWaiting(state: TourInternals): () => void {
 
 interface WaitBudget {
   left: number;
+  waited: boolean;
 }
 
 function checkEligible(
@@ -585,13 +586,14 @@ function checkEligible(
   const target = resolveTarget(config.target);
   const requested = config.waitFor ?? 0;
   if (target || !(requested > 0)) return verdict(target);
-  const wait = Math.min(requested, budget.left);
+  const wait = budget.waited ? Math.min(requested, budget.left) : requested;
   if (wait < requested) {
     console.warn(
       `[virtualtour] Step "${step.id}" waits ${wait > 0 ? `only ${wait} ms` : "no longer"} for its target: the navigation spent its waitBudget of ${state.normalized.waitBudget} ms.`
     );
   }
   if (!(wait > 0)) return verdict(target);
+  budget.waited = true;
   const waitStart = Date.now();
   const release = markWaiting(state);
   const waiting = new AbortController();
@@ -620,7 +622,7 @@ function checkEligible(
 
 function newWaitBudget(tour: Tour): WaitBudget {
   const cap = internalsOf(tour).normalized.waitBudget;
-  return { left: cap > 0 ? cap : Infinity };
+  return { left: cap > 0 ? cap : Infinity, waited: false };
 }
 
 function advanceFrom(
