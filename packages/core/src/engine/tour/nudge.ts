@@ -18,7 +18,7 @@ function untilAnimationEnds(element: Element, onEnd: () => void) {
   window.clearTimeout(timers.get(element));
 
   const finish = () => {
-    window.clearTimeout(timers.get(element));
+    globalThis.clearTimeout(timers.get(element));
     timers.delete(element);
     element.removeEventListener("animationend", onAnimationEnd);
     onEnd();
