@@ -1,6 +1,6 @@
 # Avatar
 
-`virtualtour/avatar` replaces the dialog with a speech bubble and an animated character beside it. It is a presenter: you pass it as `presenter` in the tour config, and the rest of the tour behaves the same. This page is a reference for the options and their edge cases. A longer guide and the documentation for making your own packs come later; this page does not cover them.
+`virtualtour/avatar` replaces the dialog with a speech bubble and an animated character beside it. It is a presenter: you pass it as `presenter` in the tour config, and the rest of the tour behaves the same. This page is a reference for the options and their edge cases. For a walkthrough, read the [avatar guide](./guide). To draw your own character, see [make a pack](./make-a-pack); for the character that ships, see [Thumbtack](./thumbtack).
 
 ## Use it
 
@@ -8,7 +8,7 @@ Load `base.css`, then `avatar.css`, and give the tour `withAvatar(pack, options)
 
 <<< @/snippets/avatar/with-avatar.ts
 
-The package ships one pack, loaded with `thumbtackPack()`. Anything else goes through `loadAvatarPack(url)`.
+The package ships one pack, [Thumbtack](./thumbtack), loaded with `thumbtackPack()`. Anything else goes through `loadAvatarPack(url)`. A classic character map goes through `loadClassicAvatarPack`; see [classic packs](./classic-packs) before you use it. The [licensing](../licensing) page covers the code and the art.
 
 ## withAvatar options
 

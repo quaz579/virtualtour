@@ -14,7 +14,7 @@ export default defineConfig({
       { text: "Guide", link: "/guide/getting-started" },
       { text: "Cookbook", link: "/cookbook/custom-counter" },
       { text: "API", link: "/api/config" },
-      { text: "Avatar", link: "/avatar/" },
+      { text: "Avatar", link: "/avatar/guide" },
       { text: "Migration", link: "/migration/from-driverjs" },
     ],
     sidebar: [
@@ -59,11 +59,21 @@ export default defineConfig({
       },
       {
         text: "Avatar",
-        items: [{ text: "Avatar reference", link: "/avatar/" }],
+        items: [
+          { text: "Avatar guide", link: "/avatar/guide" },
+          { text: "Avatar reference", link: "/avatar/" },
+          { text: "Thumbtack", link: "/avatar/thumbtack" },
+          { text: "Make a pack", link: "/avatar/make-a-pack" },
+          { text: "Classic packs", link: "/avatar/classic-packs" },
+        ],
       },
       {
         text: "Migration",
         items: [{ text: "From driver.js", link: "/migration/from-driverjs" }],
+      },
+      {
+        text: "About",
+        items: [{ text: "Licensing", link: "/licensing" }],
       },
     ],
     socialLinks: [{ icon: "github", link: "https://github.com/quaz579/virtualtour" }],
