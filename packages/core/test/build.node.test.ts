@@ -87,8 +87,9 @@ describe("build output", () => {
     expect(pkg).not.toHaveProperty("dependencies");
   });
 
-  it("ships the avatar pack schema", () => {
+  it("ships both schemas", () => {
     expect(existsSync(join(root, "schemas/avatar-pack.v1.schema.json"))).toBe(true);
+    expect(existsSync(join(root, "schemas/tour.v1.schema.json"))).toBe(true);
   });
 
   it("every export target is either built or explicitly pending", () => {
