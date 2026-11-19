@@ -17,8 +17,8 @@ export const nextButton = (page: Page) => page.locator(".vt-popover-next-btn");
 export const prevButton = (page: Page) => page.locator(".vt-popover-prev-btn");
 export const closeButton = (page: Page) => page.locator(".vt-popover-close-btn");
 
-export async function openFixture(page: Page) {
-  await page.goto("/e2e.html");
+export async function openFixture(page: Page, path = "/e2e.html") {
+  await page.goto(path);
   await page.locator("html[data-ready=true]").waitFor();
 }
 

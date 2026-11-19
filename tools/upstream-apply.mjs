@@ -68,6 +68,7 @@ export const KNOWN_POPOVER_CLASSES = Object.freeze([
   "driver-popover-align-",
   "driver-popover-content",
   "driver-popover-arrow-side-",
+  "driver-popover-rtl",
 ]);
 
 const KNOWN_POPOVER = new Set(KNOWN_POPOVER_CLASSES);

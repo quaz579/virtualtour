@@ -14,23 +14,11 @@ type FutureConfigKeys =
   | "mountIn"
   | "dimMountIn";
 
-type FutureStepKeys =
-  | "popover"
-  | "popoverCrossOffset";
+/** Engine popover options. */
+export type EnginePopover = Popover;
 
-type FuturePopoverKeys = "arrow" | "arrowMinInset";
-
-/** Engine popover options, including the ones the engine reads once the matching milestone-two task lands. */
-export type EnginePopover = Omit<Popover, FuturePopoverKeys> & {
-  arrow?: boolean;
-  arrowMinInset?: number;
-};
-
-/** Engine step options, including the per-step fields the engine gains later. */
-export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
-  popover?: EnginePopover;
-  popoverCrossOffset?: number;
-};
+/** Engine step options. */
+export type EngineStep = DriveStep;
 
 /** Engine config, including the keys the engine gains later. */
 export type EngineConfig = Omit<Config, FutureConfigKeys> & {
