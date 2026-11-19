@@ -53,6 +53,7 @@
   top: 0;
   right: 0;
   background-color: #fff;
+  --vt-base: 1;
 }
 
 .vt-popover-title {
@@ -160,7 +161,7 @@
 .vt-popover-arrow {
   content: "";
   position: absolute;
-  border: 5px solid #fff;
+  border: 5px solid var(--vt-bg, #fff);
 }
 
 .vt-popover-arrow-side-over {
@@ -199,12 +200,13 @@
   display: none;
 }
 
-.vt-popover-arrow-none {
+.vt-popover-arrow-none,
+.vt-no-arrow .vt-popover-arrow {
   display: none;
 }
 
 .vt-body {
-  margin-top: 8px;
+  margin-top: 5px;
   font-size: 14px;
   line-height: 1.5;
 }

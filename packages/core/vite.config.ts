@@ -31,6 +31,12 @@ export default defineConfig(({ mode }) => {
       ? []
       : [
           {
+            name: "theme-stylesheet",
+            closeBundle() {
+              copyFileSync(resolve(__dirname, "src/styles/theme.css"), resolve(__dirname, "dist/theme.css"));
+            },
+          },
+          {
             name: "thumbtack-assets",
             closeBundle() {
               const from = resolve(__dirname, "src/avatar/thumbtack");
