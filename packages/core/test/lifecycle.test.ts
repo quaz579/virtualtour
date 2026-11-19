@@ -971,7 +971,7 @@ describe("presenter wiring", () => {
 
     expect(seen.length).toBeGreaterThan(0);
     expect(seen[0]).toMatchObject({ rtl: true });
-    expect(typeof seen[0]!.physicalAlign).toBe("string");
+    expect(seen[0]!.physicalAlign).not.toBe("center");
   });
 
   it("fills bubbleRect with the wrapper rect when the popover has no bubble", async () => {
