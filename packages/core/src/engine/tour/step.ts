@@ -225,6 +225,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
 
     doneButton: isEndStep(ctx, 1),
     smoothScroll: ctx.getConfig("smoothScroll"),
+    scrollIntoView: stepOption(ctx, step, "scrollIntoView") === false ? false : undefined,
     sanitize: ctx.getConfig("sanitize"),
 
     onNextClick: ctx.tour.pressNext,

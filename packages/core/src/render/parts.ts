@@ -70,3 +70,10 @@ export function mountBody(popover: PopoverDOM, content: Element | DocumentFragme
   repointDescribedBy(popover.wrapper, P.descriptionId, BODY_ID);
   return body;
 }
+
+/** Removes the layer's `.vt-body` and points `aria-describedby` back at the engine's description. */
+export function unmountBody(popover: PopoverDOM): void {
+  popover.body?.remove();
+  delete popover.body;
+  repointDescribedBy(popover.wrapper, BODY_ID, P.descriptionId);
+}

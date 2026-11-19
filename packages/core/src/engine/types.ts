@@ -108,6 +108,8 @@ export type Config = {
   overlayColor?: string;
   overlayOpacity?: number;
   smoothScroll?: boolean;
+  /** Scroll options for bringing the highlighted element into view; `false` never scrolls. Defaults to the engine rule. */
+  scrollIntoView?: false | ScrollIntoViewOptions;
   allowClose?: boolean;
   allowScroll?: boolean;
   /**
@@ -246,6 +248,8 @@ export type DriveStep = {
   stagePadding?: number;
   stageRadius?: number | StageCornerRadius;
   clipStageToScrollParents?: boolean;
+  /** Scroll options for this step's element; `false` never scrolls. Overrides `Config.scrollIntoView`. */
+  scrollIntoView?: false | ScrollIntoViewOptions;
   popoverOffset?: number;
   /** Overrides `Config.popoverPadding` for this step. */
   popoverPadding?: number;
