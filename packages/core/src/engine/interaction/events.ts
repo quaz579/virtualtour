@@ -117,7 +117,14 @@ export function initEvents(ctx: Context) {
   };
   const onWindowKeydownCapture = (e: KeyboardEvent) => onKeydownCapture(ctx, e);
   const onWindowResize = () => requireRefresh(ctx);
-  const onWindowScroll = () => requireRefresh(ctx);
+  const onWindowScroll = (e?: Event) => {
+    const target = e?.target;
+    if (target instanceof Element && target.closest(`.${ctx.names.popover.root}`)) {
+      return;
+    }
+
+    requireRefresh(ctx);
+  };
 
   ctx.setState("__events", {
     onKeyup: onWindowKeyup,
@@ -140,7 +147,7 @@ export function initEvents(ctx: Context) {
   window.addEventListener("keyup", onWindowKeyup, false);
   window.addEventListener("keydown", onWindowKeydown, false);
   window.addEventListener("resize", onWindowResize);
-  window.addEventListener("scroll", onWindowScroll);
+  window.addEventListener("scroll", onWindowScroll, true);
   document.addEventListener("close", onWindowResize, true);
 }
 
@@ -158,5 +165,5 @@ export function destroyEvents(ctx: Context) {
   ctx.getState("__openObserver")?.disconnect();
   window.removeEventListener("resize", events.onResize);
   document.removeEventListener("close", events.onResize, true);
-  window.removeEventListener("scroll", events.onScroll);
+  window.removeEventListener("scroll", events.onScroll, true);
 }

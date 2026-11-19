@@ -13,9 +13,12 @@ import { resolveTarget, waitForTarget } from "./dom/target";
 import { chain, NavigationQueue, raceAbort, resolveStepIndex, selectEligible } from "./navigator";
 import type { NavigationOutcome } from "./navigator";
 import { DialogPresenter } from "./presenter";
+import { memoizeSanitizer } from "./render/content";
 import { relayTourEvent, setCurrentTour, tours } from "./registry";
 import { emitStep, lookupTarget, markHidden, markShown, resetStep, retireStep, setResolvedTarget, TourStep } from "./step";
-import type { Presenter, RepositionInfo, StepConfig, TourConfig } from "./types";
+import type { Presenter, RepositionInfo, StepConfig, StepParts, TourConfig } from "./types";
+
+declare const __DEV__: boolean | undefined;
 
 const WAITING_CLASS = "vt-waiting";
 
@@ -40,9 +43,11 @@ interface TourInternals {
   waiter: (() => void) | null;
   pendingExit: Promise<boolean> | null;
   previousStep: TourStep | null;
-  mounted: { popover: PopoverDOM; step: TourStep } | null;
+  mounted: { popover: PopoverDOM; step: TourStep; parts: StepParts } | null;
   advance: { step: TourStep; detach: () => void; timer: ReturnType<typeof setTimeout> | null } | null;
   waits: Map<TourStep, AbortController>;
+  warnedUnnamed: boolean;
+  clearSanitized: () => void;
 }
 
 const internals = new WeakMap<object, TourInternals>();
@@ -58,6 +63,12 @@ export class Tour {
 
   constructor(config: TourConfig = {}) {
     const normalized = normalizeTourConfig(config);
+    let clearSanitized = (): void => {};
+    if (normalized.sanitize) {
+      const memo = memoizeSanitizer(normalized.sanitize);
+      normalized.sanitize = memo.sanitize;
+      clearSanitized = memo.clear;
+    }
     this.id = normalized.id;
     if (normalized.name !== undefined) this.name = normalized.name;
     const state: TourInternals = {
@@ -82,6 +93,8 @@ export class Tour {
       mounted: null,
       advance: null,
       waits: new Map(),
+      warnedUnnamed: false,
+      clearSanitized,
     };
     internals.set(this, state);
     const reserved = new Set<string>();
@@ -335,8 +348,11 @@ function enginePresenterFor(tour: Tour, presenter: Presenter): EnginePresenter {
     mount(popover, driveStep) {
       const step = stepOf(tour, driveStep);
       if (!step) return;
-      state.mounted = { popover, step };
-      guarded("presenter.mount", () => presenter.mount(popover, step, { buttons: [] }));
+      const parts: StepParts = { buttons: [] };
+      const content = driveStep?.data?.["vtBody"] as Element | undefined;
+      if (content) parts.content = content;
+      state.mounted = { popover, step, parts };
+      guarded("presenter.mount", () => presenter.mount(popover, step, parts));
     },
     afterReposition(info: EngineRepositionInfo) {
       const mounted = state.mounted;
@@ -355,11 +371,20 @@ function enginePresenterFor(tour: Tour, presenter: Presenter): EnginePresenter {
   return adapter;
 }
 
+function warnIfUnnamed(tour: Tour, step: TourStep, out: EngineStep): void {
+  const state = internalsOf(tour);
+  if (state.warnedUnnamed || (typeof __DEV__ !== "undefined" && !__DEV__)) return;
+  if (out.popover?.title || out.popover?.label) return;
+  state.warnedUnnamed = true;
+  console.warn(`[virtualtour] Step "${step.id}" has no title and no label, so its dialog has no accessible name. Set one of them.`);
+}
+
 function evaluatedStep(tour: Tour, index: number): EngineStep {
   const state = internalsOf(tour);
   const step = state.steps[index] as TourStep;
-  const out = compileStepForShow(step, state.normalized.dimOptions.radius);
+  const out = compileStepForShow(step, state.normalized.dimOptions.radius, state.normalized.sanitize);
   if (out.skipMissingElement && step.config.target !== undefined && lookupTarget(step) === null) out.skipMissingElement = false;
+  warnIfUnnamed(tour, step, out);
   const counter = state.normalized.counter;
   if (typeof counter === "function") {
     out.popover = { ...out.popover, progressText: counter(index + 1, state.steps.length) };
@@ -719,6 +744,7 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
   state.abort?.abort();
   state.abort = null;
   state.queue.cancelWaiting();
+  state.clearSanitized();
   settle(state);
   state.engine = null;
   state.mounted = null;

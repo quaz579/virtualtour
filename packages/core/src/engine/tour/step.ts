@@ -10,7 +10,7 @@ import {
   updatePopoverContent,
 } from "../popover/popover";
 import { PositionOptions, repositionPopover } from "../popover/position";
-import { isDummyElement, resolveElement } from "../core/utils";
+import { isDummyElement, layerFor, resolveElement } from "../core/utils";
 import { isFocusWithinStep } from "./allowed";
 import { announce } from "../popover/live-region";
 import { fixedNames } from "../core/namespace";
@@ -213,6 +213,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
     ...options,
     title: popover.title,
     description: popover.description,
+    label: popover.label,
 
     isGated,
     isDone: isGated && isDone(ctx, step),
@@ -257,10 +258,11 @@ function notifyRepositioned(ctx: Context, info: RepositionInfo) {
 }
 
 export function renderStepPopover(ctx: Context, element: Element, step: DriveStep) {
+  const layer = layerFor(ctx, element, "popover");
   destroyPopover(ctx.getState("popover"));
 
   const keepFocus = isFocusWithinStep(ctx, element, step);
-  const popover = renderPopover(element, {
+  const popover = renderPopover(element, layer, {
     ...resolveStepPopover(ctx, element, step),
     keepFocus,
   });

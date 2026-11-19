@@ -16,6 +16,7 @@ export default defineConfig({
         skip: resolve(__dirname, "fixtures/skip.html"),
         prepare: resolve(__dirname, "fixtures/prepare.html"),
         autoAdvance: resolve(__dirname, "fixtures/auto-advance.html"),
+        content: resolve(__dirname, "fixtures/content.html"),
       },
     },
   },

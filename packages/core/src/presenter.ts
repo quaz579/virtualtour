@@ -1,5 +1,6 @@
 import { names } from "./engine/core/namespace";
 import type { PopoverDOM } from "./engine/popover/popover";
+import { applyAttrs, mountBody } from "./render/parts";
 import type { TourStep } from "./step";
 import type { Presenter, RepositionInfo, StepParts } from "./types";
 import type { Tour } from "./tour";
@@ -17,18 +18,33 @@ export class DialogPresenter implements Presenter {
     this.stepAttr = names(namespace).stepAttr;
   }
 
-  mount(popover: PopoverDOM, step: TourStep, _parts: StepParts): void {
+  mount(popover: PopoverDOM, step: TourStep, parts: StepParts): void {
     popover.wrapper.classList.add(DIALOG_CLASS);
     popover.wrapper.setAttribute(this.stepAttr, String(this.tour.steps.indexOf(step)));
+    if (parts.content) {
+      try {
+        parts.body = mountBody(popover, parts.content);
+      } catch (error) {
+        console.warn(`[virtualtour] Step "${step.id}" body could not be mounted.`, error);
+      }
+    }
+    this.applyCloseAttrs(popover, step);
   }
 
   afterShow(_popover: PopoverDOM, _step: TourStep): void {}
 
   afterReposition(_popover: PopoverDOM, _step: TourStep, _info: RepositionInfo): void {}
 
-  update(_popover: PopoverDOM, _step: TourStep, _parts: StepParts): void {}
+  update(popover: PopoverDOM, step: TourStep, _parts: StepParts): void {
+    this.applyCloseAttrs(popover, step);
+  }
 
   beforeLeave(_step: TourStep): void {}
 
   unmount(): void {}
+
+  private applyCloseAttrs(popover: PopoverDOM, step: TourStep): void {
+    const close = step.config.closeButton;
+    if (typeof close === "object" && popover.closeButton) applyAttrs(popover.closeButton, close.attrs);
+  }
 }
