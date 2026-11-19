@@ -150,7 +150,7 @@ describe("STYLES.md matches the shipped CSS", () => {
 
   it("documents the theme variables with their light defaults", () => {
     const declared = new Map<string, string>();
-    postcss.parse(themeCss).walkRules(":root", (rule) => {
+    postcss.parse(themeCss).walkRules(":where(:root)", (rule) => {
       if (rule.parent?.type !== "root") return;
       rule.walkDecls(/^--vt-/, (decl) => {
         declared.set(decl.prop, decl.value);
@@ -188,8 +188,8 @@ function schemeColors(selectorPattern: RegExp): Record<string, string> {
 }
 
 describe("theme.css colors", () => {
-  const light = { ...schemeColors(/^:root$/) };
-  const dark = { ...light, ...schemeColors(/^\[data-vt-theme="dark"\]$/) };
+  const light = { ...schemeColors(/^:where\(:root\)$/) };
+  const dark = { ...light, ...schemeColors(/^:where\(\[data-vt-theme="dark"\]\)$/) };
 
   it.each([
     ["light", light],
@@ -202,6 +202,20 @@ describe("theme.css colors", () => {
     expect(contrast(accent as string, bg as string)).toBeGreaterThanOrEqual(3);
   });
 
+  it("the forced light block matches the root defaults", () => {
+    const forced = schemeColors(/^:where\(\[data-vt-theme="light"\]\)$/);
+    expect(Object.keys(forced).sort()).toEqual(["accent", "bg", "fg", "muted"]);
+    expect(forced).toEqual(light);
+  });
+
+  it("scheme selectors have zero specificity so author overrides win", () => {
+    postcss.parse(themeCss).walkRules((rule) => {
+      if (rule.parent?.type === "root" || rule.parent?.type === "atrule") {
+        if (/--vt-/.test(rule.toString()) && /(:root|data-vt-theme)/.test(rule.selector)) expect(rule.selector.startsWith(":where("), rule.selector).toBe(true);
+      }
+    });
+  });
+
   it("the media-query dark block matches the forced dark block", () => {
     const media: Record<string, string> = {};
     postcss.parse(themeCss).walkAtRules("media", (at) => {
@@ -212,7 +226,7 @@ describe("theme.css colors", () => {
     });
     const forced: Record<string, string> = {};
     postcss.parse(themeCss).walkRules((rule) => {
-      if (rule.selector !== '[data-vt-theme="dark"]') return;
+      if (rule.selector !== ':where([data-vt-theme="dark"])') return;
       rule.walkDecls(/^--vt-/, (decl) => {
         forced[decl.prop] = decl.value;
       });

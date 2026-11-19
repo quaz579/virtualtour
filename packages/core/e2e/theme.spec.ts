@@ -135,7 +135,7 @@ test("variables restyle the popover", async ({ page }) => {
   await page.addInitScript(() => {
     document.addEventListener("DOMContentLoaded", () => {
       const css = document.createElement("style");
-      css.textContent = "html:root { --vt-accent: rgb(200, 0, 0); --vt-radius: 20px; --vt-space: 30px; }";
+      css.textContent = ":root { --vt-accent: rgb(200, 0, 0); --vt-radius: 20px; --vt-space: 30px; }";
       document.head.appendChild(css);
     });
   });
@@ -143,6 +143,19 @@ test("variables restyle the popover", async ({ page }) => {
   expect(parseColor(await style(page, ".vt-popover-next-btn", "background-color"))).toEqual([200, 0, 0]);
   expect(await style(page, ".vt-popover", "border-top-left-radius")).toBe("20px");
   expect(await style(page, ".vt-popover", "padding-top")).toBe("30px");
+});
+
+test("a plain :root override wins in OS dark mode too", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const css = document.createElement("style");
+      css.textContent = ":root { --vt-accent: rgb(0, 150, 0); }";
+      document.head.appendChild(css);
+    });
+  });
+  await open(page);
+  expect(parseColor(await style(page, ".vt-popover-next-btn", "background-color"))).toEqual([0, 150, 0]);
 });
 
 test("the entrance animation runs under no-preference and is absent under reduced motion", async ({ page }) => {

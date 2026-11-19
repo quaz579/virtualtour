@@ -156,7 +156,7 @@
 .vt-popover-arrow {
   content: "";
   position: absolute;
-  border: 5px solid #fff;
+  border: 5px solid var(--vt-bg, #fff);
 }
 
 .vt-popover-arrow-side-over {

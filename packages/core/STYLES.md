@@ -11,7 +11,9 @@ Without `theme.css` the popover stays a plain light box. In a development build,
 
 ## Theming
 
-Set the variables on `:root` (or any ancestor of the popover) to restyle every popover.
+Set the variables on `:root` (or any ancestor of the popover) to restyle every popover. Your rules win over the theme's defaults, including in dark mode, because the theme selectors have zero specificity.
+
+The theme sets the instruction and feedback variables in dark mode only; light mode uses the engine's built-in colors. The entrance animation replaces the engine fade on the popover, so `--vt-enter-duration` (not `--vt-animation-duration`) times it once `theme.css` is loaded.
 
 Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt-theme="light"` on `<html>` or `<body>` to force one scheme regardless of the visitor's setting.
 
@@ -26,8 +28,8 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 | `--vt-shadow` | two-layer shadow | Popover shadow |
 | `--vt-font` | system UI stack | Popover font |
 | `--vt-enter-duration` | `180ms` | Entrance animation |
-| `--vt-progress-index` | `0` | Filled steps in the progress bar |
-| `--vt-progress-total` | `1` | Total steps in the progress bar |
+| `--vt-progress-index` | `0` | Filled steps in the progress bar. Set it on the popover; nothing fills it yet |
+| `--vt-progress-total` | `1` | Total steps in the progress bar. Set it on the popover; nothing fills it yet |
 
 ## Engine variables (`base.css`)
 
@@ -35,6 +37,7 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 |---|---|
 | `--vt-base` | Marker the missing-stylesheet check reads. Do not override. |
 | `--vt-popover-font-family` | Popover font in `base.css` |
+
 | `--vt-animation-duration` | Overlay and popover fade |
 | `--vt-allowed-z-index` | Stacking of extra elements |
 | `--vt-nudge-duration`, `--vt-nudge-distance`, `--vt-nudge-color` | Nudge animation |

@@ -9,4 +9,4 @@ Gzip sizes of the built entries. Refresh with `npm run size -- --write`.
 | avatar | dist/avatar.js | 4459 |
 | motion | dist/motion.js | 56 |
 | base.css | dist/base.css | 1939 |
-| theme.css | dist/theme.css | 976 |
+| theme.css | dist/theme.css | 1043 |
