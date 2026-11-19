@@ -21,6 +21,7 @@ const popover = Object.freeze({
   root: `${FIXED_PREFIX}-popover`,
   arrow: `${FIXED_PREFIX}-popover-arrow`,
   arrowNone: `${FIXED_PREFIX}-popover-arrow-none`,
+  rtl: `${FIXED_PREFIX}-popover-rtl`,
   title: `${FIXED_PREFIX}-popover-title`,
   description: `${FIXED_PREFIX}-popover-description`,
   closeButton: `${FIXED_PREFIX}-popover-close-btn`,
@@ -53,6 +54,7 @@ const popover = Object.freeze({
 const fixed = Object.freeze({
   attr: attributes,
   popover,
+  noArrow: `${FIXED_PREFIX}-no-arrow`,
   layer: `${FIXED_PREFIX}-layer`,
   liveRegion: `${FIXED_PREFIX}-live-region`,
   dummyId: `${FIXED_PREFIX}-dummy-element`,

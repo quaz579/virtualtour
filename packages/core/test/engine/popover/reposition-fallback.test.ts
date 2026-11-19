@@ -61,3 +61,35 @@ describe("popover placement when no side fits", () => {
     expect(popoverEl()!.style.bottom).not.toBe("10px");
   });
 });
+
+describe("popover position option sanitizing", () => {
+  const place = (extra: Record<string, unknown>) => {
+    stubLayout(rect(300, 300, 100, 40));
+    const d = createDriver({
+      animate: false,
+      steps: [{ element: "#intro", popoverOffset: 10, popover: { title: "Only", side: "bottom", align: "start" }, ...extra }],
+    });
+    d.drive();
+    const wrapper = popoverEl()!;
+    const tip = wrapper.querySelector<HTMLElement>(".vt-popover-arrow")!;
+    const placed = { left: wrapper.style.left, top: wrapper.style.top, arrow: tip.style.left || tip.style.top };
+    d.destroy();
+    return placed;
+  };
+
+  it("treats a non-finite cross offset as zero", () => {
+    const baseline = place({});
+    for (const popoverCrossOffset of [NaN, Infinity, -Infinity]) {
+      const placed = place({ popoverCrossOffset });
+      expect(placed).toEqual(baseline);
+      expect(`${placed.left}${placed.top}`).not.toMatch(/NaN|Infinity/);
+    }
+  });
+
+  it("clamps a negative arrow minimum inset to zero and ignores a non-finite one", () => {
+    const clamped = place({ popover: { title: "Only", side: "bottom", align: "start", arrowMinInset: 0 } });
+    expect(place({ popover: { title: "Only", side: "bottom", align: "start", arrowMinInset: -40 } })).toEqual(clamped);
+    const fallback = place({});
+    expect(place({ popover: { title: "Only", side: "bottom", align: "start", arrowMinInset: NaN } })).toEqual(fallback);
+  });
+});
