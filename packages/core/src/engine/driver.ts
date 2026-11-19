@@ -165,6 +165,15 @@ export function createEngine(options: Config = {}): Driver {
     }
   }
 
+  function keysEnable(button: AllowedButtons): boolean {
+    const keys = currentPopoverStep()?.popover?.navigateWithKeys;
+    if (typeof keys === "object") {
+      return !!(button === "next" ? keys.next : button === "previous" ? keys.prev : false);
+    }
+
+    return !!keys;
+  }
+
   function canUseButton(button: AllowedButtons, byKey = false) {
     if (button === "previous" && isWaiting(ctx)) {
       return false;
@@ -175,7 +184,7 @@ export function createEngine(options: Config = {}): Driver {
     }
 
     const { showButtons, disableButtons } = currentButtons();
-    const isShown = showButtons.includes(button) || (byKey && !!currentPopoverStep()?.popover?.navigateWithKeys);
+    const isShown = showButtons.includes(button) || (byKey && keysEnable(button));
 
     return isShown && !disableButtons.includes(button);
   }
@@ -208,7 +217,7 @@ export function createEngine(options: Config = {}): Driver {
     }
   }
 
-  function next() {
+  function next(): void | PromiseLike<unknown> {
     const { element, step } = popoverTarget(ctx);
     const onNextClick = resolveNextHook(ctx, step);
     if (!step || !onNextClick) {
@@ -220,7 +229,7 @@ export function createEngine(options: Config = {}): Driver {
       ctx.setState("__destroyReason", "done");
     }
 
-    onNextClick(element, step, ctx.getHookOpts());
+    return onNextClick(element, step, ctx.getHookOpts());
   }
 
   function previous() {

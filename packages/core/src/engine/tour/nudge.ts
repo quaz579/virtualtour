@@ -15,7 +15,7 @@ function nudgeDuration(): number {
 }
 
 function untilAnimationEnds(element: Element, onEnd: () => void) {
-  window.clearTimeout(timers.get(element));
+  globalThis.clearTimeout(timers.get(element));
 
   const finish = () => {
     globalThis.clearTimeout(timers.get(element));
@@ -34,7 +34,7 @@ function untilAnimationEnds(element: Element, onEnd: () => void) {
   };
 
   element.addEventListener("animationend", onAnimationEnd);
-  timers.set(element, window.setTimeout(finish, nudgeDuration() + 150));
+  timers.set(element, globalThis.setTimeout(finish, nudgeDuration() + 150));
 }
 
 function restartAnimation(wrapper: HTMLElement) {

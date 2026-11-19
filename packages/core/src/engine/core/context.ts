@@ -129,7 +129,7 @@ function createStateStore() {
 
 export type TourActions = {
   drive: (stepIndex?: number, hasWaitedForElement?: boolean) => void;
-  next: () => void;
+  next: () => void | PromiseLike<unknown>;
   pressNext: () => void;
   previous: () => void;
   moveNext: () => void;

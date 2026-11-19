@@ -5,6 +5,7 @@ import type { NormalizedTourConfig } from "./config";
 import { createEngine } from "./engine/driver";
 import type { Config, DriveStep, Driver, EnginePresenter, PopoverPatch, RepositionInfo as EngineRepositionInfo } from "./engine/driver";
 import { isDummyElement } from "./engine/core/utils";
+import { isActionStep } from "./engine/tour/step";
 import type { PopoverDOM } from "./engine/popover/popover";
 import { TourEnvironmentError, TourNavigationError } from "./errors";
 import { Emitter } from "./events";
@@ -379,8 +380,11 @@ function requireDocument(method: string): void {
   }
 }
 
-function reportFailure(promise: Promise<unknown>): void {
-  promise.catch((error: unknown) => console.error("[virtualtour] Navigation failed:", error));
+function reportFailure(promise: Promise<unknown>): Promise<void> {
+  return promise.then(
+    () => {},
+    (error: unknown) => console.error("[virtualtour] Navigation failed:", error)
+  );
 }
 
 function guarded(label: string, fn: () => void): void {
@@ -667,11 +671,11 @@ function ensureEngine(tour: Tour): Driver {
     },
     onNextClick(_element: Element | undefined, driveStep: DriveStep) {
       if (!owns() || isLeavingAfterCompletion(driveStep)) return;
-      reportFailure(tour.forward());
+      return reportFailure(tour.forward());
     },
     onDoneClick(_element: Element | undefined, driveStep: DriveStep) {
       if (!owns() || isLeavingAfterCompletion(driveStep)) return;
-      reportFailure(tour.forward());
+      return reportFailure(tour.forward());
     },
     onPrevClick() {
       if (owns()) reportFailure(tour.backward());
@@ -727,8 +731,9 @@ function attachAdvance(tour: Tour, step: TourStep): void {
       if (state.advance === advance) state.advance = null;
       advance.timer = null;
       if (!state.running || state.ending || state.steps[state.currentIndex] !== step) return;
-      if (step.config.instruction !== undefined) {
-        if (state.steps[state.anchorIndex] === step) state.engine?.advance();
+      const engine = state.engine;
+      if (engine && isActionStep(engine.getState("__activation")?.step)) {
+        if (state.steps[state.anchorIndex] === step) engine.advance();
         return;
       }
       reportFailure(
@@ -989,7 +994,6 @@ function beginRun(tour: Tour): boolean {
   const other = tours.current;
   if (other && other !== tour) terminate(other, "replaced");
   state.running = true;
-  state.completing = null;
   state.runId += 1;
   state.abort = new AbortController();
   state.currentIndex = -1;
@@ -1006,7 +1010,6 @@ function endRun(tour: Tour, kind: EndKind, hookStep?: TourStep): void {
   const state = internalsOf(tour);
   if (!state.running || state.ending) return;
   state.ending = true;
-  state.completing = null;
   detachAdvance(state);
   const endStep = hookStep ?? state.steps[state.currentIndex] ?? state.steps[state.anchorIndex];
   for (const step of state.steps) leaveStep(tour, step);

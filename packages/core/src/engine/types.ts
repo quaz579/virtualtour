@@ -32,7 +32,7 @@ export type EnginePresenter = {
   afterReposition?(info: RepositionInfo): void;
 };
 
-export type DriverHook = (element: Element | undefined, step: DriveStep, opts: HookOpts) => void;
+export type DriverHook = (element: Element | undefined, step: DriveStep, opts: HookOpts) => void | PromiseLike<unknown>;
 
 export type AdvanceOnOpts = HookOpts & {
   event: Event;
@@ -243,8 +243,8 @@ export type Popover = {
 
   instruction?: string | undefined;
 
-  /** Let the arrow keys move between steps even when `showButtons` hides Next and Back. They still honor `disableButtons` and the action-step gate. */
-  navigateWithKeys?: boolean;
+  /** Let the arrow keys move between steps even when `showButtons` hides Next and Back. An object enables each direction on its own. They still honor `disableButtons` and the action-step gate. */
+  navigateWithKeys?: boolean | { next?: boolean; prev?: boolean };
 
   onPopoverRender?: (popover: PopoverDOM, opts: HookOpts) => void;
 

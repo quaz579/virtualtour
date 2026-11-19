@@ -30,7 +30,7 @@ const tour = createTour({
 | `StepConfig.advanceDelay` | Milliseconds a completed step stays on screen in its done state before the tour moves on. Default 0. |
 | `StepConfig.autoAdvance.strict` | With `autoAdvance` and no `selector`: block every other mouse gesture on the target and nudge. `{ event: "click", strict: true }` rejects a right-click. |
 
-A selector `autoAdvance` on an action step completes the step the same way, so `advanceDelay` and the events below apply.
+A selector `autoAdvance` on an action step completes the step the same way, so `advanceDelay` and the events below apply. A click that arrives while the step still waits for its target completes nothing; the step listens again once it is shown.
 
 ## Tour methods
 
@@ -64,8 +64,8 @@ During `advanceDelay` the engine's own Next button does nothing, while `Tour.for
 
 ## Arrow keys with custom buttons
 
-Custom `buttons` hide the engine's Next and Back. When a button has a `forward` or `backward` action, the arrow keys keep navigating anyway, through the same routes as the buttons: eligibility (`shouldShow`, `whenMissing`) applies, and an unmet action step nudges. `keys: { arrows: false }` turns them off. A step whose buttons only exit, finish or run a function keeps the arrows still. A step with only a `forward` or only a `backward` button gets both arrow directions.
+Custom `buttons` hide the engine's Next and Back. When a button has a `forward` or `backward` action, the arrow keys keep navigating anyway, through the same routes as the buttons: eligibility (`shouldShow`, `whenMissing`) applies, and an unmet action step nudges. `keys: { arrows: false }` turns them off. A step whose buttons only exit, finish or run a function keeps the arrows still. ArrowRight needs a `forward` button and ArrowLeft needs a `backward` button, so a step with only one of them leaves the other arrow still.
 
 ## Engine hooks
 
-The engine itself gains `Config.onStepCompleted` and `Config.onNudge`, plus `Driver.nudgeIfGated()` and the per-step `popover.navigateWithKeys`. The public layer wires them to the members above.
+The engine itself gains `Config.onStepCompleted` and `Config.onNudge`, plus `Driver.nudgeIfGated()` and the per-step `popover.navigateWithKeys` (`true`, or `{ next, prev }` for one direction). The public layer wires them to the members above.

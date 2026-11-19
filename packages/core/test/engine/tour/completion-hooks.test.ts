@@ -162,7 +162,76 @@ describe("Driver.nudgeIfGated", () => {
   });
 });
 
+describe("refreshing the popover after a completion that does not move", () => {
+  const done = () => popoverEl()?.classList.contains("vt-popover-instruction-done");
+
+  it("refreshes at once when the move is not asynchronous", async () => {
+    const onNextClick = vi.fn();
+    const onStepCompleted = vi.fn(() => d.updatePopover({ description: "Done" }));
+    const d = await start({ onNextClick, onStepCompleted, steps: [actionStep(), SAMPLE_STEPS[1]] });
+    d.advance();
+    expect(onNextClick).toHaveBeenCalledTimes(1);
+    expect(done()).toBe(false);
+    d.advance();
+    expect(onNextClick).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes when the move settles without leaving the step", async () => {
+    let settle!: () => void;
+    const onNextClick = vi.fn(() => new Promise<void>((resolve) => (settle = resolve)));
+    const d = await start({ onNextClick, steps: [actionStep(), SAMPLE_STEPS[1]] });
+    d.advance();
+    expect(d.getActiveIndex()).toBe(0);
+    d.nudgeIfGated();
+    expect(popoverEl()?.classList.contains("vt-popover-nudge")).toBe(false);
+    d.updatePopover({ description: "Done" });
+    expect(done()).toBe(true);
+    settle();
+    await tick(10);
+    expect(done()).toBe(false);
+    expect(d.nudgeIfGated()).toBe(true);
+  });
+
+  it("refreshes on the advanceDelay timer path too", async () => {
+    const onNextClick = vi.fn();
+    const d = await start({ onNextClick, steps: [actionStep({ advanceDelay: 20 }), SAMPLE_STEPS[1]] });
+    d.advance();
+    expect(done()).toBe(true);
+    await tick(60);
+    expect(onNextClick).toHaveBeenCalledTimes(1);
+    expect(done()).toBe(false);
+  });
+
+  it("a throwing onStepCompleted does not stop the move", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const d = await start({
+      onStepCompleted: () => {
+        throw new Error("boom");
+      },
+      steps: [actionStep(), SAMPLE_STEPS[1]],
+    });
+    d.advance();
+    expect(d.getActiveIndex()).toBe(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+});
+
 describe("Popover.navigateWithKeys", () => {
+  it("an object enables each arrow on its own", async () => {
+    const steps = (): DriveStep[] => [
+      { ...SAMPLE_STEPS[0], popover: { title: "A", showButtons: [], navigateWithKeys: { prev: true } } },
+      { ...SAMPLE_STEPS[1], popover: { title: "B", showButtons: [], navigateWithKeys: { prev: true } } },
+    ];
+    const d = await start({ steps: steps() });
+    pressKey("ArrowRight");
+    expect(d.getActiveIndex()).toBe(0);
+    d.moveNext();
+    await nextFrame();
+    pressKey("ArrowLeft");
+    expect(d.getActiveIndex()).toBe(0);
+  });
+
   const hidden = (extra: DriveStep["popover"] = {}): DriveStep[] => [
     { ...SAMPLE_STEPS[0], popover: { title: "A", showButtons: [], ...extra } },
     { ...SAMPLE_STEPS[1], popover: { title: "B", showButtons: [], ...extra } },

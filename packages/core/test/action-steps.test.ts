@@ -309,6 +309,91 @@ describe("completion bookkeeping across navigation and runs", () => {
     await vi.waitFor(() => expect(currentId(tour)).toBe("c"));
   });
 
+  it("a delay-free completion followed by a slow next step: Next during the move neither nudges nor reopens the step", async () => {
+    const onNudge = vi.fn();
+    const tour = await show({
+      presenter: (t) => Object.assign(new DialogPresenter(t, "vt"), { onNudge }),
+      steps: [act("a"), plain("b", { prepare: () => new Promise<void>((r) => setTimeout(r, 150)) }), plain("c")],
+    });
+    tour.advance();
+    await tick(30);
+    expect(currentId(tour)).toBe("a");
+    const done = () => !!engineOf(tour)!.getState("__activation")?.done;
+    expect(done()).toBe(true);
+    nextButton().click();
+    pressKey("ArrowRight");
+    await tick(20);
+    expect(onNudge).not.toHaveBeenCalled();
+    expect(nudged()).toBe(false);
+    expect(done()).toBe(true);
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    expect(onNudge).not.toHaveBeenCalled();
+  });
+
+  it("returning to a completed step lets its next completion count even while a move is queued", async () => {
+    let calls = 0;
+    const slowSecond = (): Promise<void> => (++calls < 2 ? Promise.resolve() : new Promise((resolve) => setTimeout(resolve, 150)));
+    const tour = make({ steps: [plain("p", { prepare: slowSecond }), selectorStep("a"), plain("b")] });
+    const completed = vi.fn();
+    tour.on("step-completed", completed);
+    await tour.start();
+    await tour.forward();
+    document.querySelector<HTMLElement>("#u")!.click();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    await tour.backward();
+    expect(currentId(tour)).toBe("a");
+    const moving = tour.backward();
+    await tick(20);
+    expect(currentId(tour)).toBe("a");
+    engineOf(tour)!.advance();
+    await moving;
+    expect(completed).toHaveBeenCalledTimes(2);
+  });
+
+  it("a completion hook that throws still moves on and reports the error", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const tour = await show({ steps: [act("a"), plain("b")] });
+    engineOf(tour)!.setConfig({
+      ...engineOf(tour)!.getConfig(),
+      onStepCompleted: () => {
+        throw new Error("boom");
+      },
+    });
+    tour.advance();
+    await vi.waitFor(() => expect(currentId(tour)).toBe("b"));
+    expect(error).toHaveBeenCalledWith("[virtualtour] onStepCompleted threw:", expect.any(Error));
+  });
+
+  it("a selector click while the step waits for its target completes nothing, and the next click after it appears does", async () => {
+    const tour = make({
+      steps: [
+        act("a", { target: "#late", autoAdvance: { event: "click", selector: "#u" }, waitFor: 2000 }),
+        plain("b"),
+      ],
+    });
+    const completed = vi.fn();
+    tour.on("step-completed", completed);
+    const started = tour.start();
+    await tick(30);
+    document.querySelector<HTMLElement>("#u")!.click();
+    await tick(30);
+    expect(completed).not.toHaveBeenCalled();
+    const late = document.createElement("div");
+    late.id = "late";
+    document.body.append(late);
+    await started;
+    document.querySelector<HTMLElement>("#u")!.click();
+    await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
+  });
+
+  it("an empty instruction is not an action step: a selector advance moves forward", async () => {
+    const tour = make({ steps: [plain("a", { instruction: "", advanceDelay: 400, autoAdvance: { event: "click", selector: "#u" } }), plain("b")] });
+    await tour.start();
+    document.querySelector<HTMLElement>("#u")!.click();
+    await tick(100);
+    expect(currentId(tour)).toBe("b");
+  });
+
   it("a selector advance that the engine cannot complete does not fall back to a plain forward", async () => {
     const tour = make({ steps: [selectorStep("a"), plain("b")] });
     const completed = vi.fn();
@@ -435,7 +520,33 @@ describe("custom forward buttons and the gate", () => {
 });
 
 describe("arrow keys with custom buttons", () => {
-  const buttons: StepConfig["buttons"] = [{ text: "Go on", action: "forward" }];
+  const buttons: StepConfig["buttons"] = [
+    { text: "Back", action: "backward" },
+    { text: "Go on", action: "forward" },
+  ];
+
+  it("a backward button alone leaves ArrowRight still so a custom choice is not skipped", async () => {
+    const accept = vi.fn();
+    const tour = await show({
+      steps: [plain("a"), plain("b", { buttons: [{ text: "Back", action: "backward" }, { text: "Accept", action: accept }] }), plain("c")],
+    });
+    await tour.forward();
+    pressKey("ArrowRight");
+    await tick(30);
+    expect(currentId(tour)).toBe("b");
+    pressKey("ArrowLeft");
+    await vi.waitFor(() => expect(currentId(tour)).toBe("a"));
+  });
+
+  it("a forward button alone leaves ArrowLeft still", async () => {
+    const tour = await show({ steps: [plain("a"), plain("b", { buttons: [{ text: "Go", action: "forward" }] }), plain("c")] });
+    await tour.forward();
+    pressKey("ArrowLeft");
+    await tick(30);
+    expect(currentId(tour)).toBe("b");
+    pressKey("ArrowRight");
+    await vi.waitFor(() => expect(currentId(tour)).toBe("c"));
+  });
 
   it("ArrowRight and ArrowLeft navigate although the engine's Next and Back are hidden", async () => {
     const tour = await show({ steps: [plain("a", { buttons }), plain("b", { buttons }), plain("c", { buttons })] });

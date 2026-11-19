@@ -364,8 +364,11 @@ describe("03-schemas section 1.4 rows (step fields)", () => {
   });
 
   it("row buttons: arrow keys keep navigating while the buttons hide Next and Back", () => {
-    expect(compileOne({ buttons: [{ text: "Go", action: "forward" }] }).step.popover?.navigateWithKeys).toBe(true);
-    expect(compileOne({ buttons: [{ text: "Back", action: "backward" }] }).step.popover?.navigateWithKeys).toBe(true);
+    expect(compileOne({ buttons: [{ text: "Go", action: "forward" }] }).step.popover?.navigateWithKeys).toEqual({ next: true, prev: false });
+    expect(compileOne({ buttons: [{ text: "Back", action: "backward" }] }).step.popover?.navigateWithKeys).toEqual({ next: false, prev: true });
+    expect(
+      compileOne({ buttons: [{ text: "Back", action: "backward" }, { text: "Go", action: "forward" }] }).step.popover?.navigateWithKeys
+    ).toEqual({ next: true, prev: true });
     expect(compileOne({}).step.popover?.navigateWithKeys).toBeUndefined();
     expect(compileOne({ buttons: [{ text: "End", action: "finish" }, { text: "Run", action: () => {} }] }).step.popover?.navigateWithKeys).toBeUndefined();
   });
