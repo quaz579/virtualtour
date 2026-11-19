@@ -42,16 +42,13 @@ test("the popover is between the two positions part way through a glide and land
   expect(between(mid.left, first.left, last.left)).toBe(true);
   expect(between(mid.top, first.top, last.top)).toBe(true);
   expect(last.left).toBeGreaterThan(first.left + 100);
-  await page.evaluate(() => (window as unknown as { vtOff: { glide(): void } }).vtOff.glide());
-  const control = await page.evaluate(async () => {
-    const w = window as unknown as Win;
-    await w.vtTour.forward();
-    const r = document.querySelector<HTMLElement>(".vt-popover")!.getBoundingClientRect();
-    return { left: r.left, top: r.top };
+  const computed = await page.locator(".vt-popover").evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { left: Number.parseFloat(style.left), top: Number.parseFloat(style.top), transform: style.transform };
   });
-  const settled = await rect(page);
-  expect(settled.left).toBeCloseTo(control.left, 0);
-  expect(settled.top).toBeCloseTo(control.top, 0);
+  expect(Math.abs(last.left - computed.left)).toBeLessThanOrEqual(1);
+  expect(Math.abs(last.top - computed.top)).toBeLessThanOrEqual(1);
+  expect(["none", "matrix(1, 0, 0, 1, 0, 0)"]).toContain(computed.transform);
 });
 
 test("without glide the new popover is at its final position immediately", async ({ page }) => {

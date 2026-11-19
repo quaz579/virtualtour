@@ -34,6 +34,15 @@
         left: 380px;
         top: 700px;
       }
+      .vt-popover[data-vt-progress-bar]::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 3px;
+        width: calc(var(--vt-progress-index) / var(--vt-progress-total) * 100%);
+        background: #2563eb;
+      }
     </style>
   </head>
   <body>

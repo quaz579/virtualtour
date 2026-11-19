@@ -52,7 +52,7 @@ export function uninstall(): void {
 
 export async function start(config: TourConfig): Promise<Tour> {
   document.body.innerHTML = `<button id="a">A</button><button id="b">B</button><button id="c">C</button>`;
-  const tour = createTour({ animate: true, duration: 0, ...config });
+  const tour = createTour({ animate: true, ...config });
   created.push(tour);
   await tour.start();
   return tour;

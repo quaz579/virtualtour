@@ -9,18 +9,16 @@ declare global {
   }
 }
 
-async function main(): Promise<void> {
+function main(): void {
   const params = new URLSearchParams(location.search);
-  if (!params.has("plain")) await import("../../packages/core/src/styles/theme.css");
-
   const tour = createTour({
     id: "motion-demo",
     animate: params.get("animate") !== "0",
     counter: (index, total) => `Step ${index} of ${total}`,
     steps: [
-      { id: "one", title: "One", body: "First.", target: "#m1" },
-      { id: "two", title: "Two", body: "Second.", target: "#m2" },
-      { id: "three", title: "Three", body: "Third.", target: "#m3" },
+      { id: "one", title: "One", body: "First.", target: "#m1", placement: { side: "right" } },
+      { id: "two", title: "Two", body: "Second.", target: "#m2", placement: { side: "left" } },
+      { id: "three", title: "Three", body: "Third.", target: "#m3", placement: { side: "top" } },
     ],
   });
   window.vtTour = tour;
@@ -36,4 +34,4 @@ async function main(): Promise<void> {
   document.documentElement.dataset["ready"] = "true";
 }
 
-void main();
+main();
