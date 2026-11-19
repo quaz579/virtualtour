@@ -153,6 +153,14 @@ describe("custom footer buttons", () => {
     expect(tour.isRunning()).toBe(true);
   });
 
+  it("an unknown action warns and does nothing", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = await show({ steps: [{ title: "One", buttons: [{ text: "go", action: "next" as never }] }] });
+    buttons()[0]!.click();
+    expect(warn).toHaveBeenCalled();
+    expect(tour.isRunning()).toBe(true);
+  });
+
   it("a disabled button does not run its action", async () => {
     const action = vi.fn();
     await show({ steps: [{ title: "One", buttons: [{ text: "go", disabled: true, action }] }] });

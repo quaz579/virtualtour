@@ -452,7 +452,13 @@ function refreshShownStep(step: TourStep): void {
   const state = internalsOf(tour);
   const shown = shownPopover(tour, step);
   if (!shown) return;
-  const out = evaluatedStep(tour, state.steps.indexOf(step));
+  let out: EngineStep;
+  try {
+    out = evaluatedStep(tour, state.steps.indexOf(step));
+  } catch (error) {
+    console.error("[virtualtour] configure could not re-evaluate the step; the popover is unchanged:", error);
+    return;
+  }
   const popover = out.popover ?? {};
   const patch: PopoverPatch = {
     title: popover.title ?? "",
@@ -463,7 +469,7 @@ function refreshShownStep(step: TourStep): void {
   };
   if (popover.showButtons !== undefined) patch.showButtons = popover.showButtons;
   if (popover.instruction !== undefined) patch.instruction = popover.instruction;
-  const text = counterText(tour);
+  const text = typeof state.normalized.counter === "function" ? popover.progressText : counterText(tour);
   if (text !== undefined) patch.progressText = text;
   const { engine, mounted } = shown;
   const content = out.data?.["vtBody"] as Element | DocumentFragment | undefined;

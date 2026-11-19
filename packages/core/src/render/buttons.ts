@@ -70,14 +70,16 @@ function run(tour: Tour, step: TourStep, config: ButtonConfig): void {
     }
     return;
   }
-  const result =
-    action === "forward"
-      ? tour.forward()
-      : action === "backward"
-        ? tour.backward()
-        : action === "exit"
-          ? tour.exit()
-          : tour.finish();
+  let result: unknown;
+  try {
+    if (action === "forward") result = tour.forward();
+    else if (action === "backward") result = tour.backward();
+    else if (action === "exit") result = tour.exit();
+    else if (action === "finish") tour.finish();
+    else console.warn(`[virtualtour] Button action ${JSON.stringify(action)} is not one of forward, backward, exit, finish or a function; nothing happened.`);
+  } catch (error) {
+    fail(error);
+  }
   if (result instanceof Promise) result.catch(fail);
 }
 

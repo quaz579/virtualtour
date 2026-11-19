@@ -179,6 +179,24 @@ describe("TourStep.configure", () => {
     expect(step.config.buttons![0]!.text).toBe("y");
   });
 
+  it("a throwing title function in configure is reported and the popover stays as it was", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const tour = make({ steps: [{ id: "a", title: "A" }] });
+    await tour.start();
+    expect(() => tour.stepById("a")!.configure({ title: () => { throw new Error("x"); } })).not.toThrow();
+    expect(error).toHaveBeenCalled();
+    expect(text(".vt-popover-title")).toBe("A");
+  });
+
+  it("calls a function counter once per configure", async () => {
+    const counter = vi.fn((i: number, n: number) => `${i}/${n}`);
+    const tour = make({ counter, steps: [{ id: "a", title: "A" }] });
+    await tour.start();
+    counter.mockClear();
+    tour.stepById("a")!.configure({ title: "B" });
+    expect(counter).toHaveBeenCalledTimes(1);
+  });
+
   it("a configure on a hidden step does not touch the screen", async () => {
     const tour = make({ steps: [{ id: "a", title: "A" }, { id: "b", title: "B" }] });
     await tour.start();
