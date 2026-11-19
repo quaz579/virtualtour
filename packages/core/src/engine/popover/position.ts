@@ -15,6 +15,7 @@ export type PositionOptions = {
   centered?: boolean;
   hasTarget?: boolean;
   sideAttribute?: string;
+  strategy?: "fixed" | "absolute";
 };
 
 type PopoverDimensions = {
@@ -96,11 +97,31 @@ function alignAlongEdge(
   return Math.max(Math.min(start, boundsEnd - popoverSize - arrowSize), boundsStart + arrowSize);
 }
 
+function toAbsolute(wrapper: HTMLElement, width: number, height: number) {
+  const { style } = wrapper;
+  const left = style.left === "auto" ? window.innerWidth - parseFloat(style.right) - width : parseFloat(style.left);
+  const top = style.top === "auto" ? window.innerHeight - parseFloat(style.bottom) - height : parseFloat(style.top);
+
+  wrapper.setAttribute(fixedNames.attr.strategy, "absolute");
+  style.right = "auto";
+  style.bottom = "auto";
+  style.left = "0px";
+  style.top = "0px";
+
+  const origin = wrapper.getBoundingClientRect();
+  style.left = `${left - origin.left}px`;
+  style.top = `${top - origin.top}px`;
+}
+
 export function repositionPopover(popover: PopoverDOM, anchor: Element, options: PositionOptions): RepositionInfo {
   const { align: requiredAlignment, side } = options;
   const requiredSide: Placement = options.centered ? "over" : side;
   const popoverPadding = options.padding;
   const { style, classList } = popover.wrapper;
+  if (popover.wrapper.hasAttribute(fixedNames.attr.strategy)) {
+    popover.wrapper.removeAttribute(fixedNames.attr.strategy);
+    style.left = style.top = style.right = style.bottom = "";
+  }
 
   const popoverDimensions = getPopoverDimensions(popover, options.offset);
   const popoverArrowDimensions = popover.arrow.getBoundingClientRect();
@@ -221,6 +242,10 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     place("right");
 
     popoverRenderedSide = "bottom";
+  }
+
+  if (options.strategy === "absolute" && requiredSide !== "over") {
+    toAbsolute(popover.wrapper, popoverDimensions.realWidth, popoverDimensions.realHeight);
   }
 
   renderPopoverArrow(popover, noneOptimal ? "over" : popoverRenderedSide, requiredAlignment, elementDimensions);
