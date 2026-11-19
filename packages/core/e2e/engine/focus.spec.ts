@@ -152,6 +152,24 @@ test.describe("Tab", () => {
     expect(await tabThrough(page, "Shift+Tab", 1)).toEqual(["editable"]);
   });
 
+  test("skips hidden and inert controls inside the highlighted element", async ({ page }) => {
+    await page.evaluate(() => {
+      document.querySelector("#slot")!.innerHTML = `
+        <div id="panel">
+          <button id="shown-a" type="button">A</button>
+          <button id="hidden" type="button" style="visibility: hidden">Hidden</button>
+          <div id="inert-wrap" inert><button id="inert-btn" type="button">Inert</button></div>
+          <button id="shown-b" type="button">B</button>
+        </div>
+      `;
+    });
+    await start(page, { steps: [{ element: "#panel", popover: { title: "Panel", showButtons: [] } }] });
+
+    await page.locator("#shown-a").focus();
+    expect(await tabThrough(page, "Tab", 3)).toEqual(["shown-b", "shown-a", "shown-b"]);
+    expect(await tabThrough(page, "Shift+Tab", 2)).toEqual(["shown-a", "shown-b"]);
+  });
+
   test("visits each element once when the highlighted element sits inside an allowed one", async ({ page }) => {
     await page.evaluate(() => {
       document.querySelector("#slot")!.innerHTML = `

@@ -317,6 +317,22 @@ describe("onElementMissing: removed", () => {
     expect(onElementMissing).toHaveBeenCalledTimes(1);
   });
 
+  it("does not report a removal at once when the grace period is too long for a timer", async () => {
+    const target = append("target");
+    const onElementMissing = vi.fn();
+    createDriver({
+      animate: false,
+      onElementMissing,
+      steps: [{ element: "#target", waitForElement: 3e9, popover: { title: "Target" } }, ...steps().slice(1)],
+    }).drive();
+    await nextFrame();
+
+    target.remove();
+    await tick(40);
+
+    expect(onElementMissing).not.toHaveBeenCalled();
+  });
+
   it("does nothing without a hook", async () => {
     const target = append("target");
     const d = createDriver({ animate: false, steps: steps() });
