@@ -16,13 +16,13 @@ const builtToday = [
   "dist/avatar.d.ts",
   "dist/motion.d.ts",
   "dist/base.css",
+  "dist/theme.css",
   "dist/thumbtack/pack.json",
   "dist/thumbtack/sheet.png",
   "dist/thumbtack/LICENSE-ART.md",
 ];
 
 const notBuiltYet = [
-  "./dist/theme.css",
   "./dist/avatar.css",
 ];
 
@@ -69,6 +69,17 @@ describe("build output", () => {
     expect(bareSpecifiers('import { a } from "lodash";\nimport "./x.js";')).toEqual(["lodash"]);
     expect(bareSpecifiers('export * from "left-pad";')).toEqual(["left-pad"]);
     expect(bareSpecifiers('const m = import("react");')).toEqual(["react"]);
+  });
+
+  it("ships theme.css unchanged and base.css with the marker", () => {
+    expect(readFileSync(join(dist, "theme.css"), "utf8")).toBe(readFileSync(join(root, "src/styles/theme.css"), "utf8"));
+    expect(readFileSync(join(dist, "base.css"), "utf8")).toMatch(/--vt-base:\s*1/);
+  });
+
+  it("keeps the missing-stylesheet warning out of the production build only", () => {
+    const warning = "base.css is not loaded";
+    expect(readFileSync(join(dist, "index.js"), "utf8")).not.toContain(warning);
+    expect(readFileSync(join(dist, "index.dev.js"), "utf8")).toContain(warning);
   });
 
   it("has no dependencies key", () => {

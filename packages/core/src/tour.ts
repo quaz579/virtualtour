@@ -51,6 +51,7 @@ interface TourInternals {
   advance: { step: TourStep; detach: () => void; timer: ReturnType<typeof setTimeout> | null } | null;
   waits: Map<TourStep, AbortController>;
   warnedUnnamed: boolean;
+  warnedStyles: boolean;
   completing: TourStep | null;
   progress: ProgressTracker | null;
   starting: boolean;
@@ -103,6 +104,7 @@ export class Tour {
       advance: null,
       waits: new Map(),
       warnedUnnamed: false,
+      warnedStyles: false,
       completing: null,
       progress: normalized.progress ? new ProgressTracker(normalized.id, normalized.progress) : null,
       starting: false,
@@ -459,10 +461,6 @@ function leaveStep(tour: Tour, step: TourStep): void {
   emitStep(step, "hidden", { step });
 }
 
-function bubbleRectOf(wrapper: HTMLElement): DOMRect | undefined {
-  return wrapper.querySelector<HTMLElement>(".vt-bubble")?.getBoundingClientRect();
-}
-
 function enginePresenterFor(tour: Tour, presenter: Presenter): EnginePresenter {
   const state = internalsOf(tour);
   const adapter: EnginePresenter = {
@@ -482,7 +480,10 @@ function enginePresenterFor(tour: Tour, presenter: Presenter): EnginePresenter {
         side: info.side,
         align: info.align,
         wrapperRect: info.wrapperRect,
-        bubbleRect: bubbleRectOf(mounted.popover.wrapper) ?? info.wrapperRect,
+        bubbleRect: info.bubbleRect,
+        physicalAlign: info.physicalAlign,
+        rtl: info.rtl,
+        pinned: info.pinned,
         targetRect: info.targetRect,
       };
       guarded("presenter.afterReposition", () => presenter.afterReposition(mounted.popover, mounted.step, full));
@@ -498,6 +499,14 @@ function warnIfUnnamed(tour: Tour, step: TourStep, out: EngineStep): void {
   if (out.popover?.title || out.popover?.label) return;
   state.warnedUnnamed = true;
   console.warn(`[virtualtour] Step "${step.id}" has no title and no label, so its dialog has no accessible name. Set one of them.`);
+}
+
+function warnIfStylesMissing(tour: Tour, wrapper: HTMLElement): void {
+  const state = internalsOf(tour);
+  if (state.warnedStyles || (typeof __DEV__ !== "undefined" && !__DEV__)) return;
+  state.warnedStyles = true;
+  if (getComputedStyle(wrapper).getPropertyValue("--vt-base").trim() !== "") return;
+  console.warn("[virtualtour] base.css is not loaded, so the popover is unstyled. Import `virtualtour/base.css`.");
 }
 
 function evaluatedStep(tour: Tour, index: number): EngineStep {
@@ -633,6 +642,7 @@ function ensureEngine(tour: Tour): Driver {
       }
       state.completing = null;
       markShown(step, popover.wrapper, element ?? null);
+      warnIfStylesMissing(tour, popover.wrapper);
       const index = state.steps.indexOf(step);
       state.currentIndex = index;
       state.anchorIndex = index;

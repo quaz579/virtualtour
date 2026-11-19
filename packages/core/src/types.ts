@@ -232,6 +232,12 @@ export interface ProgressInfo {
 export interface RepositionInfo {
   side: Side | "over";
   align: Align;
+  /** `align` resolved to a physical edge: `left`/`right` for `top` and `bottom` sides (swapped in right-to-left layouts), `top`/`bottom` for `left` and `right`, and `center` for `over` or a centered alignment. */
+  physicalAlign: "left" | "right" | "top" | "bottom" | "center";
+  /** Whether the anchor is laid out right to left. */
+  rtl: boolean;
+  /** True when no side fit: the popover is pinned to the bottom centre of the viewport and its arrow is hidden, whatever `side` says. */
+  pinned: boolean;
   wrapperRect: DOMRect;
   /** The visible bubble; equals `wrapperRect` for layouts without one. */
   bubbleRect: DOMRect;

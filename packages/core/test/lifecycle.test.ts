@@ -988,11 +988,9 @@ describe("presenter wiring", () => {
   it("fills bubbleRect from the .vt-bubble element when the layout has one", async () => {
     const marker = new DOMRect(1, 2, 3, 4);
     const { presenter, rects } = spyPresenter({
+      layout: "speaker",
       mount: (popover: PopoverDOM) => {
-        const bubble = document.createElement("div");
-        bubble.className = "vt-bubble";
-        bubble.getBoundingClientRect = () => marker;
-        popover.wrapper.append(bubble);
+        popover.bubble!.getBoundingClientRect = () => marker;
       },
     });
     const tour = make({ presenter: () => presenter });

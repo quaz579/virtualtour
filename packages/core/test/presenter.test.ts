@@ -37,6 +37,9 @@ describe("DialogPresenter", () => {
       presenter.afterReposition(popover, step, {
         side: "bottom",
         align: "center",
+        physicalAlign: "center",
+        rtl: false,
+        pinned: false,
         wrapperRect: new DOMRect(),
         bubbleRect: new DOMRect(),
         targetRect: null,

@@ -1,5 +1,5 @@
 import type { Alignment, Placement, PlacementRequest, PopoverDOM, Side } from "./popover";
-import type { RepositionInfo } from "../types";
+import type { PhysicalAlign, RepositionInfo } from "../types";
 import { fixedNames } from "../core/namespace";
 import { isRtl } from "../core/env";
 import { clipRectByScrollParents } from "../core/utils";
@@ -365,12 +365,33 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     popover.wrapper.setAttribute(options.sideAttribute, renderedSide);
   }
 
+  const wrapperRect = popover.wrapper.getBoundingClientRect();
+
   return {
     side: renderedSide,
     align: renderedAlignment,
-    wrapperRect: popover.wrapper.getBoundingClientRect(),
+    physicalAlign: physicalAlignment(fellBack ? "over" : renderedSide, renderedAlignment, rtl),
+    pinned: fellBack,
+    rtl,
+    wrapperRect,
+    bubbleRect: popover.bubble ? popover.bubble.getBoundingClientRect() : wrapperRect,
     targetRect: options.hasTarget ? elementDimensions : null,
   };
+}
+
+function physicalAlignment(side: Placement, alignment: Alignment, rtl: boolean): PhysicalAlign {
+  if (side === "over" || alignment === "center") {
+    return "center";
+  }
+  if (side === "left" || side === "right") {
+    return alignment === "start" ? "top" : "bottom";
+  }
+
+  return (alignment === "start") !== rtl ? "left" : "right";
+}
+
+export function arrowClassName(popover: PopoverDOM): string {
+  return popover.bubble ? `${popoverNames.arrow} ${fixedNames.bubbleTail}` : popoverNames.arrow;
 }
 
 export const ARROW_SIZE = 10;
@@ -452,7 +473,7 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, render: ArrowR
   const { elementRect, showArrow, minInset } = render;
   const popoverArrow = popover.arrow;
 
-  popoverArrow.className = popoverNames.arrow;
+  popoverArrow.className = arrowClassName(popover);
   popoverArrow.style.top = "";
   popoverArrow.style.right = "";
   popoverArrow.style.bottom = "";
@@ -463,7 +484,8 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, render: ArrowR
     return;
   }
 
-  const popoverRect = popover.wrapper.getBoundingClientRect();
+  const wrapperRect = popover.wrapper.getBoundingClientRect();
+  const popoverRect = popover.bubble ? popover.bubble.getBoundingClientRect() : wrapperRect;
   const arrowSize = popoverArrow.getBoundingClientRect().width || ARROW_SIZE;
 
   const arrowSide = resolveArrowSide(side, elementRect, popoverRect);
@@ -480,7 +502,7 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, render: ArrowR
       arrowSize,
       minInset
     );
-    popoverArrow.style.top = `${calculateArrowOffset(target, popoverRect.height, arrowSize, minInset)}px`;
+    popoverArrow.style.top = `${calculateArrowOffset(target, popoverRect.height, arrowSize, minInset) + popoverRect.top - wrapperRect.top}px`;
   } else {
     const target = calculateArrowTarget(
       elementRect.left,
@@ -491,6 +513,23 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, render: ArrowR
       arrowSize,
       minInset
     );
-    popoverArrow.style.left = `${calculateArrowOffset(target, popoverRect.width, arrowSize, minInset)}px`;
+    popoverArrow.style.left = `${calculateArrowOffset(target, popoverRect.width, arrowSize, minInset) + popoverRect.left - wrapperRect.left}px`;
+  }
+
+  if (popover.bubble) {
+    anchorArrowToBubble(popoverArrow, arrowSide, popoverRect, wrapperRect);
+  }
+}
+
+function anchorArrowToBubble(arrow: HTMLElement, side: Side, bubble: DOMRect, wrapper: DOMRect) {
+  const { style } = arrow;
+  if (side === "left") {
+    style.left = `${bubble.right - wrapper.left}px`;
+  } else if (side === "right") {
+    style.right = `${wrapper.right - bubble.left}px`;
+  } else if (side === "top") {
+    style.top = `${bubble.bottom - wrapper.top}px`;
+  } else {
+    style.bottom = `${wrapper.bottom - bubble.top}px`;
   }
 }

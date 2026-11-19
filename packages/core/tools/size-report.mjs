@@ -13,6 +13,7 @@ const entries = [
   { name: "avatar", file: "dist/avatar.js", target: 6 },
   { name: "motion", file: "dist/motion.js", target: 2 },
   { name: "base.css", file: "dist/base.css", target: null },
+  { name: "theme.css", file: "dist/theme.css", target: null },
 ];
 
 function kb(bytes) {
