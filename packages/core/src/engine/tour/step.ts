@@ -175,6 +175,7 @@ function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): P
     centered: step.popover?.side === "over" || isDummyElement(element),
     hasTarget: !isDummyElement(element),
     sideAttribute: ctx.names.sideAttr,
+    strategy: step.popover?.strategy === "absolute" ? "absolute" : "fixed",
   };
 }
 
