@@ -115,3 +115,42 @@ test("an animated tour moves the cutout and shows the next popover", async ({ pa
   await expect.poll(() => topElementAt(page, target.x + 5, target.y + 5)).toBe("two");
   expect(await page.evaluate(() => document.body.classList.contains("vt-fade"))).toBe(true);
 });
+
+test.describe("reduced motion", () => {
+  test.use({ reducedMotion: "reduce" });
+
+  test("jumps the cutout to the next element with no fade and no running animations", async ({ page }) => {
+    await page.evaluate(() => {
+      window.tour = window.__engine.createEngine({
+        duration: 2000,
+        stagePadding: 0,
+        steps: [
+          { element: "#intro", popover: { title: "Intro" } },
+          { element: "#three", popover: { title: "Three" } },
+        ],
+      });
+      window.tour.drive();
+    });
+    await expect(title(page)).toHaveText("Intro");
+    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+    expect(await page.evaluate(() => document.body.classList.contains("vt-simple"))).toBe(true);
+    expect(await page.evaluate(() => document.body.classList.contains("vt-fade"))).toBe(false);
+
+    await nextButton(page).click();
+    await expect(title(page)).toHaveText("Three");
+    const to = await box(page.locator("#three"));
+    const y = await page.evaluate(() => {
+      const d = document.querySelector(".vt-overlay path")!.getAttribute("d")!;
+      return Number(d.split("Z")[1].match(/M\S+,(\S+) /)![1]);
+    });
+    expect(Math.abs(y - to.y)).toBeLessThan(2);
+    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+  });
+
+  test("the media query alone stops the fade when an integrator forces the fade attribute", async ({ page }) => {
+    await start(page);
+    await page.evaluate(() => document.body.setAttribute("data-vt-fade", ""));
+    await expect(overlay(page)).toHaveCSS("animation-name", "none");
+    await expect(popover(page)).toHaveCSS("animation-name", "none");
+  });
+});

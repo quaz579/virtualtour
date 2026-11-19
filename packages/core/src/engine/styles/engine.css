@@ -37,12 +37,14 @@
   }
 }
 
-[data-vt-fade] [data-vt-overlay] {
-  animation: animate-fade-in var(--vt-animation-duration, 400ms) ease-in-out;
-}
+@media (prefers-reduced-motion: no-preference) {
+  [data-vt-fade] [data-vt-overlay] {
+    animation: animate-fade-in var(--vt-animation-duration, 400ms) ease-in-out;
+  }
 
-[data-vt-fade] .vt-popover {
-  animation: animate-fade-in var(--vt-animation-duration, 400ms);
+  [data-vt-fade] .vt-popover {
+    animation: animate-fade-in var(--vt-animation-duration, 400ms);
+  }
 }
 
 [data-vt-target-parent][data-vt-lock-scroll] {
@@ -98,21 +100,17 @@
   animation: vt-nudge-shake var(--vt-nudge-duration, 500ms) ease-in-out;
 }
 
-[data-vt-fade] .vt-popover.vt-popover-nudge {
-  animation:
-    animate-fade-in var(--vt-animation-duration, 400ms),
-    vt-nudge-shake var(--vt-nudge-duration, 500ms) ease-in-out;
+@media (prefers-reduced-motion: no-preference) {
+  [data-vt-fade] .vt-popover.vt-popover-nudge {
+    animation:
+      animate-fade-in var(--vt-animation-duration, 400ms),
+      vt-nudge-shake var(--vt-nudge-duration, 500ms) ease-in-out;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .vt-popover.vt-popover-nudge {
     animation: vt-nudge-flash var(--vt-nudge-duration, 500ms) ease-out;
-  }
-
-  [data-vt-fade] .vt-popover.vt-popover-nudge {
-    animation:
-      animate-fade-in var(--vt-animation-duration, 400ms),
-      vt-nudge-flash var(--vt-nudge-duration, 500ms) ease-out;
   }
 }
 

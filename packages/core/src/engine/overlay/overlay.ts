@@ -75,7 +75,7 @@ export function refreshOverlay(ctx: Context) {
 
 function mountOverlay(ctx: Context, stagePosition: StageDefinition, element: Element) {
   const overlaySvg = createOverlaySvg(ctx, stagePosition);
-  placeInLayer(overlaySvg, layerFor(element), true);
+  placeInLayer(overlaySvg, layerFor(ctx, element, "overlay"), true);
 
   onDriverClick(overlaySvg, e => {
     const target = e.target as SVGElement;
@@ -95,8 +95,8 @@ function preventFadeInReplay(overlaySvg: SVGSVGElement) {
   overlaySvg.style.animation = "none";
 }
 
-function placeOverlay(overlaySvg: SVGSVGElement, element: Element) {
-  const hasMovedLayer = moveToLayerOf(overlaySvg, element, true);
+function placeOverlay(ctx: Context, overlaySvg: SVGSVGElement, element: Element) {
+  const hasMovedLayer = moveToLayerOf(ctx, overlaySvg, element, "overlay");
   if (hasMovedLayer) {
     preventFadeInReplay(overlaySvg);
   }
@@ -121,7 +121,7 @@ function renderOverlay(ctx: Context, stagePosition: StageDefinition, element: El
   }
 
   const overlaySvg = ctx.getState("__overlaySvg") ?? mountOverlay(ctx, stagePosition, element);
-  placeOverlay(overlaySvg, element);
+  placeOverlay(ctx, overlaySvg, element);
 
   const pathElement = overlaySvg.firstElementChild as SVGPathElement | null;
   if (pathElement?.tagName !== "path") {
