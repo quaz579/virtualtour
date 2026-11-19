@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour late target fixture</title>
+    <script>
+      (function () {
+        var live = new Set();
+        var Native = window.MutationObserver;
+        window.vtLiveObservers = function () {
+          return live.size;
+        };
+        window.MutationObserver = class extends Native {
+          observe(target, options) {
+            live.add(this);
+            return super.observe(target, options);
+          }
+          disconnect() {
+            live.delete(this);
+            return super.disconnect();
+          }
+        };
+      })();
+    </script>
+    <style>
+      body {
+        margin: 0;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      .demo-container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-container">
+      <h1>VirtualTour late target fixture</h1>
+      <button id="start" type="button">Start tour</button>
+      <div id="slot"></div>
+    </div>
+
+    <script type="module" src="./late-target.ts"></script>
+  </body>
+</html>

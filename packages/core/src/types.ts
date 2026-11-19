@@ -140,6 +140,10 @@ export interface StepConfig {
   reveal?: boolean | "smooth" | ScrollIntoViewOptions;
   /** Replaces the built-in scrolling. */
   revealWith?: (target: Element) => void | Promise<void>;
+  /**
+   * Moves on when the user does something. With `selector`, the first matching `event` in the document advances the tour after
+   * the page's own handlers ran, and `strict` is ignored. Without `selector`, the engine advances on `event` at the target.
+   */
   autoAdvance?: { event: string | string[]; selector?: string; strict?: boolean };
   /** Action step: what the user must do before moving on. */
   instruction?: string | (() => string);

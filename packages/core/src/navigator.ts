@@ -18,13 +18,59 @@ export function selectIndex(
   direction: "forward" | "backward",
   isEligible: (index: number) => boolean = () => true
 ): NavigationOutcome {
-  if (direction === "forward") {
-    for (let i = from + 1; i < total; i += 1) if (isEligible(i)) return { kind: "show", index: i };
-    return { kind: "finish" };
-  }
-  if (from <= 0) return { kind: "stay" };
-  for (let i = Math.min(from, total) - 1; i >= 0; i -= 1) if (isEligible(i)) return { kind: "show", index: i };
-  return { kind: "exit" };
+  return selectEligible(total, from, direction, isEligible) as NavigationOutcome;
+}
+
+/**
+ * Same selection as {@link selectIndex} with an eligibility check that may be asynchronous. Candidates are tried one
+ * after another in the direction of travel. The outcome is returned synchronously unless a check returned a promise.
+ */
+export function selectEligible(
+  total: number,
+  from: number,
+  direction: "forward" | "backward",
+  isEligible: (index: number) => boolean | Promise<boolean>
+): NavigationOutcome | Promise<NavigationOutcome> {
+  const forward = direction === "forward";
+  if (!forward && from <= 0) return { kind: "stay" };
+  const delta = forward ? 1 : -1;
+  const scan = (first: number): NavigationOutcome | Promise<NavigationOutcome> => {
+    for (let i = first; forward ? i < total : i >= 0; i += delta) {
+      const verdict = isEligible(i);
+      if (typeof verdict === "boolean") {
+        if (verdict) return { kind: "show", index: i };
+        continue;
+      }
+      return verdict.then((ok) => (ok ? { kind: "show", index: i } : scan(i + delta)));
+    }
+    return forward ? { kind: "finish" } : { kind: "exit" };
+  };
+  return scan(forward ? from + 1 : Math.min(from, total) - 1);
+}
+
+/** Applies `next` to a value that may still be a promise, staying synchronous when it is not. */
+export function chain<T, R>(value: T | Promise<T>, next: (value: T) => R | Promise<R>): R | Promise<R> {
+  return value instanceof Promise ? value.then(next) : next(value);
+}
+
+/** Resolves with `work`'s result, or `undefined` as soon as `signal` aborts; a failing `work` rejects. */
+export function raceAbort<T>(work: Promise<T> | T, signal: AbortSignal | null): Promise<T | undefined> {
+  if (!signal) return Promise.resolve(work);
+  if (signal.aborted) return Promise.resolve(undefined);
+  return new Promise<T | undefined>((resolve, reject) => {
+    const onAbort = (): void => resolve(undefined);
+    signal.addEventListener("abort", onAbort, { once: true });
+    Promise.resolve(work).then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      }
+    );
+  });
 }
 
 /** Resolves a step reference (index, id or instance) to an index; throws {@link TourNavigationError} when it matches none. */

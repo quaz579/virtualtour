@@ -1,5 +1,6 @@
 import { DEFAULT_DIM, DEFAULT_POSITION, DEFAULT_STEP_CONFIG, mergeStepConfig } from "./config";
 import type { NormalizedTourConfig } from "./config";
+import { lookupTarget } from "./step";
 import type { Config, DriveStep, Popover } from "./engine/types";
 import type { AllowedButtons, Alignment, Side } from "./engine/popover/popover";
 import { resolveBody, resolveText, resolveTitle } from "./render/content";
@@ -67,7 +68,7 @@ const elementFns = new WeakMap<TourStepLike, () => Element>();
 function targetFn(step: TourStepLike): () => Element {
   let fn = elementFns.get(step);
   if (!fn) {
-    fn = () => step.resolvedTarget as Element;
+    fn = () => lookupTarget(step) as Element;
     elementFns.set(step, fn);
   }
   return fn;
