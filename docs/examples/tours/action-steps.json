@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../packages/core/schemas/tour.v1.schema.json",
+  "format": "virtualtour-tour/1",
+  "id": "first-save",
+  "name": "Save your first document",
+  "dim": true,
+  "exitPrompt": false,
+  "counter": true,
+  "steps": [
+    {
+      "id": "intro",
+      "title": "Let's save a document",
+      "body": "You will do the clicking.",
+      "placement": "auto"
+    },
+    {
+      "id": "save",
+      "target": "#save",
+      "title": "Save your work",
+      "instruction": "Click <b>Save</b>.",
+      "placement": { "side": "auto" },
+      "position": { "offset": 12, "arrow": false },
+      "spotlight": { "padding": 8, "radius": { "topLeft": 4, "bottomRight": 16 }, "targetInteractive": "hover-only" },
+      "reveal": { "behavior": "smooth", "block": "center", "inline": "nearest" },
+      "autoAdvance": { "event": ["click", "keydown"], "strict": true },
+      "advanceDelay": 600
+    },
+    {
+      "id": "done",
+      "title": "Saved",
+      "closeButton": { "label": "Finish", "attrs": { "data-test": "finish" } },
+      "placement": { "side": "over" }
+    }
+  ]
+}

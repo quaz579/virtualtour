@@ -3,96 +3,336 @@
   "$id": "virtualtour-avatar-pack.v1.schema.json",
   "title": "VirtualTour avatar pack v1",
   "type": "object",
-  "required": ["format", "name", "sheet", "animations", "roles"],
+  "required": [
+    "format",
+    "name",
+    "sheet",
+    "animations",
+    "roles"
+  ],
   "additionalProperties": false,
   "properties": {
-    "format": { "const": "virtualtour-avatar/1" },
-    "name": { "type": "string", "minLength": 1 },
-    "version": { "type": "string" },
+    "format": {
+      "title": "Format",
+      "description": "Pack format and major version. Loaders refuse any other value.",
+      "const": "virtualtour-avatar/1"
+    },
+    "name": {
+      "title": "Name",
+      "description": "Display name of the character. Must not be empty.",
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "title": "Version",
+      "description": "The pack's own version string.",
+      "type": "string"
+    },
     "sheet": {
+      "title": "Sprite sheet",
+      "description": "The image holding every frame and how to cut it up.",
       "type": "object",
-      "required": ["src", "frameWidth", "frameHeight"],
+      "required": [
+        "src",
+        "frameWidth",
+        "frameHeight"
+      ],
       "additionalProperties": false,
       "properties": {
-        "src": { "type": "string", "minLength": 1 },
-        "frameWidth": { "type": "number", "exclusiveMinimum": 0 },
-        "frameHeight": { "type": "number", "exclusiveMinimum": 0 },
-        "columns": { "type": "integer", "minimum": 1 },
-        "scale": { "type": "number", "exclusiveMinimum": 0 },
-        "pixelArt": { "type": "boolean" }
+        "src": {
+          "title": "Image source",
+          "description": "URL of the sprite sheet, relative to the URL of the pack JSON.",
+          "type": "string",
+          "minLength": 1
+        },
+        "frameWidth": {
+          "title": "Frame width",
+          "description": "Width of one frame in CSS pixels.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "frameHeight": {
+          "title": "Frame height",
+          "description": "Height of one frame in CSS pixels.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "columns": {
+          "title": "Columns",
+          "description": "Number of frame columns in the image. Informational.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "scale": {
+          "title": "Scale",
+          "description": "Device pixels per CSS pixel in the image. Default 1.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "pixelArt": {
+          "title": "Pixel art",
+          "description": "Render the image with nearest-neighbor scaling.",
+          "type": "boolean"
+        }
       }
     },
     "animations": {
+      "title": "Animations",
+      "description": "Named animations, at least one. Each lists its frames in order.",
       "type": "object",
       "minProperties": 1,
-      "additionalProperties": { "$ref": "#/$defs/animation" }
+      "additionalProperties": {
+        "$ref": "#/$defs/animation"
+      }
     },
     "roles": {
+      "title": "Roles",
+      "description": "Which animation plays for each role. Roles left out fall back to rest.",
       "type": "object",
-      "required": ["rest"],
+      "required": [
+        "rest"
+      ],
       "additionalProperties": false,
       "properties": {
-        "rest": { "type": "string" },
-        "idle": { "oneOf": [{ "type": "string" }, { "type": "array", "minItems": 1, "items": { "type": "string" } }] },
-        "greet": { "type": "string" },
-        "think": { "type": "string" },
-        "celebrate": { "type": "string" },
-        "exit": { "type": "string" },
-        "alert": { "type": "string" },
+        "rest": {
+          "title": "Rest",
+          "description": "Animation shown when nothing else plays. Must name an existing animation.",
+          "type": "string"
+        },
+        "idle": {
+          "title": "Idle",
+          "description": "Animation or animations played at random while waiting.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "greet": {
+          "title": "Greet",
+          "description": "Animation played on the first step when it has no target; also the fallback when pointing has no animation.",
+          "type": "string"
+        },
+        "think": {
+          "title": "Think",
+          "description": "Animation played while a step waits for its target.",
+          "type": "string"
+        },
+        "celebrate": {
+          "title": "Celebrate",
+          "description": "Animation played on the last step when the tour finishes.",
+          "type": "string"
+        },
+        "exit": {
+          "title": "Exit",
+          "description": "Animation played when the tour is dismissed.",
+          "type": "string"
+        },
+        "alert": {
+          "title": "Alert",
+          "description": "Animation played when the popover nudges.",
+          "type": "string"
+        },
         "point": {
+          "title": "Point",
+          "description": "Animations used to point toward the target, by direction.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "left": { "type": "string" },
-            "right": { "type": "string" },
-            "up": { "type": "string" },
-            "down": { "type": "string" },
-            "any": { "type": "string" }
+            "left": {
+              "title": "Point left",
+              "description": "Animation for a target to the left.",
+              "type": "string"
+            },
+            "right": {
+              "title": "Point right",
+              "description": "Animation for a target to the right.",
+              "type": "string"
+            },
+            "up": {
+              "title": "Point up",
+              "description": "Animation for a target above.",
+              "type": "string"
+            },
+            "down": {
+              "title": "Point down",
+              "description": "Animation for a target below.",
+              "type": "string"
+            },
+            "any": {
+              "title": "Point any",
+              "description": "Animation used when no directional one is given.",
+              "type": "string"
+            }
           }
         }
       }
     },
     "bubble": {
+      "title": "Bubble hints",
+      "description": "Presentation hints for the speech bubble.",
       "type": "object",
       "properties": {
-        "dock": { "enum": ["start", "end", "auto"] },
-        "gap": { "type": "number" }
+        "dock": {
+          "title": "Dock",
+          "description": "Default side of the avatar the bubble docks to.",
+          "enum": [
+            "start",
+            "end",
+            "auto"
+          ]
+        },
+        "gap": {
+          "title": "Gap",
+          "description": "Pixels between the bubble and the avatar.",
+          "type": "number"
+        }
       }
     },
     "license": {
+      "title": "License",
+      "description": "License and credit for the artwork.",
       "type": "object",
       "properties": {
-        "name": { "type": "string" },
-        "url": { "type": "string" },
-        "attribution": { "type": "string" }
+        "name": {
+          "title": "License name",
+          "description": "SPDX identifier or name of the license.",
+          "type": "string"
+        },
+        "url": {
+          "title": "License URL",
+          "description": "Address of the license text.",
+          "type": "string"
+        },
+        "attribution": {
+          "title": "Attribution",
+          "description": "Credit line to show where the license requires one.",
+          "type": "string"
+        }
       }
     }
   },
   "$defs": {
     "frame": {
+      "title": "Frame",
+      "description": "One frame of an animation, placed on the grid or by pixel offset.",
       "type": "object",
-      "required": ["ms"],
+      "required": [
+        "ms"
+      ],
       "properties": {
-        "col": { "type": "integer", "minimum": 0 },
-        "row": { "type": "integer", "minimum": 0 },
-        "x": { "type": "number", "minimum": 0 },
-        "y": { "type": "number", "minimum": 0 },
-        "ms": { "type": "number", "exclusiveMinimum": 0 }
+        "col": {
+          "title": "Column",
+          "description": "Zero-based grid column. Use with row.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "row": {
+          "title": "Row",
+          "description": "Zero-based grid row. Use with col.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "x": {
+          "title": "X offset",
+          "description": "Pixel offset from the left of the image, divided by the sheet scale. Use with y.",
+          "type": "number",
+          "minimum": 0
+        },
+        "y": {
+          "title": "Y offset",
+          "description": "Pixel offset from the top of the image, divided by the sheet scale. Use with x.",
+          "type": "number",
+          "minimum": 0
+        },
+        "ms": {
+          "title": "Duration",
+          "description": "How long the frame shows, in milliseconds.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
       },
       "oneOf": [
-        { "required": ["col", "row"], "not": { "anyOf": [{ "required": ["x"] }, { "required": ["y"] }] } },
-        { "required": ["x", "y"], "not": { "anyOf": [{ "required": ["col"] }, { "required": ["row"] }] } }
+        {
+          "required": [
+            "col",
+            "row"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "x"
+                ]
+              },
+              {
+                "required": [
+                  "y"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "x",
+            "y"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "col"
+                ]
+              },
+              {
+                "required": [
+                  "row"
+                ]
+              }
+            ]
+          }
+        }
       ]
     },
     "animation": {
+      "title": "Animation",
+      "description": "A named sequence of frames.",
       "type": "object",
-      "required": ["frames"],
+      "required": [
+        "frames"
+      ],
       "additionalProperties": false,
       "properties": {
-        "frames": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/frame" } },
-        "loop": { "type": "boolean" },
-        "still": { "type": "integer", "minimum": 0 }
+        "frames": {
+          "title": "Frames",
+          "description": "The frames in play order, at least one.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/frame"
+          }
+        },
+        "loop": {
+          "title": "Loop",
+          "description": "Whether the animation repeats.",
+          "type": "boolean"
+        },
+        "still": {
+          "title": "Still frame",
+          "description": "Index of the frame shown under reduced motion and after a non-looping animation ends.",
+          "type": "integer",
+          "minimum": 0
+        }
       }
     }
-  }
+  },
+  "description": "A sprite-sheet avatar pack: one image, named frame animations, and the roles a tour presenter plays them for."
 }
