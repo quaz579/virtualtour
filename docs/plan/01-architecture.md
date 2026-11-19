@@ -157,24 +157,29 @@ import 'virtualtour/base.css';
 const tour = createTour(config: TourConfig): Tour;
 ```
 
+`createTour` is also the default export. The other value exports are `Tour`, `TourStep`, `Emitter`,
+`TourEnvironmentError`, `TourNavigationError`, `parseTourJson`, `serializeTour`, `TourJsonError`,
+`localStorageStore` and `memoryStore`; every type in `types.ts` is exported as a type.
+
 ```ts
 interface TourConfig {
   id?: string;                    // T-4: defaults to `<name-slug>-<random>`
   name?: string;
   steps?: StepConfig[];           // T-2
   stepDefaults?: Partial<StepConfig>; // T-3, deep-merged key by key for nested groups
-  dim?: boolean | DimConfig;      // T-5 overlay; `true` = DimConfig defaults
+  dim?: boolean | DimConfig;      // T-5 overlay; `true` = DimConfig defaults; absent or `false` draws no overlay (engine `overlay: false`)
   mountIn?: Element | (() => Element);     // T-6 container for popovers; default: document.body or the open <dialog> (engine layerFor)
   dimMountIn?: Element | (() => Element);  // T-6 container for the overlay; default: same rule
   namespace?: string;             // T-10 prefix for classes and data attributes added to page elements (popover classes stay fixed); default 'vt'
   keys?: { escape?: boolean; arrows?: boolean }; // T-7, T-8; both default true
-  exitPrompt?: false | string | (() => boolean | Promise<boolean>); // T-9
+  exitPrompt?: false | string | (() => boolean | Promise<boolean>); // T-9; a string runs `window.confirm` (synchronous), a function may be async; a throwing function keeps the tour open
   counter?: boolean | ((index: number, total: number) => string); // V1X-counter
   labels?: { next?: string; back?: string; done?: string; close?: string };
-  progress?: ProgressConfig;      // V1X-persist
-  presenter?: PresenterFactory;   // extension point; the avatar entry sets this (§8)
-  sanitize?: (html: string) => string; // NF-security optional sanitizer hook
+  progress?: ProgressConfig;      // V1X-persist: `{ store, skipCompleted?, resume? }`, see §2.7
+  presenter?: PresenterFactory;   // extension point; the avatar entry sets this (§8); `(tour, context: PresenterContext) => Presenter`
+  sanitize?: (html: string) => string; // NF-security optional sanitizer hook; memoized, runs once per HTML string
   animate?: boolean;              // engine `animate`; default true; the engine itself turns motion off under reduced motion (F-14)
+  waitBudget?: number;            // ms one navigation may spend waiting for targets across consecutive `waitFor` steps; default 10000; 0 or Infinity removes the cap (§7.3)
 }
 
 interface DimConfig {
@@ -185,7 +190,7 @@ interface DimConfig {
   opacity?: number;              // default 0.7 (engine overlayOpacity)
   clickOutside?: 'none' | 'exit' | 'forward'; // default 'none' (H-1: dimmed area swallows clicks)
   pageScroll?: boolean;          // default true (engine allowScroll)
-  lockScrollParent?: boolean;    // default false (P-7); true keeps driver.js's behavior of freezing the target's scroll parent
+  lockScrollParent?: boolean;    // default false (P-7); true keeps driver.js's behavior of freezing the target's scroll parent (driver.js always froze it)
   clipToScrollParents?: boolean; // default true (H-5)
 }
 
@@ -196,9 +201,9 @@ interface CornerRadius { topLeft?: number; topRight?: number; bottomRight?: numb
 
 ```ts
 interface StepConfig {
-  id?: string;                                  // S-7
+  id?: string;                                  // S-7; defaults to `step-<n>` (n counts from 1 per tour, skipping ids in use); progress and resume need explicit ids
   title?: string | (() => string);              // S-1
-  body?: BodyContent;                           // S-2
+  body?: BodyContent;                           // S-2; an element or fragment is deep-cloned into the popover on each mount
   label?: string | (() => string);              // S-3 accessible name when no title
   closeButton?: boolean | { label?: string | (() => string); attrs?: Record<string, string> }; // S-4
   classes?: string | string[];                  // S-5
@@ -212,6 +217,7 @@ interface StepConfig {
   whenMissing?: 'center' | 'skip';              // A-5, default 'center'
   shouldShow?: () => boolean;                   // A-6
   prepare?: () => Promise<unknown> | unknown;   // A-7
+  hookTimeout?: number;                         // ms `prepare` and `revealWith` may each take; on timeout a warning is logged and the step shows; default 10000; 0 or Infinity waits forever (§7.3)
   spotlight?: SpotlightOptions;                 // H-2, H-3, H-7, H-8 per step
   reveal?: boolean | 'smooth' | ScrollIntoViewOptions; // SC-1; default true (engine rule: center, auto behavior)
   revealWith?: (target: Element) => void | Promise<void>; // SC-2, replaces the engine scroll
@@ -222,7 +228,7 @@ interface StepConfig {
   extensions?: Record<string, unknown>;         // namespaced bag for presenters (avatar uses `avatar`)
 }
 
-type BodyContent = string | string[] | Element | (() => string | string[] | Element);
+type BodyContent = string | string[] | Element | DocumentFragment | (() => string | string[] | Element | DocumentFragment);
 type TargetRef = string | Element | (() => string | Element | null | undefined);
 type Side = 'top' | 'bottom' | 'left' | 'right';
 type Align = 'start' | 'center' | 'end';
@@ -274,7 +280,7 @@ class Tour {
   start(): Promise<void>;                         // N-1
   forward(): Promise<void>;                       // N-2 next
   backward(): Promise<void>;                      // N-2 back
-  goTo(ref?: string | number): Promise<void>;     // N-3
+  goTo(ref?: string | number | TourStep): Promise<void>; // N-3 index, id or step; rejects with TourNavigationError for no match
   exit(): Promise<boolean>;                       // N-5 cancel; false if the prompt declined
   finish(): void;                                 // N-6 complete
   hideCurrent(): void;                            // N-7
@@ -282,10 +288,10 @@ class Tour {
   stepById(id: string): TourStep | undefined;     // N-8
   appendStep(def: StepConfig, at?: number | string): TourStep; // N-9
   dropStep(ref: string | TourStep): void;         // N-9
-  progressInfo(): { index: number; total: number }; // V1X-counter
+  progressInfo(): ProgressInfo;                   // V1X-counter: `{ index, total }`, index 1-based and 0 while no step is on screen
   refresh(): void;                                 // forces a reposition (engine refresh)
 
-  advance(): void;                                 // completes the current action step from code (engine advance)
+  advance(): void;                                 // completes the current action step from code (engine advance); on a step without an instruction it only moves forward
   nudge(message?: string): void;                   // shakes the popover and shows feedback (engine nudge); the avatar plays its `alert` role
 
   on / once / off                                  // typed, see §2.5
@@ -328,8 +334,8 @@ interface TourEvents {
   'step-shown': { tour: Tour; step: TourStep; previous: TourStep | null };
   'step-completed': { tour: Tour; step: TourStep };   // an action step's instruction was met (engine completion)
   finished: { tour: Tour };
-  exited: { tour: Tour; reason: 'close' | 'escape' | 'overlay' | 'api' | 'replaced' };
-  bypassed: { tour: Tour; reason: 'completed' };   // V1X-persist
+  exited: { tour: Tour; reason: ExitReason };      // 'close' | 'escape' | 'overlay' | 'api' | 'replaced'
+  bypassed: { tour: Tour; reason: 'completed' };   // V1X-persist: `start()` found a completed record and `skipCompleted` is on; the tour does not start
 }
 
 interface StepEvents {
@@ -362,11 +368,28 @@ relays events.
 
 ### 2.7 Persistence, 2.8 JSON tours, 2.9 Motion, 2.10 Avatar
 
-Unchanged in shape: `ProgressStore`, `ProgressRecord`, `ProgressConfig`, `localStorageStore`,
-`memoryStore` (`09-tasks-M4-extras.md` V-10; record shape in `03-schemas.md` §3);
-`parseTourJson`, `serializeTour`, `TourJsonError` (`03-schemas.md` §1); `glide`,
-`progressVars`; `withAvatar`, `loadAvatarPack`, `loadClassicAvatarPack`, `thumbtackPack`,
-`SpritePlayer` (`02-avatar.md`).
+```ts
+interface ProgressConfig { store: ProgressStore; skipCompleted?: boolean /* default true */; resume?: boolean /* default false */ }
+interface ProgressStore { load(tourId): Promise<ProgressRecord | null> | ProgressRecord | null; save(record): Promise<void> | void; clear(tourId): Promise<void> | void }
+interface ProgressRecord { tourId: string; lastStepId?: string; completedAt?: string; exitedAt?: string; updatedAt: string }
+```
+
+`localStorageStore` and `memoryStore` implement `ProgressStore` (`09-tasks-M4-extras.md` V-10; record
+shape in `03-schemas.md` §3). `lastStepId` is a step id, so resuming only matches across page
+loads when step ids are stable (explicit ids, not the generated `step-<n>`); a tour with `progress`
+and no tour `id` logs a development warning. Saves are fire-and-forget: the tour does not wait for
+`save`, each save runs after the previous one settles, and a failure logs a warning without
+stopping the tour.
+
+JSON (`03-schemas.md` §1): `parseTourJson`, `serializeTour`, `TourJsonError`. A document is
+`{ "format": "virtualtour-tour/1", "$schema"?: string, ... }`; `$schema` is accepted and dropped on
+parse, and `serializeTour` writes only `format`.
+
+Motion (`virtualtour/motion`): `glide`, `progressVars`.
+
+Avatar (`virtualtour/avatar`, `02-avatar.md`): `withAvatar`, `loadAvatarPack`, `loadClassicAvatarPack`,
+`thumbtackPack`, `normalizePack`, `validatePack`, `resolveRole`, `preloadSheet`, `SpritePlayer`,
+`SpeakerPresenter`, `IdleScheduler`, `AvatarPackError`.
 
 ---
 
@@ -489,8 +512,9 @@ Migration for driver.js users (`docs/migration/from-driverjs.md`, task V-14):
   `dim.padding`, `onHighlighted` → `step.on('shown')`, `moveNext` → `forward`, …).
 - A class-name table (`driver-popover` → `vt-popover`, `driver-active-element` →
   `vt-target`, …) that a search-and-replace can apply to custom CSS.
-- A list of what has no equivalent (`setSteps`, `highlight()` standalone, hints, checklists)
-  with the recommended replacement.
+- A list of what has no equivalent (`setConfig`/`getConfig`/`getState`, `highlight()` standalone, hints,
+  checklists, the `when` predicate of `advanceOn`, `onInteraction`) with the recommended replacement;
+  `setSteps` maps to `appendStep`/`dropStep` or a new tour.
 - The default `namespace` is `vt`; it is not a compatibility switch (the suffixes differ
   too), and the docs say so.
 
@@ -649,13 +673,17 @@ interface Presenter {
   update(popover: PopoverDOM, step: TourStep, parts: StepParts): void; // configure()
   beforeLeave(step: TourStep): void;                                   // onDeselected
   unmount(): void;                                                     // tour end
-  layout?: 'dialog' | 'speaker';                                        // which popover layout the engine builds (default 'dialog')
+  onNudge?(step: TourStep): void;                                      // popover nudged (gated Next, rejected gesture, tour.nudge())
+  onCompleted?(step: TourStep): void;                                  // action step instruction met, before the step's `completed` event
+  layout?: 'dialog' | 'speaker';                                        // which popover layout the engine builds (default 'dialog'); read after `ready()` settles
+  ready?(): Promise<void>;                                              // awaited once before the first step of a run is built; a rejection is ignored; the run stops waiting after 10 s
 }
 
 interface StepParts {       // built by render/parts.ts
   body?: HTMLElement;       // `.vt-body`, only for non-string bodies (string bodies use the engine description)
   footer?: HTMLElement;     // `.vt-footer` with custom buttons
   buttons: HTMLButtonElement[];
+  content?: Element | DocumentFragment; // what an element body resolved to; the presenter clones it into `.vt-body`
 }
 
 interface RepositionInfo {
@@ -667,7 +695,13 @@ interface RepositionInfo {
   wrapperRect: DOMRect; bubbleRect: DOMRect; targetRect: DOMRect | null;
 }
 
-type PresenterFactory = (tour: Tour) => Presenter;
+interface PresenterContext {
+  namespace: string;                      // the tour's `namespace`
+  sanitize?: (html: string) => string;    // the tour's memoized `sanitize`
+  fadeMs: number;                         // entrance fade: `dim.transitionMs`, or 0 when `animate` is off
+}
+
+type PresenterFactory = (tour: Tour, context: PresenterContext) => Presenter;
 ```
 
 The engine knows about presenters only through these calls (V-02): `renderPopover` calls
@@ -676,7 +710,9 @@ returns the rendered side and alignment and the engine passes them to `onReposit
 `createPopover(layout)` builds the speaker structure when asked (A-04). There is no
 MutationObserver on the wrapper and no "move the engine's parts into a bubble" step any more.
 
-`DialogPresenter` (default) adds `vt-dialog` to the wrapper and appends the layer parts.
+`DialogPresenter` (default) adds `vt-dialog` to the wrapper and appends the layer parts. `DialogPresenter` renders the custom
+footer through `syncFooter` (`render/buttons.ts`, internal and not exported from any entry), on
+`mount` and again on `update`; a presenter that supports `buttons` has to do the equivalent.
 `withAvatar(...)` returns a factory for `SpeakerPresenter` (`02-avatar.md`). The core bundle
 never imports avatar code.
 

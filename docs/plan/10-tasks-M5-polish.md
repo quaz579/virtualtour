@@ -13,41 +13,45 @@ docs; V-15 needs V-14 and A-08; V-16 is independent of V-14; V-17 is last.
 
 ## V-13 Framework wrappers: React and Vue
 
-**Goal.** Thin wrapper packages: a React provider plus hook, and a Vue plugin plus
-composable, each exposing a tour with reactive `isRunning` / `currentStep`.
+**Goal.** Thin wrapper packages: a React provider plus hook, and a Vue provider component
+plus composable, each exposing a tour with reactive `isRunning` / `currentStep`.
 
 **PRD requirements covered.** D-5.
 
 **Files in the fork.** `packages/react/` (`package.json` with `react` and the core
 package as peer dependencies, `src/index.tsx`, `vite.config.ts`, `test/*.test.tsx`),
 `packages/vue/` (`package.json` with `vue` and the core package as peer dependencies,
-`src/index.ts`, `vite.config.ts`, `test/*.test.ts`), `e2e/wrappers.spec.ts`,
-`demo/react/`, `demo/vue/`.
+`src/index.ts`, `vite.config.ts`, `test/*.test.ts`), `packages/core/e2e/wrappers.spec.ts`,
+`demo/fixtures/react.html` and `react.tsx`, `demo/fixtures/vue.html` and `vue.tsx`.
 
-**Public API added.**
+**Public API added.** The packages are `virtualtour-react` and `virtualtour-vue`.
 ```tsx
-// react
+// react: packages/react/src/index.tsx
 <TourProvider config={TourConfig} autoStart?: boolean>{children}</TourProvider>
 function useTour(): { tour: Tour; isRunning: boolean; currentStep: TourStep | null;
   start(): Promise<void>; forward(): Promise<void>; backward(): Promise<void>; exit(): Promise<boolean>; finish(): void }
-// vue
-app.use(tourPlugin, { config: TourConfig })
-provideTour(config: TourConfig): Tour
-function useTour(): { tour: Tour; isRunning: Ref<boolean>; currentStep: Ref<TourStep | null>; start; forward; backward; exit; finish }
+// vue: packages/vue/src/index.ts
+const TourProvider: component with props { config: TourConfig (required), autoStart?: boolean } and a default slot
+function useTour(): { tour: Tour; isRunning: Readonly<Ref<boolean>>; currentStep: Readonly<Ref<TourStep | null>>;
+  start(): Promise<void>; forward(): Promise<void>; backward(): Promise<void>; exit(): Promise<boolean>; finish(): void }
 ```
+There is no Vue plugin and no `provideTour`: the Vue wrapper is a provider component that
+calls `provide` itself, and `useTour()` injects its value (it throws outside a provider).
+Both packages also export the `UseTourResult` type, and React exports `TourProviderProps`.
 
-Implementation: the React provider creates the tour once (`useMemo` keyed on an explicit
-`key`), subscribes with `useSyncExternalStore` to `started`, `step-shown`, `finished`,
-`exited`, `deactivated`, and exits a running tour without prompt on unmount; strict-mode
-double effects must not start the tour twice (guard on `isRunning()`). The config object is
-not watched for deep changes (documented; pass a new `key`). SSR: children only; the tour is
-created in an effect. Vue: subscriptions in `onMounted`, removed in `onUnmounted`; the tour
-exits on unmount of the providing component; no DOM in setup.
+Implementation: the React provider creates the tour once in `useState`'s initializer,
+subscribes with `useSyncExternalStore` to `started`, `step-shown`, `finished`, `exited`,
+`deactivated`, and exits a running tour without a prompt on unmount; strict-mode double
+effects must not start the tour twice (guard on `isRunning()`). The config object is not
+watched for deep changes (documented; pass a new `key`). SSR: the tour is created during the
+first render, which is safe on the server, and starts only in an effect. Vue: the tour is
+created in `setup`, subscriptions are added in `onMounted` and removed in `onBeforeUnmount`,
+and the tour exits on unmount of the provider; no DOM access in setup.
 
 **Tests/proof required.**
 - Unit: hook/ref values update on events; unmount exits a running tour; `autoStart` starts
   in an effect, once under strict mode; `renderToString` does not throw for both.
-- e2e (3 browsers): the React and Vue demo pages start a tour from a button, show the
+- e2e (3 browsers): the React and Vue fixture pages start a tour from a button, show the
   current step id from framework state, and navigate with hook calls.
 
 **Acceptance criteria.** Neither package has `dependencies`; peers are `react >= 18` /

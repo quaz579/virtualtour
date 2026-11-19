@@ -1,38 +1,28 @@
 # Custom counter and progress bar
 
-Two ways to show where the user is in a tour without writing your own popover.
+Three ways to show where the user is in a tour without writing your own popover: counter text, your own element, and a progress bar drawn from CSS variables.
 
 ## Counter text
 
-Set `counter` to `true` for "2 of 5", or to a function that returns the text. The function receives the 1-based index and the step count, skipped steps included.
+Set `counter` to `true` for "2 of 5", or to a function that returns the text. The function receives the 1-based index and the step count, skipped steps included. The text goes through the tour's `sanitize` hook when it contains markup.
 
-```ts
-createTour({ counter: (index, total) => `Step ${index} of ${total}`, steps });
-```
+<<< @/snippets/cookbook/counter-text.ts
 
 ## Your own element
 
-Read `tour.progressInfo()` from `step-shown` to drive anything on the page.
+`tour.progressInfo()` returns `{ index, total }`. Read it from `step-shown` to drive anything on the page. `index` is 0 while no step is on screen.
 
-```ts
-tour.on("step-shown", () => {
-  const { index, total } = tour.progressInfo();
-  badge.textContent = `${index}/${total}`;
-});
-```
+<<< @/snippets/cookbook/counter-badge.ts
 
 ## Progress bar from CSS variables
 
-`progressVars` sets `--vt-progress-index` and `--vt-progress-total` on the popover each time a step is shown. It returns a function that stops updating and removes them. The theme stylesheet draws a bar from the two variables on a popover that has `data-vt-progress-bar`; any other stylesheet can use them too.
+`progressVars(tour)` from `virtualtour/motion` sets `--vt-progress-index` and `--vt-progress-total` on the popover each time a step is shown, and right away when a step is already on screen. It returns a function that stops updating and removes the variables.
 
-```ts
-import { progressVars } from "virtualtour/motion";
+The theme stylesheet draws a bar from the two variables, but only on a popover that has the `data-vt-progress-bar` attribute. `progressVars` does not set that attribute. You set it, for example from `step-shown`:
 
-const off = progressVars(tour);
-tour.on("step-shown", ({ step }) => step.element?.setAttribute("data-vt-progress-bar", ""));
-```
+<<< @/snippets/cookbook/progress-bar.ts
 
-Any rule can use the variables:
+Any stylesheet can use the variables, with or without the attribute:
 
 ```css
 .vt-popover::after {
@@ -46,12 +36,12 @@ Any rule can use the variables:
 }
 ```
 
+The variables are written when a step is shown. If you call `appendStep` or `dropStep` while a step is on screen, the values on that popover are stale until the next step shows.
+
 ## Glide between steps
 
-`glide(tour, { durationMs, easing })` slides the popover from the previous step's position to the next instead of fading it in. It does nothing under reduced motion, when the tour has `animate: false`, between a centered and a targeted step, or between popover layouts. It returns a function that stops listening.
+`glide(tour, { durationMs, easing })` slides the popover from the previous step's position to the next instead of fading it in. The defaults are 250 ms and `cubic-bezier(.2,.8,.2,1)`. It does nothing under reduced motion, when the tour has `animate: false`, between a centered and a targeted step, or between popover layouts. It returns a function that stops listening and cancels a glide in progress.
 
-```ts
-import { glide } from "virtualtour/motion";
+<<< @/snippets/cookbook/glide.ts
 
-const off = glide(tour, { durationMs: 300 });
-```
+Call `glide` once per tour. Two calls on the same tour do not compose.
