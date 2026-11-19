@@ -11,9 +11,9 @@ export type PositionOptions = {
   offset: number;
   padding: number;
   boundaryPadding?: number;
-  boundary?: "viewport" | "scrollParents";
-  flip?: boolean;
-  shift?: boolean;
+  boundary?: "viewport" | "scrollParents" | undefined;
+  flip?: boolean | undefined;
+  shift?: boolean | undefined;
   hasTarget: boolean;
   sideAttribute?: string;
 };
@@ -39,7 +39,7 @@ function getPopoverDimensions(popover: PopoverDOM, offset: number): PopoverDimen
 
 type Bounds = { left: number; top: number; right: number; bottom: number };
 
-const FALLBACK_CHAIN: Side[] = ["left", "right", "top", "bottom"];
+const EXPLICIT_FALLBACK: Side[] = ["left", "right", "top", "bottom"];
 const AUTO_ORDER: Side[] = ["bottom", "top", "right", "left"];
 
 const insetBounds = (b: Bounds, by: number): Bounds => ({
@@ -49,10 +49,6 @@ const insetBounds = (b: Bounds, by: number): Bounds => ({
   bottom: b.bottom - by,
 });
 
-/**
- * Builds the viewport rect and the scroller-narrowed rect, both inset by the popover padding, from a single walk of
- * the anchor's scroll parents. An axis the scroller leaves too little room on keeps the viewport extent.
- */
 function resolveBounds(
   anchor: Element,
   options: PositionOptions,
@@ -101,11 +97,8 @@ function rawAlignedStart(
   if (alignment === "end") {
     return elementStart - popoverSize + elementSize + padding;
   }
-  if (alignment === "center") {
-    return elementStart + elementSize / 2 - popoverSize / 2;
-  }
 
-  return 0;
+  return elementStart + elementSize / 2 - popoverSize / 2;
 }
 
 function clampAlongEdge(start: number, popoverSize: number, boundsStart: number, boundsEnd: number): number {
@@ -126,18 +119,10 @@ function freeSpace(side: Side, element: Bounds, bounds: Bounds): number {
   return bounds.right - element.right;
 }
 
-function bestSide(element: Bounds, bounds: Bounds): Side {
-  let best: Side = AUTO_ORDER[0]!;
-  let bestSpace = freeSpace(best, element, bounds);
-  for (const candidate of AUTO_ORDER.slice(1)) {
-    const space = freeSpace(candidate, element, bounds);
-    if (space > bestSpace) {
-      best = candidate;
-      bestSpace = space;
-    }
-  }
-
-  return best;
+function sidesByFreeSpace(element: Bounds, bounds: Bounds): Side[] {
+  return AUTO_ORDER.map((side, index) => ({ side, index, space: freeSpace(side, element, bounds) }))
+    .sort((a, b) => b.space - a.space || a.index - b.index)
+    .map(entry => entry.side);
 }
 
 export function repositionPopover(popover: PopoverDOM, anchor: Element, options: PositionOptions): RepositionInfo {
@@ -174,11 +159,9 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     right: rightValue >= window.innerWidth - b.right,
   });
 
-  const requestedSide: Placement = centered
-    ? "over"
-    : options.side === "auto"
-      ? bestSide(elementDimensions, scroller)
-      : options.side;
+  const autoOrder = options.side === "auto" && !centered ? sidesByFreeSpace(elementDimensions, scroller) : undefined;
+  const fallbackChain = autoOrder ?? EXPLICIT_FALLBACK;
+  const requestedSide: Placement = centered ? "over" : (autoOrder?.[0] ?? (options.side as Placement));
 
   let bounds = scroller;
   let renderedSide: Placement = requestedSide;
@@ -188,7 +171,7 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     const fitScroller = fitsIn(scroller);
     const fitViewport = scroller === viewport ? fitScroller : fitsIn(viewport);
     const pick = (fit: Record<Side, boolean>): Side | undefined =>
-      fit[requestedSide] ? requestedSide : FALLBACK_CHAIN.find(candidate => fit[candidate]);
+      fit[requestedSide] ? requestedSide : fallbackChain.find(candidate => fit[candidate]);
 
     if (!flip) {
       bounds = fitScroller[requestedSide] || !fitViewport[requestedSide] ? scroller : viewport;
@@ -230,30 +213,22 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   };
 
   let renderedAlignment: Alignment = requiredAlignment;
-  const alignTop = () => {
-    const result = alignAlong(
+  const alignVertically = () =>
+    alignAlong(
       elementDimensions.top,
       elementDimensions.height,
       popoverDimensions.realHeight,
       margined.top,
       margined.bottom
     );
-    renderedAlignment = result.alignment;
-
-    return result.value;
-  };
-  const alignLeft = () => {
-    const result = alignAlong(
+  const alignHorizontally = () =>
+    alignAlong(
       elementDimensions.left,
       elementDimensions.width,
       popoverDimensions.realWidth,
       margined.left,
       margined.right
     );
-    renderedAlignment = result.alignment;
-
-    return result.value;
-  };
 
   const place = (edge: Side, value?: number) => {
     style[edge] = value === undefined ? "auto" : `${value}px`;
@@ -280,21 +255,29 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     }
   } else if (renderedSide === "left") {
     place("left", clampMax(leftValue, margined.right - popoverDimensions.realWidth));
-    place("top", alignTop());
+    const aligned = alignVertically();
+    renderedAlignment = aligned.alignment;
+    place("top", aligned.value);
     place("bottom");
     place("right");
   } else if (renderedSide === "right") {
     place("right", clampMax(rightValue, window.innerWidth - margined.left - popoverDimensions.realWidth));
-    place("top", alignTop());
+    const aligned = alignVertically();
+    renderedAlignment = aligned.alignment;
+    place("top", aligned.value);
     place("bottom");
     place("left");
   } else if (renderedSide === "top") {
     place("top", clampMax(topValue, margined.bottom - popoverDimensions.realHeight));
-    place("left", alignLeft());
+    const aligned = alignHorizontally();
+    renderedAlignment = aligned.alignment;
+    place("left", aligned.value);
     place("bottom");
     place("right");
   } else {
-    place("left", alignLeft());
+    const aligned = alignHorizontally();
+    renderedAlignment = aligned.alignment;
+    place("left", aligned.value);
     place("bottom", clampMax(bottomValue, window.innerHeight - margined.top - popoverDimensions.realHeight));
     place("top");
     place("right");

@@ -220,13 +220,11 @@ describe("03-schemas section 1.4 rows (step fields)", () => {
     expect(compileOne({ position: { viewportPadding: 8 } }).step.popoverPadding).toBe(8);
   });
 
-  it("row position.boundary: becomes popoverBoundary on the step and the base config", () => {
+  it("row position.boundary: becomes popoverBoundary on the step", () => {
     expect(compileOne({}).step.popoverBoundary).toBe("scrollParents");
-    expect(compileOne({}).base.popoverBoundary).toBe("scrollParents");
     expect(compileOne({ position: { boundary: "viewport" } }).step.popoverBoundary).toBe("viewport");
     const tour = { stepDefaults: { position: { boundary: "viewport" as const } } };
     const out = compileOne({}, tour);
-    expect(out.base.popoverBoundary).toBe("viewport");
     expect(out.step.popoverBoundary).toBe("viewport");
     expect(compileOne({ position: { boundary: "scrollParents" } }, tour).step.popoverBoundary).toBe("scrollParents");
   });

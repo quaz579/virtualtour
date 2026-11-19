@@ -177,7 +177,6 @@ export function compileTour(c: NormalizedTourConfig, steps: readonly TourStepLik
     allowScroll: dim.pageScroll,
     lockScrollParent: dim.lockScrollParent,
     clipStageToScrollParents: dim.clipToScrollParents,
-    popoverBoundary: c.stepDefaults.position?.boundary ?? DEFAULT_POSITION.boundary,
     allowEscape: c.keys.escape,
     allowArrowKeys: c.keys.arrows,
     showProgress: c.counter !== false,

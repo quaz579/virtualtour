@@ -162,18 +162,18 @@ export function markStandalone(step: DriveStep): DriveStep {
   return step;
 }
 
-function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): PositionOptions {
+function resolveStepPosition(ctx: Context, element: Element, step: DriveStep, popover: Popover): PositionOptions {
   const stagePadding = stepOption(ctx, step, "stagePadding") || 0;
 
   return {
-    side: step.popover?.side || "bottom",
-    align: step.popover?.align || "start",
+    side: popover.side || "bottom",
+    align: popover.align || "start",
     offset: stagePadding + (stepOption(ctx, step, "popoverOffset") || 0),
     padding: stagePadding,
     boundaryPadding: stepOption(ctx, step, "popoverPadding") || 0,
-    boundary: stepOption(ctx, step, "popoverBoundary") || "scrollParents",
-    flip: step.popover?.flip ?? ctx.getConfig("popoverFlip") ?? true,
-    shift: step.popover?.shift ?? ctx.getConfig("popoverShift") ?? true,
+    boundary: stepOption(ctx, step, "popoverBoundary"),
+    flip: popover.flip ?? ctx.getConfig("popoverFlip"),
+    shift: popover.shift ?? ctx.getConfig("popoverShift"),
     hasTarget: !isDummyElement(element),
     sideAttribute: ctx.names.sideAttr,
   };
@@ -254,7 +254,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
     step,
     onPositioned: info => notifyRepositioned(ctx, info),
 
-    position: resolveStepPosition(ctx, element, step),
+    position: resolveStepPosition(ctx, element, step, popover),
   };
 }
 
@@ -319,7 +319,7 @@ export function repositionStepPopover(ctx: Context, element: Element, step: Driv
     return;
   }
 
-  notifyRepositioned(ctx, repositionPopover(popover, element, resolveStepPosition(ctx, element, step)));
+  notifyRepositioned(ctx, repositionPopover(popover, element, resolveStepPosition(ctx, element, step, currentPopover(ctx, step).popover)));
 }
 
 function showPopoverWaiting(ctx: Context) {

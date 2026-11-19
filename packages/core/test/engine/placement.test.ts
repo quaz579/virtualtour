@@ -116,6 +116,19 @@ describe("side auto", () => {
     expect(popoverEl()!.getAttribute("data-vt-side")).toBe("top");
   });
 
+  it("falls back in descending free-space order when the roomiest side cannot hold the popover", () => {
+    const target = rect(150, 130, window.innerWidth - 300, window.innerHeight - 270);
+    const { info } = show(target, { side: "auto" });
+
+    expect(info.side).toBe("bottom");
+  });
+
+  it("keeps the fixed left, right, top, bottom chain for an explicit side", () => {
+    const target = rect(150, 130, window.innerWidth - 300, window.innerHeight - 270);
+
+    expect(show(target, { side: "left" }).info.side).toBe("top");
+  });
+
   it("reports a concrete side when nothing fits", () => {
     const { info } = show(rect(0, 0, window.innerWidth, window.innerHeight), { side: "auto" });
 
@@ -236,6 +249,31 @@ describe("shift", () => {
     expect(
       parseFloat(show(rect(-40, 400, 100, 40), { side: "top", config: { popoverShift: false } }).wrapper.style.left)
     ).toBeLessThan(0);
+  });
+});
+
+describe("runtime patches", () => {
+  it("reads flip and side from the patched popover", () => {
+    const target = rect(100, window.innerHeight - 68, 100, 40);
+    stubTarget(target);
+    const infos: RepositionInfo[] = [];
+    const d = createDriver({
+      animate: false,
+      stagePadding: 0,
+      popoverOffset: 0,
+      onReposition: info => infos.push(info),
+      steps: [{ element: "#target", popover: { title: "T", side: "bottom" } }],
+    });
+    d.drive();
+    expect(infos.at(-1)!.side).not.toBe("bottom");
+
+    d.updatePopover({ flip: false } as never);
+    window.dispatchEvent(new Event("resize"));
+    expect(infos.at(-1)!.side).toBe("bottom");
+
+    d.updatePopover({ flip: true, side: "auto" } as never);
+    window.dispatchEvent(new Event("resize"));
+    expect(infos.at(-1)!.side).toBe("right");
   });
 });
 
