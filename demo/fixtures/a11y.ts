@@ -1,4 +1,5 @@
 import "../../packages/core/src/styles/base.css";
+import "../../packages/core/src/styles/theme.css";
 import { createTour } from "../../packages/core/src/index";
 import type { StepConfig, Tour, TourConfig } from "../../packages/core/src/index";
 
@@ -83,6 +84,9 @@ const tours: Record<string, TourConfig> = {
     ],
   },
 };
+
+const theme = new URLSearchParams(location.search).get("theme");
+if (theme) document.documentElement.dataset["vtTheme"] = theme;
 
 window.vtLog = [];
 window.vtBuild = (name) => {

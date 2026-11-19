@@ -15,8 +15,8 @@ const log = (page: Page) => page.evaluate(() => window.vtLog);
 const focusedId = (page: Page) => page.evaluate(() => document.activeElement?.id ?? "");
 const focusedClass = (page: Page) => page.evaluate(() => (document.activeElement as HTMLElement | null)?.className ?? "");
 
-async function open(page: Page, tour: string, first: string) {
-  await page.goto(`/fixtures/a11y.html?tour=${tour}`);
+async function open(page: Page, tour: string, first: string, extra = "") {
+  await page.goto(`/fixtures/a11y.html?tour=${tour}${extra}`);
   await page.locator("html[data-ready=true]").waitFor();
   await page.locator("#start").focus();
   await page.keyboard.press("Enter");
@@ -51,6 +51,25 @@ for (const [name, tour, first] of scenarios) {
     expect(await violations(page)).toEqual([]);
   });
 }
+
+for (const theme of ["light", "dark"]) {
+  for (const tour of ["titled", "action", "buttons"]) {
+    test(`the accessibility engine reports no violations on the ${tour} step in the ${theme} theme`, async ({ page }) => {
+      await open(page, tour, tour, `&theme=${theme}`);
+      const background = await popover(page).evaluate((el) => getComputedStyle(el).backgroundColor);
+      const channels = background.match(/\d+/g)!.slice(0, 3).map(Number);
+      const mean = channels.reduce((a, b) => a + b, 0) / 3;
+      expect(theme === "dark" ? mean < 100 : mean > 200).toBe(true);
+      expect(await violations(page)).toEqual([]);
+    });
+  }
+}
+
+test("the accessibility engine reports no violations when the system prefers a dark color scheme", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await open(page, "action", "action");
+  expect(await violations(page)).toEqual([]);
+});
 
 test("the dialog is named and described by its parts", async ({ page }) => {
   await open(page, "action", "action");
