@@ -17,14 +17,13 @@ const builtToday = [
   "dist/motion.d.ts",
   "dist/base.css",
   "dist/theme.css",
+  "dist/avatar.css",
   "dist/thumbtack/pack.json",
   "dist/thumbtack/sheet.png",
   "dist/thumbtack/LICENSE-ART.md",
 ];
 
-const notBuiltYet = [
-  "./dist/avatar.css",
-];
+const notBuiltYet: string[] = [];
 
 function exportTargets(value: unknown): string[] {
   if (typeof value === "string") return [value];
@@ -74,6 +73,10 @@ describe("build output", () => {
   it("ships theme.css unchanged and base.css with the marker", () => {
     expect(readFileSync(join(dist, "theme.css"), "utf8")).toBe(readFileSync(join(root, "src/styles/theme.css"), "utf8"));
     expect(readFileSync(join(dist, "base.css"), "utf8")).toMatch(/--vt-base:\s*1/);
+  });
+
+  it("ships avatar.css unchanged", () => {
+    expect(readFileSync(join(dist, "avatar.css"), "utf8")).toBe(readFileSync(join(root, "src/styles/avatar.css"), "utf8"));
   });
 
   it("keeps the missing-stylesheet warning out of the production build only", () => {
