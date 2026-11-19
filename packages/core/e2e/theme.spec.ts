@@ -213,14 +213,16 @@ test("position.arrow false adds vt-no-arrow and hides the arrow, and the arrow s
 
 test("the progress bar width follows the progress variables", async ({ page }) => {
   await open(page);
-  await popover(page).evaluate((element) => {
-    element.setAttribute("data-vt-progress-bar", "");
-    element.style.setProperty("--vt-progress-index", "1");
-    element.style.setProperty("--vt-progress-total", "2");
-  });
-  const widths = await popover(page).evaluate((element) => ({
-    bar: parseFloat(getComputedStyle(element, "::after").width),
-    box: element.getBoundingClientRect().width,
-  }));
-  expect(Math.abs(widths.bar - widths.box / 2)).toBeLessThanOrEqual(1.5);
+  await expect(async () => {
+    await popover(page).evaluate((element) => {
+      element.setAttribute("data-vt-progress-bar", "");
+      element.style.setProperty("--vt-progress-index", "1");
+      element.style.setProperty("--vt-progress-total", "2");
+    });
+    const widths = await popover(page).evaluate((element) => ({
+      bar: parseFloat(getComputedStyle(element, "::after").width),
+      box: element.getBoundingClientRect().width,
+    }));
+    expect(Math.abs(widths.bar - widths.box / 2)).toBeLessThanOrEqual(1.5);
+  }).toPass();
 });
