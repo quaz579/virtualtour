@@ -245,6 +245,20 @@ describe("03-schemas section 1.4 rows (step fields)", () => {
     expect(compileOne({ position: { arrow: true } }).step.popover?.arrowMinInset).toBe(15);
   });
 
+  it("row position.arrow.minInset: invalid values fall back to the default", () => {
+    for (const minInset of [-1, NaN, Infinity, "8" as unknown as number]) {
+      expect(compileOne({ position: { arrow: { minInset } } }).step.popover?.arrowMinInset).toBe(15);
+    }
+    expect(compileOne({ position: { arrow: { minInset: 0 } } }).step.popover?.arrowMinInset).toBe(0);
+  });
+
+  it("row position.offset.cross: non-finite values fall back to the default", () => {
+    for (const cross of [NaN, Infinity, -Infinity, "3" as unknown as number]) {
+      expect(compileOne({ position: { offset: { cross } } }).step.popoverCrossOffset).toBe(0);
+    }
+    expect(compileOne({ position: { offset: { cross: -6 } } }).step.popoverCrossOffset).toBe(-6);
+  });
+
   it("row spotlight.padding: becomes stagePadding only when set", () => {
     expect(compileOne({}).step.stagePadding).toBeUndefined();
     expect(compileOne({ spotlight: { padding: 6 } }).step.stagePadding).toBe(6);

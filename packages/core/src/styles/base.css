@@ -82,6 +82,11 @@
   transition-duration: 200ms;
 }
 
+.vt-popover-rtl .vt-popover-close-btn {
+  right: auto;
+  left: 0;
+}
+
 .vt-popover-close-btn:hover,
 .vt-popover-close-btn:focus-visible {
   color: #2d2d2d;
