@@ -73,17 +73,32 @@ window.vtClassicSample = async (animation) => {
   const el = presenter?.avatar;
   if (!presenter || !el) throw new Error("no presenter");
   const samples: Sample[] = [];
-  let sampling = true;
   const startedAt = performance.now();
-  const loop = (): void => {
-    if (!sampling) return;
-    samples.push({ t: performance.now() - startedAt, pos: el.style.backgroundPosition });
-    requestAnimationFrame(loop);
+  const positionOf = (style: string | null): string => /background-position:\s*([^;]+)/.exec(style ?? "")?.[1]?.trim() ?? "";
+  const push = (pos: string): void => {
+    samples.push({ t: performance.now() - startedAt, pos });
   };
-  requestAnimationFrame(loop);
+  let started = false;
+  let skipOld = false;
+  const take = (records: MutationRecord[]): void => {
+    for (const rec of records) {
+      if (rec.attributeName === "data-vt-anim") {
+        if (!started && el.getAttribute("data-vt-anim") === animation) {
+          started = true;
+          skipOld = true;
+        }
+      } else if (started) {
+        if (skipOld) skipOld = false;
+        else push(positionOf(rec.oldValue));
+      }
+    }
+  };
+  const observer = new MutationObserver(take);
+  observer.observe(el, { attributes: true, attributeOldValue: true, attributeFilter: ["style", "data-vt-anim"] });
   await presenter.player.play(animation);
-  samples.push({ t: performance.now() - startedAt, pos: el.style.backgroundPosition });
-  sampling = false;
+  take(observer.takeRecords());
+  observer.disconnect();
+  push(el.style.backgroundPosition);
   return samples;
 };
 
