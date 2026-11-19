@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createTour, tours } from "../../src/index";
 import type { Tour } from "../../src/index";
 import { withAvatar } from "../../src/avatar/with-avatar";
+import { SpeakerPresenter } from "../../src/avatar/speaker";
 import type { AvatarOptions } from "../../src/avatar/speaker";
 import { AvatarPackError, normalizePack, validatePack } from "../../src/avatar/pack";
 import type { AvatarPack } from "../../src/avatar/pack";
@@ -98,6 +99,12 @@ const pointing: StepConfig = { id: "t", title: "Target", body: "Here", target: "
 
 function make(steps: StepConfig[], options: AvatarOptions = {}, extra: TourConfig = {}, avatar: AvatarPack | Promise<AvatarPack> = pack()): Tour {
   const tour = createTour({ animate: false, steps, presenter: withAvatar(avatar, options), ...extra });
+  created.push(tour);
+  return tour;
+}
+
+function fading(steps: StepConfig[]): Tour {
+  const tour = createTour({ animate: false, steps, presenter: (t) => new SpeakerPresenter(t, pack(), { fadeMs: 400 }) });
   created.push(tour);
   return tour;
 }
@@ -208,8 +215,8 @@ describe("animation selection", () => {
   });
 
   it("starts the step animation only after the engine fade", async () => {
-    vi.useFakeTimers();
-    const tour = make([pointing], {}, { animate: true, dim: { transitionMs: 400 } });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const tour = fading([pointing]);
     await tour.start();
     expect(anim()).toBe("rest");
     vi.advanceTimersByTime(399);
@@ -219,16 +226,16 @@ describe("animation selection", () => {
   });
 
   it("does not wait for the fade under reduced motion", async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     reduced = true;
-    const tour = make([pointing], {}, { animate: true, dim: { transitionMs: 400 } });
+    const tour = fading([pointing]);
     await tour.start();
     expect(anim()).toBe("point-right");
   });
 
   it("cancels a pending step animation when the step is left", async () => {
-    vi.useFakeTimers();
-    const tour = make([pointing, plain], {}, { animate: true, dim: { transitionMs: 400 } });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const tour = fading([pointing, plain]);
     await tour.start();
     vi.advanceTimersByTime(100);
     await tour.forward();
@@ -258,7 +265,7 @@ describe("animation selection", () => {
     expect(anim()).toBe("point-right");
     targetRect = new DOMRect(100, 500, 32, 100);
     tour.refresh();
-    expect(anim()).toBe("point-down");
+    await vi.waitFor(() => expect(anim()).toBe("point-down"));
   });
 
   it("plays nothing for a hidden avatar", async () => {
@@ -383,7 +390,7 @@ describe("pack failure", () => {
   });
 
   it("starts in dialog mode after loadTimeoutMs, reports once, and uses the pack on the next run", async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     vi.spyOn(console, "warn").mockImplementation(() => {});
     let release: (value: AvatarPack) => void = () => {};
     const slow = new Promise<AvatarPack>((resolve) => (release = resolve));
