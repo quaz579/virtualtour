@@ -1,0 +1,81 @@
+{
+  "$schema": "../../../packages/core/schemas/tour.v1.schema.json",
+  "format": "virtualtour-tour/1",
+  "id": "billing-intro",
+  "name": "Billing introduction",
+  "dim": {
+    "padding": 10,
+    "radius": { "topLeft": 5, "topRight": 5, "bottomRight": 12, "bottomLeft": 12 },
+    "transitionMs": 400,
+    "color": "#000",
+    "opacity": 0.7,
+    "clickOutside": "none",
+    "pageScroll": true,
+    "lockScrollParent": false,
+    "clipToScrollParents": true
+  },
+  "mountIn": "#app",
+  "dimMountIn": "#app",
+  "namespace": "vt",
+  "keys": { "escape": true, "arrows": true },
+  "exitPrompt": { "handler": "confirmExit" },
+  "counter": { "handler": "counterText" },
+  "labels": { "next": "Next", "back": "Back", "done": "Done", "close": "Close" },
+  "animate": true,
+  "waitBudget": 8000,
+  "stepDefaults": {
+    "position": { "offset": 10, "viewportPadding": 8 },
+    "whenMissing": "center"
+  },
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Welcome to billing",
+      "body": ["Review invoices here.", "Takes about a minute."],
+      "closeButton": true,
+      "classes": ["intro"],
+      "meta": { "analyticsId": "s-0" }
+    },
+    {
+      "id": "save",
+      "title": { "handler": "titleFor" },
+      "body": "Click <b>Save</b>.",
+      "label": "Save step",
+      "buttons": [
+        { "text": "Back", "action": "backward", "kind": "secondary" },
+        { "text": "Next", "action": "forward" },
+        { "text": "Open settings", "action": { "handler": "openSettings" } }
+      ],
+      "target": "#save",
+      "placement": { "side": "bottom", "align": "start" },
+      "position": {
+        "offset": { "main": 10, "cross": 0 },
+        "viewportPadding": 8,
+        "boundary": "scrollParents",
+        "flip": true,
+        "shift": true,
+        "strategy": "fixed",
+        "arrow": { "minInset": 15 }
+      },
+      "waitFor": 3000,
+      "whenMissing": "skip",
+      "shouldShow": { "handler": "isBillingVisible" },
+      "prepare": { "handler": "openBillingPanel" },
+      "hookTimeout": 5000,
+      "spotlight": {
+        "padding": 6,
+        "radius": 8,
+        "extra": ["#save-hint"],
+        "class": "glow",
+        "targetInteractive": true
+      },
+      "reveal": "smooth",
+      "revealWith": { "handler": "customScroll" },
+      "autoAdvance": { "event": "click", "selector": "#save", "strict": false },
+      "instruction": "Click Save to continue.",
+      "advanceDelay": 600,
+      "focus": "dialog",
+      "extensions": { "avatar": { "animation": "point.left" } }
+    }
+  ]
+}

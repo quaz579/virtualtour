@@ -1,0 +1,829 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "virtualtour-tour.v1.schema.json",
+  "title": "VirtualTour tour v1",
+  "description": "A guided tour stored as JSON and loaded with parseTourJson. Functions are named handlers, elements are CSS selectors.",
+  "type": "object",
+  "required": [
+    "format",
+    "steps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "title": "Schema reference",
+      "description": "URL of this schema, for editor support. Ignored by the parser.",
+      "type": "string"
+    },
+    "format": {
+      "title": "Format",
+      "description": "Document format and major version. Parsers refuse any other value.",
+      "const": "virtualtour-tour/1"
+    },
+    "id": {
+      "title": "Tour id",
+      "description": "Identifier used for persistence and the tour registry. Defaults to a slug of the name plus a random suffix.",
+      "type": "string"
+    },
+    "name": {
+      "title": "Tour name",
+      "description": "Human-readable name of the tour.",
+      "type": "string"
+    },
+    "dim": {
+      "title": "Dim",
+      "description": "true draws the dimmed overlay with defaults, false draws none, an object configures it.",
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/dim"
+        }
+      ]
+    },
+    "mountIn": {
+      "title": "Mount in",
+      "description": "CSS selector of the element the popover is mounted in. Resolved when the tour starts; no match is an environment error.",
+      "type": "string"
+    },
+    "dimMountIn": {
+      "title": "Dim mount in",
+      "description": "CSS selector of the element the overlay is mounted in. Resolved when the tour starts.",
+      "type": "string"
+    },
+    "namespace": {
+      "title": "Namespace",
+      "description": "Prefix for classes and data attributes added to page elements. Default vt.",
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$"
+    },
+    "keys": {
+      "title": "Keys",
+      "description": "Keyboard controls.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "escape": {
+          "title": "Escape key",
+          "description": "Whether Escape exits the tour.",
+          "type": "boolean"
+        },
+        "arrows": {
+          "title": "Arrow keys",
+          "description": "Whether the arrow keys move between steps.",
+          "type": "boolean"
+        }
+      }
+    },
+    "exitPrompt": {
+      "title": "Exit prompt",
+      "description": "false never asks, a string is the question, a handler returns a boolean or promise.",
+      "oneOf": [
+        {
+          "const": false
+        },
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/handler"
+        }
+      ]
+    },
+    "counter": {
+      "title": "Counter",
+      "description": "true shows the step counter, a handler receives the 1-based index and total and returns the text.",
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/handler"
+        }
+      ]
+    },
+    "labels": {
+      "title": "Labels",
+      "description": "Text of the built-in buttons.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "next": {
+          "title": "Next label",
+          "description": "Text of the Next button.",
+          "type": "string"
+        },
+        "back": {
+          "title": "Back label",
+          "description": "Text of the Back button.",
+          "type": "string"
+        },
+        "done": {
+          "title": "Done label",
+          "description": "Text of the last step's forward button.",
+          "type": "string"
+        },
+        "close": {
+          "title": "Close label",
+          "description": "Accessible name of the close button.",
+          "type": "string"
+        }
+      }
+    },
+    "animate": {
+      "title": "Animate",
+      "description": "Whether popovers and the cut-out animate.",
+      "type": "boolean"
+    },
+    "waitBudget": {
+      "title": "Wait budget",
+      "description": "Total milliseconds one navigation may spend waiting for targets across consecutive steps. 0 removes the cap.",
+      "type": "number",
+      "minimum": 0
+    },
+    "stepDefaults": {
+      "title": "Step defaults",
+      "description": "Values merged under every step. May hold any step key except id.",
+      "$ref": "#/$defs/step",
+      "not": {
+        "type": "object",
+        "required": [
+          "id"
+        ]
+      }
+    },
+    "steps": {
+      "title": "Steps",
+      "description": "The steps of the tour, in order. May be empty.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    }
+  },
+  "$defs": {
+    "handler": {
+      "title": "Handler reference",
+      "description": "Names a function from the handlers map passed to parseTourJson.",
+      "type": "object",
+      "required": [
+        "handler"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "handler": {
+          "title": "Handler name",
+          "description": "Key of the function in the handlers map.",
+          "type": "string"
+        }
+      }
+    },
+    "text": {
+      "title": "Text",
+      "description": "A string, or a handler returning the string each time it is needed.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/handler"
+        }
+      ]
+    },
+    "corners": {
+      "title": "Corner radii",
+      "description": "Radius per corner in CSS pixels. Unset corners keep the default.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "topLeft": {
+          "title": "Top left",
+          "description": "Radius of the top left corner.",
+          "type": "number",
+          "minimum": 0
+        },
+        "topRight": {
+          "title": "Top right",
+          "description": "Radius of the top right corner.",
+          "type": "number",
+          "minimum": 0
+        },
+        "bottomRight": {
+          "title": "Bottom right",
+          "description": "Radius of the bottom right corner.",
+          "type": "number",
+          "minimum": 0
+        },
+        "bottomLeft": {
+          "title": "Bottom left",
+          "description": "Radius of the bottom left corner.",
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "radius": {
+      "title": "Radius",
+      "description": "Corner radius in CSS pixels, one number for all corners or an object per corner.",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "$ref": "#/$defs/corners"
+        }
+      ]
+    },
+    "dim": {
+      "title": "Dim options",
+      "description": "Appearance and behavior of the dimmed overlay.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "padding": {
+          "title": "Padding",
+          "description": "Space between the target and the cut-out edge. Default 10.",
+          "type": "number",
+          "minimum": 0
+        },
+        "radius": {
+          "title": "Cut-out radius",
+          "description": "Cut-out corner radius, uniform or per corner. Default 5.",
+          "$ref": "#/$defs/radius"
+        },
+        "transitionMs": {
+          "title": "Transition",
+          "description": "Duration of the cut-out transition between steps, in milliseconds. Default 400.",
+          "type": "number",
+          "minimum": 0
+        },
+        "color": {
+          "title": "Color",
+          "description": "Overlay color. Default #000.",
+          "type": "string"
+        },
+        "opacity": {
+          "title": "Opacity",
+          "description": "Overlay opacity from 0 to 1. Default 0.7.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "clickOutside": {
+          "title": "Click outside",
+          "description": "What a click on the dimmed area does: nothing, exit the tour, or go forward.",
+          "enum": [
+            "none",
+            "exit",
+            "forward"
+          ]
+        },
+        "pageScroll": {
+          "title": "Page scroll",
+          "description": "Whether the page can scroll while a step is shown.",
+          "type": "boolean"
+        },
+        "lockScrollParent": {
+          "title": "Lock scroll parent",
+          "description": "Freeze the target's scroll parent while a step is shown.",
+          "type": "boolean"
+        },
+        "clipToScrollParents": {
+          "title": "Clip to scroll parents",
+          "description": "Cut out only the part of the target its scroll parents leave visible.",
+          "type": "boolean"
+        }
+      }
+    },
+    "button": {
+      "title": "Button",
+      "description": "A custom footer button.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "action"
+      ],
+      "properties": {
+        "text": {
+          "title": "Button text",
+          "description": "Visible text of the button.",
+          "$ref": "#/$defs/text"
+        },
+        "label": {
+          "title": "Button label",
+          "description": "Accessible name of the button, when it differs from the text.",
+          "$ref": "#/$defs/text"
+        },
+        "action": {
+          "title": "Button action",
+          "description": "A built-in action, or a handler called with the tour and step.",
+          "oneOf": [
+            {
+              "enum": [
+                "forward",
+                "backward",
+                "exit",
+                "finish"
+              ]
+            },
+            {
+              "$ref": "#/$defs/handler"
+            }
+          ]
+        },
+        "disabled": {
+          "title": "Disabled",
+          "description": "Whether the button is disabled, or a handler returning that.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/handler"
+            }
+          ]
+        },
+        "kind": {
+          "title": "Kind",
+          "description": "Visual weight of the button.",
+          "enum": [
+            "primary",
+            "secondary"
+          ]
+        },
+        "classes": {
+          "title": "Button classes",
+          "description": "CSS class or classes added to the button.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "title": "Button attributes",
+          "description": "Extra HTML attributes set on the button.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "placement": {
+      "title": "Placement",
+      "description": "auto, or an object choosing the side and alignment.",
+      "oneOf": [
+        {
+          "const": "auto"
+        },
+        {
+          "title": "Placement options",
+          "description": "Side and alignment of the popover.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "side"
+          ],
+          "properties": {
+            "side": {
+              "title": "Side",
+              "description": "Side of the target; auto picks the best fit, over covers the target.",
+              "enum": [
+                "top",
+                "bottom",
+                "left",
+                "right",
+                "auto",
+                "over"
+              ]
+            },
+            "align": {
+              "title": "Align",
+              "description": "Alignment along the chosen side.",
+              "enum": [
+                "start",
+                "center",
+                "end"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "position": {
+      "title": "Position options",
+      "description": "Popover positioning switches.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "title": "Offset",
+          "description": "Gap between target and popover, or an object with the main and cross distances.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "title": "Offset options",
+              "description": "Main and cross distances.",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "main": {
+                  "title": "Main offset",
+                  "description": "Gap between target and popover. Default 10.",
+                  "type": "number"
+                },
+                "cross": {
+                  "title": "Cross offset",
+                  "description": "Shift along the edge the popover sits on. Default 0.",
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "viewportPadding": {
+          "title": "Viewport padding",
+          "description": "Distance kept from the boundary. Default 0.",
+          "type": "number",
+          "minimum": 0
+        },
+        "boundary": {
+          "title": "Boundary",
+          "description": "What the popover must stay inside: the target's scroll parents or the viewport.",
+          "enum": [
+            "scrollParents",
+            "viewport"
+          ]
+        },
+        "flip": {
+          "title": "Flip",
+          "description": "Fall back to another side or alignment when the popover does not fit. Default true.",
+          "type": "boolean"
+        },
+        "shift": {
+          "title": "Shift",
+          "description": "Slide along the edge to stay inside the boundary. Default true.",
+          "type": "boolean"
+        },
+        "strategy": {
+          "title": "Strategy",
+          "description": "CSS positioning strategy. Default fixed.",
+          "enum": [
+            "fixed",
+            "absolute"
+          ]
+        },
+        "arrow": {
+          "title": "Arrow",
+          "description": "false hides the arrow, true shows it, an object sets the closest it gets to a corner.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "title": "Arrow options",
+              "description": "Arrow tuning.",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "minInset": {
+                  "title": "Minimum inset",
+                  "description": "Closest the arrow gets to a corner. Default 15.",
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "spotlight": {
+      "title": "Spotlight options",
+      "description": "Per-step cut-out options.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "padding": {
+          "title": "Padding",
+          "description": "Overrides the dim padding for this step.",
+          "type": "number",
+          "minimum": 0
+        },
+        "radius": {
+          "title": "Radius",
+          "description": "Overrides the dim radius for this step.",
+          "$ref": "#/$defs/radius"
+        },
+        "extra": {
+          "title": "Extra selectors",
+          "description": "Extra selectors to cut out and keep interactive.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "class": {
+          "title": "Class",
+          "description": "Class added to the target and the extras.",
+          "type": "string"
+        },
+        "targetInteractive": {
+          "title": "Target interactive",
+          "description": "false blocks all interaction with the target; hover-only allows hover but not clicks.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "hover-only"
+            }
+          ]
+        }
+      }
+    },
+    "scrollIntoView": {
+      "title": "Scroll options",
+      "description": "Options passed to scrollIntoView.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "behavior": {
+          "title": "Behavior",
+          "description": "Scroll animation.",
+          "enum": [
+            "auto",
+            "smooth",
+            "instant"
+          ]
+        },
+        "block": {
+          "title": "Block",
+          "description": "Vertical alignment of the target.",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "nearest"
+          ]
+        },
+        "inline": {
+          "title": "Inline",
+          "description": "Horizontal alignment of the target.",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "nearest"
+          ]
+        }
+      }
+    },
+    "step": {
+      "title": "Step",
+      "description": "One step of the tour.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Step id",
+          "description": "Stable identifier of the step. Used for persistence, goTo and events. Must be unique within the tour.",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "description": "Popover heading: plain text, or a handler returning the text each time the step shows.",
+          "$ref": "#/$defs/text"
+        },
+        "body": {
+          "title": "Body",
+          "description": "Popover content as HTML. A list becomes one paragraph per entry. HTML is not sanitized unless the host sets a sanitizer in code.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "label": {
+          "title": "Accessible label",
+          "description": "Name announced for the dialog when the step has no title.",
+          "$ref": "#/$defs/text"
+        },
+        "closeButton": {
+          "title": "Close button",
+          "description": "false hides the close button, true shows it, an object customizes it.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "title": "Close button options",
+              "description": "Customizes the close button.",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "title": "Close label",
+                  "description": "Accessible name of the close button.",
+                  "$ref": "#/$defs/text"
+                },
+                "attrs": {
+                  "title": "Close attributes",
+                  "description": "Extra HTML attributes set on the close button.",
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "classes": {
+          "title": "Popover classes",
+          "description": "CSS class or classes added to the popover.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "meta": {
+          "title": "Meta",
+          "description": "Any JSON value kept on the step for your own use; never interpreted."
+        },
+        "buttons": {
+          "title": "Buttons",
+          "description": "Custom footer buttons. When present, the built-in Next and Back buttons are hidden.",
+          "type": "array",
+          "items": {
+            "title": "Button",
+            "description": "One footer button.",
+            "$ref": "#/$defs/button"
+          }
+        },
+        "target": {
+          "title": "Target",
+          "description": "CSS selector of the element to highlight, or a handler returning an element or selector.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/handler"
+            }
+          ]
+        },
+        "placement": {
+          "title": "Placement",
+          "description": "Where the popover sits relative to the target: auto, or a side with an optional alignment.",
+          "$ref": "#/$defs/placement"
+        },
+        "position": {
+          "title": "Position",
+          "description": "Popover positioning switches.",
+          "$ref": "#/$defs/position"
+        },
+        "waitFor": {
+          "title": "Wait for",
+          "description": "Milliseconds to wait for the target to appear.",
+          "type": "number",
+          "minimum": 0
+        },
+        "whenMissing": {
+          "title": "When missing",
+          "description": "What to do when the target never appears: show the step centered or skip it.",
+          "enum": [
+            "center",
+            "skip"
+          ]
+        },
+        "shouldShow": {
+          "title": "Should show",
+          "description": "Handler returning false to skip the step.",
+          "$ref": "#/$defs/handler"
+        },
+        "prepare": {
+          "title": "Prepare",
+          "description": "Handler run before the step shows; the tour waits for a returned promise.",
+          "$ref": "#/$defs/handler"
+        },
+        "hookTimeout": {
+          "title": "Hook timeout",
+          "description": "Milliseconds prepare and revealWith may each take before the step shows anyway. 0 waits forever.",
+          "type": "number",
+          "minimum": 0
+        },
+        "spotlight": {
+          "title": "Spotlight",
+          "description": "Per-step cut-out options.",
+          "$ref": "#/$defs/spotlight"
+        },
+        "reveal": {
+          "title": "Reveal",
+          "description": "How the target is scrolled into view: true or false, smooth, or scroll options.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "smooth"
+            },
+            {
+              "$ref": "#/$defs/scrollIntoView"
+            }
+          ]
+        },
+        "revealWith": {
+          "title": "Reveal with",
+          "description": "Handler that scrolls the target itself, replacing the built-in scrolling.",
+          "$ref": "#/$defs/handler"
+        },
+        "autoAdvance": {
+          "title": "Auto advance",
+          "description": "Moves to the next step when the user does something.",
+          "type": "object",
+          "required": [
+            "event"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "event": {
+              "title": "Event",
+              "description": "DOM event name or names that advance the tour.",
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "selector": {
+              "title": "Selector",
+              "description": "CSS selector to listen on in the whole document instead of on the target.",
+              "type": "string"
+            },
+            "strict": {
+              "title": "Strict",
+              "description": "Without a selector, block other mouse gestures on the target so only the named event advances.",
+              "type": "boolean"
+            }
+          }
+        },
+        "instruction": {
+          "title": "Instruction",
+          "description": "Action step: what the user must do before moving on, as HTML, or a handler returning it.",
+          "$ref": "#/$defs/text"
+        },
+        "advanceDelay": {
+          "title": "Advance delay",
+          "description": "Milliseconds a completed action step stays on screen before the tour moves on.",
+          "type": "number",
+          "minimum": 0
+        },
+        "focus": {
+          "title": "Focus",
+          "description": "What receives focus when the step shows.",
+          "enum": [
+            "dialog",
+            "first-button"
+          ]
+        },
+        "extensions": {
+          "title": "Extensions",
+          "description": "Namespaced bag of presenter data, passed through untouched.",
+          "type": "object"
+        }
+      }
+    }
+  }
+}
