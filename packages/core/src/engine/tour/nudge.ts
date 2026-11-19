@@ -51,4 +51,9 @@ export function nudge(ctx: Context) {
 
   restartAnimation(wrapper);
   untilAnimationEnds(wrapper, () => wrapper.classList.remove(POPOVER_CLASS));
+
+  const step = ctx.getState("__activation")?.step;
+  if (step) {
+    ctx.getConfig("onNudge")?.(step);
+  }
 }

@@ -1,11 +1,19 @@
 import type { Activation, Context } from "../core/context";
 import { stepOption } from "../core/options";
+import { isDummyElement } from "../core/utils";
 import { announce } from "../popover/live-region";
 import { isCurrent, latch, markDone, unlatch } from "./lifecycle";
 import { isActionStep } from "./step";
 
 export function requestCompletion(ctx: Context, activation: Activation) {
   if (!latch(ctx, activation)) {
+    return;
+  }
+
+  markDone(activation);
+  const element = ctx.getState("__activeElement");
+  ctx.getConfig("onStepCompleted")?.(isDummyElement(element) ? undefined : element, activation.step, ctx.getHookOpts());
+  if (!isCurrent(ctx, activation)) {
     return;
   }
 
@@ -16,7 +24,6 @@ export function requestCompletion(ctx: Context, activation: Activation) {
     return;
   }
 
-  markDone(activation);
   ctx.tour.refreshPopover();
   if (isActionStep(activation.step)) {
     announce(ctx, activation.step.popover?.doneBtnText || ctx.getConfig("doneBtnText") || "Done");

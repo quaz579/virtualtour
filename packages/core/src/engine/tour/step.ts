@@ -184,9 +184,25 @@ function activePatch(ctx: Context, step: DriveStep) {
   return activation?.popoverPatch && activation.step === step ? activation.popoverPatch : undefined;
 }
 
+function livePlacement(ctx: Context, step: DriveStep): Popover {
+  const activation = ctx.getState("__activation");
+  const index = ctx.getState("activeIndex");
+  if (isStandalone(step) || activation?.step !== step || activation.placeholder || index === undefined) {
+    return {};
+  }
+
+  if (!(ctx.getConfig("steps") || [])[index]) {
+    return {};
+  }
+
+  const { nextBtnText, disableButtons, progressText } = resolveTourStep(ctx, index).popover || {};
+
+  return { nextBtnText, progressText, ...(disableButtons ? { disableButtons } : {}) };
+}
+
 function currentPopover(ctx: Context, step: DriveStep) {
   const patch = activePatch(ctx, step);
-  const popover: Popover = { ...step.popover, ...patch };
+  const popover: Popover = { ...step.popover, ...livePlacement(ctx, step), ...patch };
   const options = resolvePopoverOptions(ctx, popover);
 
   if (patch?.popoverClass !== undefined) {
@@ -309,6 +325,7 @@ export function updateStepPopover(ctx: Context, element: Element, step: DriveSte
   }
 
   updatePopoverContent(popover, element, resolveStepPopover(ctx, element, step));
+  syncStepAttribute(ctx, popover);
   showStepPopoverState(ctx);
 }
 

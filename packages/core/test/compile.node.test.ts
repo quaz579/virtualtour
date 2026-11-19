@@ -349,6 +349,16 @@ describe("03-schemas section 1.4 rows (step fields)", () => {
     expect(compileStepForShow(source).popover?.instruction).toBe("Dyn");
   });
 
+  it("row instruction: left for the engine sink to sanitize, so an emptying sanitizer cannot un-gate the step", () => {
+    const sanitize = (): string => "";
+    expect(compileOne({ instruction: "<b>Go</b>" }, { sanitize }).step.popover?.instruction).toBe("<b>Go</b>");
+  });
+
+  it("row buttons: arrow keys keep navigating while the buttons hide Next and Back", () => {
+    expect(compileOne({ buttons: [{ text: "Go", action: "forward" }] }).step.popover?.navigateWithKeys).toBe(true);
+    expect(compileOne({}).step.popover?.navigateWithKeys).toBeUndefined();
+  });
+
   it("row advanceDelay: becomes advanceDelay", () => {
     expect(compileOne({ advanceDelay: 600 }).step.advanceDelay).toBe(600);
     expect(compileOne({}).step.advanceDelay).toBeUndefined();

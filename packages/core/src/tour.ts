@@ -208,9 +208,34 @@ export class Tour {
     await navigateGuarded(this, () => runNavigation(this, "forward"));
   }
 
-  /** Moves to the next step, or finishes after the last one. Does nothing while no run is active. */
+  /**
+   * Moves to the next step, or finishes after the last one. Does nothing while no run is active. While the step on
+   * screen is an action step whose instruction is not met, it nudges instead of moving, whoever calls it: a custom
+   * `forward` button, the page, or the keyboard.
+   */
   forward(): Promise<void> {
+    const state = internalsOf(this);
+    if (state.running && !state.ending && state.engine?.isActive() && state.engine.nudgeIfGated()) return Promise.resolve();
     return navigate(this, "forward");
+  }
+
+  /**
+   * Completes the action step on screen as if the user had done what its instruction asks: emits `completed`, then
+   * `step-completed`, waits the step's `advanceDelay` and moves forward. Does nothing while no step is on screen or
+   * the step is still waiting for its target.
+   */
+  advance(): void {
+    const engine = internalsOf(this).engine;
+    if (engine?.isActive()) engine.advance();
+  }
+
+  /**
+   * Shakes the popover (a flash under reduced motion) and calls the presenter's `onNudge`. A `message` is shown in
+   * the feedback row as HTML that passes through `sanitize`; without one the row is cleared. Does nothing while no step is on screen.
+   */
+  nudge(message?: string): void {
+    const engine = internalsOf(this).engine;
+    if (engine?.isActive()) engine.nudge(message);
   }
 
   /** Moves to the previous step. Does nothing on the first step or while no run is active; exits when no earlier step is eligible. */
@@ -532,6 +557,19 @@ function ensureEngine(tour: Tour): Driver {
       const step = stepOf(tour, driveStep);
       if (step) leaveStep(tour, step);
     },
+    onStepCompleted(_element: Element | undefined, driveStep: DriveStep) {
+      if (!owns() || !driveStep.popover?.instruction) return;
+      const step = stepOf(tour, driveStep);
+      if (!step) return;
+      guarded("presenter.onCompleted", () => presenter.onCompleted?.(step));
+      emitStep(step, "completed", { step });
+      emitTour(tour, "step-completed", { tour, step });
+    },
+    onNudge(driveStep: DriveStep) {
+      if (!owns()) return;
+      const step = stepOf(tour, driveStep);
+      if (step) guarded("presenter.onNudge", () => presenter.onNudge?.(step));
+    },
     onNextClick() {
       if (owns()) reportFailure(tour.forward());
     },
@@ -592,6 +630,10 @@ function attachAdvance(tour: Tour, step: TourStep): void {
       if (state.advance === advance) state.advance = null;
       advance.timer = null;
       if (!state.running || state.ending || state.steps[state.currentIndex] !== step) return;
+      if (state.engine?.getActiveStep()?.popover?.instruction) {
+        state.engine.advance();
+        return;
+      }
       reportFailure(
         navigateGuarded(tour, () => (state.steps[state.anchorIndex] === step ? runNavigation(tour, "forward") : Promise.resolve()))
       );

@@ -128,13 +128,31 @@ export function createEngine(options: Config = {}): Driver {
     return !isWaiting(ctx) && !isActionStep(step);
   }
 
-  function nudgeIfGated(): boolean {
+  function isUnmetGate(): boolean {
     const activation = ctx.getState("__activation");
-    if (!isActionStep(activation?.step ?? currentPopoverStep())) {
+    const step = activation?.step ?? currentPopoverStep();
+
+    return isActionStep(step) && !(activation && isDone(ctx, activation.step));
+  }
+
+  function nudgeIfGated(): boolean {
+    if (!isActionStep(ctx.getState("__activation")?.step ?? currentPopoverStep())) {
       return false;
     }
 
-    if (!(activation && isDone(ctx, activation.step)) && !isWaiting(ctx)) {
+    if (isUnmetGate() && !isWaiting(ctx)) {
+      nudge(ctx);
+    }
+
+    return true;
+  }
+
+  function nudgeIfUnmet(): boolean {
+    if (!isUnmetGate()) {
+      return false;
+    }
+
+    if (!isWaiting(ctx)) {
       nudge(ctx);
     }
 
@@ -147,7 +165,7 @@ export function createEngine(options: Config = {}): Driver {
     }
   }
 
-  function canUseButton(button: AllowedButtons) {
+  function canUseButton(button: AllowedButtons, byKey = false) {
     if (button === "previous" && isWaiting(ctx)) {
       return false;
     }
@@ -157,8 +175,9 @@ export function createEngine(options: Config = {}): Driver {
     }
 
     const { showButtons, disableButtons } = currentButtons();
+    const isShown = showButtons.includes(button) || (byKey && !!currentPopoverStep()?.popover?.navigateWithKeys);
 
-    return showButtons.includes(button) && !disableButtons.includes(button);
+    return isShown && !disableButtons.includes(button);
   }
 
   function handleOverlayClick() {
@@ -316,7 +335,7 @@ export function createEngine(options: Config = {}): Driver {
     }
 
     const steps = ctx.getConfig("steps") || [];
-    if (!steps[activeIndex - 1] || !canUseButton("previous")) {
+    if (!steps[activeIndex - 1] || !canUseButton("previous", true)) {
       return;
     }
 
@@ -325,7 +344,7 @@ export function createEngine(options: Config = {}): Driver {
 
   function handleArrowRight() {
     const hasStep = ctx.getState("activeIndex") !== undefined && !!currentPopoverStep();
-    if (isTransitioning(ctx) || !hasStep || nudgeIfGated() || !canUseButton("next")) {
+    if (isTransitioning(ctx) || !hasStep || nudgeIfGated() || !canUseButton("next", true)) {
       return;
     }
 
@@ -374,6 +393,29 @@ export function createEngine(options: Config = {}): Driver {
 
     const changed = popoverText(popover).filter((text, index) => text && text !== before[index]);
     announce(ctx, changed.join(". "));
+  }
+
+  function setConfig(next: Config) {
+    const index = ctx.getState("activeIndex");
+    const before = ctx.getConfig("steps");
+    const active = index === undefined ? undefined : before?.[index];
+
+    ctx.setConfig(next);
+
+    if (!active || !ctx.getState("isInitialized")) {
+      return;
+    }
+
+    const steps = ctx.getConfig("steps");
+    const moved = steps?.indexOf(active) ?? -1;
+    const reindexed = moved >= 0 && moved !== index;
+    if (reindexed) {
+      ctx.setState("activeIndex", moved);
+    }
+
+    if (reindexed || steps?.length !== before?.length) {
+      refreshActivePopover();
+    }
   }
 
   function init() {
@@ -543,7 +585,7 @@ export function createEngine(options: Config = {}): Driver {
       init();
       drive(stepIndex);
     },
-    setConfig: ctx.setConfig,
+    setConfig,
     setSteps: (steps: DriveStep[]) => {
       if (ctx.getState("isInitialized")) {
         removeTour();
@@ -603,6 +645,7 @@ export function createEngine(options: Config = {}): Driver {
     },
     updatePopover,
     advance,
+    nudgeIfGated: nudgeIfUnmet,
     nudge: (message?: string | PopoverPatch) => {
       if (typeof message === "object") {
         updatePopover(message);

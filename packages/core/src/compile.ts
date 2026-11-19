@@ -108,6 +108,7 @@ function compileStep(
   const showButtons: AllowedButtons[] = config.buttons !== undefined ? [] : ["next", "previous"];
   if (closeButton !== false) showButtons.push("close");
   popover.showButtons = showButtons;
+  if (config.buttons !== undefined) popover.navigateWithKeys = true;
   if (typeof closeButton === "object") {
     const closeLabel = resolveText(closeButton.label, evaluate);
     if (closeLabel !== undefined) popover.closeBtnLabel = closeLabel;

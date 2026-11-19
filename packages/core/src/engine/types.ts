@@ -197,6 +197,11 @@ export type Config = {
   onPrevClick?: DriverHook;
   onCloseClick?: DriverHook;
   onDoneClick?: DriverHook;
+
+  /** Runs when a step's `advanceOn` fires or `advance()` runs, right after the step is marked done and before any `advanceDelay`. */
+  onStepCompleted?: DriverHook;
+  /** Runs each time the popover shakes: Next, ArrowRight or the overlay pressed on an unmet action step, or `nudge()`. */
+  onNudge?: (step: DriveStep) => void;
 };
 
 export type Popover = {
@@ -220,6 +225,9 @@ export type Popover = {
   closeBtnLabel?: string | undefined;
 
   instruction?: string | undefined;
+
+  /** Let the arrow keys move between steps even when `showButtons` hides Next and Back. They still honor `disableButtons` and the action-step gate. */
+  navigateWithKeys?: boolean;
 
   onPopoverRender?: (popover: PopoverDOM, opts: HookOpts) => void;
 
@@ -281,6 +289,8 @@ export interface Driver {
   updatePopover: (patch?: PopoverPatch) => void;
   advance: () => void;
   nudge: (message?: string | PopoverPatch) => void;
+  /** Nudges and returns `true` when the current step is an action step whose instruction is not yet met; returns `false` and does nothing otherwise. */
+  nudgeIfGated: () => boolean;
   destroy: () => void;
 }
 
