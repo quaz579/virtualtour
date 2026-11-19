@@ -68,6 +68,10 @@ export default defineConfig({
         ],
       },
       {
+        text: "Demo",
+        items: [{ text: "Demo app", link: "/demo" }],
+      },
+      {
         text: "Migration",
         items: [{ text: "From driver.js", link: "/migration/from-driverjs" }],
       },

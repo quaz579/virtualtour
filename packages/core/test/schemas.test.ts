@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
@@ -19,7 +19,11 @@ const validateTour = ajv().compile(tourSchema);
 const validateAvatar = ajv().compile(avatarSchema);
 
 const examplesDir = join(repo, "docs/examples/tours");
-const exampleFiles = readdirSync(examplesDir).filter((f) => f.endsWith(".json"));
+const demoToursDir = join(repo, "demo/tours");
+const exampleFiles = [
+  ...readdirSync(examplesDir).filter((f) => f.endsWith(".json")).map((f) => join(examplesDir, f)),
+  ...readdirSync(demoToursDir).filter((f) => f.endsWith(".json")).map((f) => join(demoToursDir, f)),
+];
 
 function handlerNamesIn(value: unknown, into = new Set<string>()): Set<string> {
   if (Array.isArray(value)) value.forEach((v) => handlerNamesIn(v, into));
@@ -94,8 +98,8 @@ describe("conformance", () => {
     expect(exampleFiles.length).toBeGreaterThanOrEqual(3);
   });
 
-  it.each(exampleFiles)("example %s validates against the tour schema and parses", (file) => {
-    const doc = read(join(examplesDir, file));
+  it.each(exampleFiles.map((f) => [relative(repo, f), f] as const))("example %s validates against the tour schema and parses", (_name, file) => {
+    const doc = read(file);
     expect(validateTour(doc), JSON.stringify(validateTour.errors)).toBe(true);
     expect(parses(doc)).toBe(true);
   });
