@@ -171,8 +171,9 @@ function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): P
     offset: stagePadding + (stepOption(ctx, step, "popoverOffset") || 0),
     padding: stagePadding,
     boundaryPadding: stepOption(ctx, step, "popoverPadding") || 0,
-    boundary: ctx.getConfig("popoverBoundary") || "scrollParents",
-    centered: step.popover?.side === "over" || isDummyElement(element),
+    boundary: stepOption(ctx, step, "popoverBoundary") || "scrollParents",
+    flip: step.popover?.flip ?? ctx.getConfig("popoverFlip") ?? true,
+    shift: step.popover?.shift ?? ctx.getConfig("popoverShift") ?? true,
     hasTarget: !isDummyElement(element),
     sideAttribute: ctx.names.sideAttr,
   };

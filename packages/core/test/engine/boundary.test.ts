@@ -184,3 +184,117 @@ describe("side over", () => {
     expect(wrapper.querySelector(".vt-popover-arrow")!.classList.contains("vt-popover-arrow-none")).toBe(true);
   });
 });
+
+describe("no side fits", () => {
+  const FULL = () => rect(0, 0, window.innerWidth, window.innerHeight);
+  const centeredLeft = (padding = 0) => (padding + window.innerWidth - padding) / 2 - POPOVER.width / 2;
+
+  it("pins the popover above the bottom edge, inside the padded viewport", () => {
+    document.body.innerHTML = `<button id="target" type="button">T</button>`;
+    stubLayout({ target: FULL() });
+
+    const { wrapper } = show({ stagePadding: 0, popoverOffset: 0, popoverPadding: 20 }, "left");
+    expect(wrapper.style.bottom).toBe("30px");
+    expect(wrapper.style.left).toBe(`${centeredLeft()}px`);
+  });
+
+  it("keeps the popover inside the bounds when the padded viewport is narrower than the popover", () => {
+    document.body.innerHTML = `<button id="target" type="button">T</button>`;
+    stubLayout({ target: FULL() });
+
+    const { wrapper } = show({ stagePadding: 0, popoverOffset: 0, popoverPadding: 450 }, "left");
+    expect(wrapper.style.left).toBe("460px");
+  });
+
+  it("keeps the arrow-size margin after the arrow is hidden", () => {
+    document.body.innerHTML = `<button id="target" type="button">T</button>`;
+    stubLayout({ target: FULL() });
+    const stubbed = Element.prototype.getBoundingClientRect as unknown as ReturnType<typeof vi.fn>;
+    const base = stubbed.getMockImplementation()!;
+    stubbed.mockImplementation(function (this: Element) {
+      return this.classList.contains("vt-popover-arrow-none") ? rect(0, 0, 0, 0) : base.call(this);
+    });
+
+    const infos: RepositionInfo[] = [];
+    const d = createDriver({
+      animate: false,
+      stagePadding: 0,
+      onReposition: info => infos.push(info),
+      steps: [{ element: "#target", popover: { title: "T", side: "left" } }],
+    });
+    d.drive();
+    d.refresh();
+    d.refresh();
+
+    expect(popoverEl()!.style.bottom).toBe("10px");
+  });
+});
+
+describe("side over bounds", () => {
+  it("clamps the centered popover to the padding", () => {
+    document.body.innerHTML = `<button id="target" type="button">T</button>`;
+    stubLayout({ target: rect(100, 100, 100, 40) });
+
+    const { wrapper } = show({ popoverPadding: 360 }, "over");
+    expect(wrapper.style.top).toBe("370px");
+    expect(wrapper.style.left).toBe(`${window.innerWidth / 2 - POPOVER.width / 2}px`);
+  });
+
+  it("centers in the viewport even when the target sits inside a scroller", () => {
+    placeInScroller(rect(60, 150, 40, 40), rect(50, 100, 150, 200), [150, 200]);
+
+    const { wrapper } = show({ stagePadding: 0 }, "over");
+    expect(wrapper.style.left).toBe(`${window.innerWidth / 2 - POPOVER.width / 2}px`);
+    expect(wrapper.style.top).toBe(`${window.innerHeight / 2 - POPOVER.height / 2}px`);
+  });
+});
+
+describe("popoverPadding on scroller edges", () => {
+  it("insets the scroller's left edge by the padding", () => {
+    placeInScroller(rect(20, 250, 40, 40), rect(50, 100, 300, 200), [300, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0, popoverPadding: 20 }, "top").wrapper.style.left).toBe("80px");
+  });
+
+  it("insets the scroller's right edge by the padding", () => {
+    placeInScroller(rect(330, 250, 40, 40), rect(50, 100, 300, 200), [300, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0, popoverPadding: 20 }, "top").wrapper.style.left).toBe("120px");
+  });
+
+  it("leaves the scroller's edge exact at padding 0", () => {
+    placeInScroller(rect(20, 250, 40, 40), rect(50, 100, 300, 200), [300, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0 }, "top").wrapper.style.left).toBe("60px");
+  });
+
+  it("counts the padding on both edges when deciding the scroller is too small for the popover", () => {
+    placeInScroller(rect(60, 250, 40, 40), rect(50, 100, 230, 200), [230, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0, popoverPadding: 10 }, "top").wrapper.style.left).toBe("60px");
+  });
+});
+
+describe("boundary per step and per side", () => {
+  it("lets a step override the boundary", () => {
+    placeInScroller(rect(100, 230, 100, 40), rect(50, 100, 300, 200), [300, 200]);
+    const d = createDriver({ animate: false, stagePadding: 0, popoverOffset: 0, popoverBoundary: "viewport" });
+    d.highlight({ element: "#target", popoverBoundary: "scrollParents", popover: { title: "T", side: "bottom" } });
+
+    expect(popoverEl()!.classList.contains("vt-popover-side-top")).toBe(true);
+  });
+
+  it("prefers a side that fits the scroller over a requested side that only fits the viewport", () => {
+    placeInScroller(rect(100, 230, 100, 40), rect(50, 100, 300, 200), [300, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0 }, "bottom").info.side).toBe("top");
+  });
+
+  it("falls back to the viewport for the sides only when none fits the scroller", () => {
+    placeInScroller(rect(100, 150, 100, 40), rect(50, 100, 300, 120), [300, 120]);
+
+    const { info, wrapper } = show({ stagePadding: 0, popoverOffset: 0 }, "bottom");
+    expect(info.side).toBe("bottom");
+    expect(wrapper.style.bottom).toBe(`${window.innerHeight - 190 - POPOVER.height}px`);
+  });
+});

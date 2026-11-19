@@ -1,4 +1,4 @@
-import type { Alignment, AllowedButtons, Placement, PopoverDOM } from "./popover/popover";
+import type { Alignment, AllowedButtons, Placement, PlacementRequest, PopoverDOM } from "./popover/popover";
 import type { StageCornerRadius, StageDefinition } from "./overlay/stage";
 
 export type DestroyReason = "done" | "close" | "escape" | "overlay" | "replaced" | "api";
@@ -175,6 +175,10 @@ export type Config = {
    * ancestors of the target; `"viewport"` is the viewport alone.
    */
   popoverBoundary?: "viewport" | "scrollParents";
+  /** Default for `Popover.flip`. Defaults to `true`. */
+  popoverFlip?: boolean;
+  /** Default for `Popover.shift`. Defaults to `true`. */
+  popoverShift?: boolean;
   showButtons?: AllowedButtons[];
   disableButtons?: AllowedButtons[];
   showProgress?: boolean;
@@ -203,9 +207,16 @@ export type Popover = {
   title?: string | undefined;
   description?: string | undefined;
   label?: string | undefined;
-  /** Side of the target the popover sits on. `"over"` keeps the target highlighted and centers the popover. */
-  side?: Placement;
+  /**
+   * Side of the target the popover sits on. `"over"` keeps the target highlighted and centers the popover; `"auto"`
+   * picks the side with the most free space inside the boundary (ties go bottom, top, right, left).
+   */
+  side?: PlacementRequest;
   align?: Alignment;
+  /** Move to another side, or to the opposite alignment, when the popover does not fit. Defaults to `true`. */
+  flip?: boolean;
+  /** Slide along the edge to stay inside the boundary. Defaults to `true`. */
+  shift?: boolean;
 
   showButtons?: AllowedButtons[];
   showProgress?: boolean;
@@ -253,6 +264,8 @@ export type DriveStep = {
   popoverOffset?: number;
   /** Overrides `Config.popoverPadding` for this step. */
   popoverPadding?: number;
+  /** Overrides `Config.popoverBoundary` for this step. */
+  popoverBoundary?: "viewport" | "scrollParents";
   data?: Record<string, any>;
 };
 
