@@ -16,12 +16,17 @@ const tour = createTour({
   name: "content",
   dim: true,
   animate: false,
+  counter: true,
   steps: [
     {
       id: "titled",
       title: "Titled step",
       body: note,
       closeButton: { label: "Dismiss tour", attrs: { "data-track": "close" } },
+      buttons: [
+        { text: "Log it", kind: "secondary", attrs: { "data-track": "log" }, action: ({ step }) => window.vtLog.push(`clicked:${step.id}`) },
+        { text: "Next step", action: "forward" },
+      ],
     },
     { id: "untitled", label: "Untitled step label", body: ["First paragraph", "Second paragraph"] },
   ],

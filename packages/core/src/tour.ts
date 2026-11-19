@@ -3,7 +3,7 @@ import type { EngineStep } from "./compile";
 import { DEFAULT_HOOK_TIMEOUT_MS, normalizeTourConfig, resolveStepConfig } from "./config";
 import type { NormalizedTourConfig } from "./config";
 import { createEngine } from "./engine/driver";
-import type { Config, DriveStep, Driver, EnginePresenter, RepositionInfo as EngineRepositionInfo } from "./engine/driver";
+import type { Config, DriveStep, Driver, EnginePresenter, PopoverPatch, RepositionInfo as EngineRepositionInfo } from "./engine/driver";
 import type { PopoverDOM } from "./engine/popover/popover";
 import { TourEnvironmentError, TourNavigationError } from "./errors";
 import { Emitter } from "./events";
@@ -15,8 +15,8 @@ import type { NavigationOutcome } from "./navigator";
 import { DialogPresenter } from "./presenter";
 import { memoizeSanitizer } from "./render/content";
 import { relayTourEvent, setCurrentTour, tours } from "./registry";
-import { emitStep, lookupTarget, markHidden, markShown, resetStep, retireStep, setResolvedTarget, TourStep } from "./step";
-import type { Presenter, RepositionInfo, StepConfig, StepParts, TourConfig } from "./types";
+import { emitStep, lookupTarget, markHidden, markShown, resetStep, retireStep, setConfiguredHook, setResolvedTarget, TourStep } from "./step";
+import type { Presenter, ProgressInfo, RepositionInfo, StepConfig, StepParts, TourConfig } from "./types";
 
 declare const __DEV__: boolean | undefined;
 
@@ -118,6 +118,12 @@ export class Tour {
     return internalsOf(this).running;
   }
 
+  /** The 1-based position of the step on screen (0 when none) and the number of steps, skipped ones included. */
+  progressInfo(): ProgressInfo {
+    const state = internalsOf(this);
+    return { index: state.currentIndex + 1, total: state.steps.length };
+  }
+
   /** Finds a step by id. */
   stepById(id: string): TourStep | undefined {
     return internalsOf(this).steps.find((s) => s.id === id);
@@ -143,7 +149,10 @@ export class Tour {
     state.steps.splice(index, 0, step);
     if (index <= state.currentIndex) state.currentIndex += 1;
     if (index <= state.anchorIndex) state.anchorIndex += 1;
-    if (state.running) syncEngineSteps(this);
+    if (state.running) {
+      syncEngineSteps(this);
+      refreshProgress(this);
+    }
     return step;
   }
 
@@ -173,7 +182,10 @@ export class Tour {
     else if (index === state.anchorIndex) state.anchorIndex = index - 1;
     step.dispose();
     retireStep(step);
-    if (state.engine) syncEngineSteps(this);
+    if (state.engine) {
+      syncEngineSteps(this);
+      refreshProgress(this);
+    }
     if (wasTarget) settle(state);
     if (!wasVisible && !wasTarget) return;
     reportFailure(state.queue.enqueue(() => resumeAfterDrop(this, index - 1)));
@@ -402,6 +414,74 @@ function syncEngineSteps(tour: Tour): void {
   if (shown && previous) steps[state.currentIndex] = previous;
   engine.setConfig({ ...engine.getConfig(), steps });
 }
+
+function shownPopover(tour: Tour, step?: TourStep): { engine: Driver; mounted: NonNullable<TourInternals["mounted"]> } | null {
+  const state = internalsOf(tour);
+  const engine = state.engine;
+  const mounted = state.mounted;
+  const current = state.steps[state.currentIndex];
+  if (!engine || !mounted || !current || !engine.isActive() || mounted.step !== current) return null;
+  if (step && step !== current) return null;
+  if (!mounted.popover.wrapper.isConnected) return null;
+  return { engine, mounted };
+}
+
+function counterText(tour: Tour): string | undefined {
+  const state = internalsOf(tour);
+  const counter = state.normalized.counter;
+  if (counter === false) return undefined;
+  const { index, total } = tour.progressInfo();
+  if (typeof counter !== "function") return `${index} of ${total}`;
+  try {
+    return counter(index, total);
+  } catch (error) {
+    console.error("[virtualtour] counter threw:", error);
+    return undefined;
+  }
+}
+
+function refreshProgress(tour: Tour): void {
+  const shown = shownPopover(tour);
+  if (!shown) return;
+  const text = counterText(tour);
+  if (text !== undefined) shown.engine.updatePopover({ progressText: text });
+}
+
+function refreshShownStep(step: TourStep): void {
+  const tour = step.tour;
+  const state = internalsOf(tour);
+  const shown = shownPopover(tour, step);
+  if (!shown) return;
+  let out: EngineStep;
+  try {
+    out = evaluatedStep(tour, state.steps.indexOf(step));
+  } catch (error) {
+    console.error("[virtualtour] configure could not re-evaluate the step; the popover is unchanged:", error);
+    return;
+  }
+  const popover = out.popover ?? {};
+  const patch: PopoverPatch = {
+    title: popover.title ?? "",
+    description: popover.description ?? "",
+    label: popover.label ?? "",
+    popoverClass: popover.popoverClass ?? "",
+    closeBtnLabel: popover.closeBtnLabel ?? state.normalized.labels.close,
+  };
+  if (popover.showButtons !== undefined) patch.showButtons = popover.showButtons;
+  if (popover.instruction !== undefined) patch.instruction = popover.instruction;
+  const text = typeof state.normalized.counter === "function" ? popover.progressText : counterText(tour);
+  if (text !== undefined) patch.progressText = text;
+  const { engine, mounted } = shown;
+  const content = out.data?.["vtBody"] as Element | DocumentFragment | undefined;
+  if (content) mounted.parts.content = content;
+  else delete mounted.parts.content;
+  engine.updatePopover(patch);
+  const presenter = state.presenter;
+  if (presenter) guarded("presenter.update", () => presenter.update(mounted.popover, step, mounted.parts));
+  engine.refresh();
+}
+
+setConfiguredHook(refreshShownStep);
 
 function evaluateStepInto(tour: Tour, index: number): void {
   const engine = internalsOf(tour).engine;
@@ -890,7 +970,7 @@ export function presenterOf(tour: Tour): Presenter {
   const state = internalsOf(tour);
   state.presenter ??= state.normalized.presenter
     ? state.normalized.presenter(tour)
-    : new DialogPresenter(tour, state.normalized.namespace);
+    : new DialogPresenter(tour, state.normalized.namespace, state.normalized.sanitize);
   return state.presenter;
 }
 

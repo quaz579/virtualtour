@@ -1,5 +1,6 @@
 import type { DriveStep } from "../types";
 import type { Context } from "./context";
+import { prefersReducedMotion } from "./env";
 import { EXTRA_SELECTOR, fixedNames } from "./namespace";
 
 export function resolveElement(element: DriveStep["element"]): Element | null | undefined {
@@ -69,18 +70,24 @@ export function getFocusableElements(parentEls: Element[]) {
   return focusableCandidates(parentEls).filter(isFocusable);
 }
 
-export function bringInView(element: Element, shouldSmoothScroll?: boolean) {
-  if (!element || isElementInView(element)) {
+export function bringInView(element: Element, scrollIntoView?: false | ScrollIntoViewOptions, shouldSmoothScroll?: boolean) {
+  if (scrollIntoView === false || !element || isElementInView(element)) {
     return;
   }
 
+  const options: ScrollIntoViewOptions = scrollIntoView ?? defaultScrollOptions(element, shouldSmoothScroll);
+
+  element.scrollIntoView(prefersReducedMotion() && options.behavior !== "auto" && options.behavior !== "instant" ? { ...options, behavior: "instant" } : options);
+}
+
+function defaultScrollOptions(element: Element, shouldSmoothScroll?: boolean): ScrollIntoViewOptions {
   const isTallerThanViewport = (element as HTMLElement).offsetHeight > window.innerHeight;
 
-  element.scrollIntoView({
+  return {
     behavior: !shouldSmoothScroll || hasScrollableParent(element) ? "auto" : "smooth",
     inline: "center",
     block: isTallerThanViewport ? "start" : "center",
-  });
+  };
 }
 
 function hasScrollableParent(e: Element) {
