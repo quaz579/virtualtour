@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour avatar motion fixture</title>
+    <style>
+      body {
+        margin: 0;
+        height: 700px;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      .t {
+        position: absolute;
+        box-sizing: border-box;
+        width: 160px;
+        height: 40px;
+        margin: 0;
+        border: 1px solid #888;
+      }
+      #one {
+        left: 200px;
+        top: 200px;
+      }
+      #two {
+        left: 800px;
+        top: 450px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="margin: 8px 20px">Avatar motion fixture</h1>
+    <button class="t" id="one">One</button>
+    <button class="t" id="two">Two</button>
+
+    <script type="module" src="./avatar-motion.ts"></script>
+  </body>
+</html>
