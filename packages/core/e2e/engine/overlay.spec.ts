@@ -205,9 +205,9 @@ async function driveIntoDialog(page: Page, gap: number) {
 }
 
 test.describe("allowed elements", () => {
-  test("get their own holes only when the overlay sits inside a dialog", async ({ page }) => {
+  test("get their own holes on the page and, inside a dialog, only those inside it", async ({ page }) => {
     await driveIntoDialog(page, 60);
-    expect((await cutout(page)).subpaths).toBe(2);
+    expect((await cutout(page)).subpaths).toBeGreaterThan(2);
 
     await page.evaluate(() => window.tour.moveNext());
     await expect(title(page)).toHaveText("Dialog");

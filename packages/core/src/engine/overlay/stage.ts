@@ -91,6 +91,29 @@ function isInside(rect: Rect, x: number, y: number): boolean {
   return x > rect.x && x < rect.x + rect.width && y > rect.y && y < rect.y + rect.height;
 }
 
+function contains(outer: Rect, inner: Rect): boolean {
+  return (
+    inner.x >= outer.x &&
+    inner.y >= outer.y &&
+    inner.x + inner.width <= outer.x + outer.width &&
+    inner.y + inner.height <= outer.y + outer.height
+  );
+}
+
+/** Drops rects fully inside the stage cut-out or inside another kept rect, so nested extras make one hole. */
+export function dedupeRects(stage: Rect, rects: Rect[]): Rect[] {
+  const kept: Rect[] = [];
+  [...rects]
+    .sort((a, b) => b.width * b.height - a.width * a.height)
+    .forEach(rect => {
+      if (!contains(stage, rect) && !kept.some(other => contains(other, rect))) {
+        kept.push(rect);
+      }
+    });
+
+  return kept;
+}
+
 export function generateExtraCutoutsPathString(cutout: StageCutout, rects: Rect[]): string {
   const isInsideExtraCutout = (x: number, y: number) => rects.some(rect => isInside(rect, x, y));
   const gridLines = (start: "x" | "y", size: "width" | "height") =>
