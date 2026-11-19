@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { CLASS_TABLE, main, rewriteClassStrings, rewritePatch, type RunResult } from "../../../tools/upstream-apply.mjs";
+import { CLASS_TABLE, KNOWN_POPOVER_CLASSES, main, rewriteClassStrings, rewritePatch, type RunResult } from "../../../tools/upstream-apply.mjs";
 import { names } from "../src/engine/core/namespace";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -48,7 +48,7 @@ describe("rewritePatch", () => {
   it("maps state classes to the data attributes the engine uses", () => {
     const result = rewritePatch(formatPatch(section("tour/highlight.ts", "", 'el.classList.add("driver-active-element");')));
     expect(result.patch).toContain('+el.classList.add("data-vt-target");');
-    expect(result.unmapped).toEqual([]);
+    expect(result.unmapped).toEqual(["driver-active-element"]);
   });
 
   it("reports class strings that are not in the table", () => {
@@ -61,6 +61,14 @@ describe("rewritePatch", () => {
     const result = rewritePatch(formatPatch(section("core/utils.ts", "-- a: 1", "-- b: 2")));
     expect(result.patch).toContain("--- a: 1");
     expect(result.patch).toContain("+-- b: 2");
+  });
+
+  it("handles CRLF patches and refuses unparseable diff headers", () => {
+    const crlf = rewritePatch(formatPatch(section("hints.ts", "", "x")).replace(/\n/g, "\r\n"));
+    expect(crlf.refused).toHaveLength(1);
+    const quoted = rewritePatch(formatPatch('diff --git "a/packages/driver/src/my file.ts" "b/packages/driver/src/my file.ts"\n@@ -1 +1 @@\n-a\n+b\n'));
+    expect(quoted.refused).toHaveLength(1);
+    expect(quoted.patch).toBe("");
   });
 
   it("renames driver.css to engine.css", () => {
@@ -129,6 +137,12 @@ describe("namespace table", () => {
     expect(CLASS_TABLE["driver-no-scroll"]).toBe(dynamic.attr.lockScroll);
     expect(CLASS_TABLE["driver-simple"]).toBe(dynamic.simple);
     expect(CLASS_TABLE["driver-overlay-animated"]).toBe(dynamic.overlayAnimated);
+  });
+
+  it("lists every popover class the engine defines as known", () => {
+    const strings = Object.values(dynamic.popover).filter(value => typeof value === "string") as string[];
+    expect([...KNOWN_POPOVER_CLASSES].sort()).toEqual([...new Set([...strings.map(value => `driver-${value.slice(3)}`), "driver-popover-arrow-side-"])].sort());
+    expect(rewritePatch(formatPatch(section("core/utils.ts", "", 'c("driver-popover-foo", "driver-popover-side-top")'))).unmapped).toEqual(["driver-popover-foo"]);
   });
 
   it("rewrites every popover class name the engine defines from its upstream spelling", () => {

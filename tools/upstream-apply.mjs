@@ -41,18 +41,54 @@ export const CLASS_TABLE = Object.freeze({
 
 const DRIVER_TOKEN = /(?<![A-Za-z0-9_-])driver-[A-Za-z0-9_-]*[A-Za-z0-9_]|(?<![A-Za-z0-9_-])driver-(?![A-Za-z0-9_-])/g;
 
+export const KNOWN_POPOVER_CLASSES = Object.freeze([
+  "driver-popover",
+  "driver-popover-arrow",
+  "driver-popover-arrow-none",
+  "driver-popover-title",
+  "driver-popover-description",
+  "driver-popover-close-btn",
+  "driver-popover-footer",
+  "driver-popover-footer-btn",
+  "driver-popover-progress-text",
+  "driver-popover-navigation-btns",
+  "driver-popover-prev-btn",
+  "driver-popover-next-btn",
+  "driver-popover-done-btn",
+  "driver-popover-btn-disabled",
+  "driver-popover-instruction",
+  "driver-popover-instruction-text",
+  "driver-popover-instruction-indicator",
+  "driver-popover-has-instruction",
+  "driver-popover-instruction-done",
+  "driver-popover-feedback",
+  "driver-popover-waiting",
+  "driver-popover-nudge",
+  "driver-popover-side-",
+  "driver-popover-align-",
+  "driver-popover-content",
+  "driver-popover-arrow-side-",
+]);
+
+const KNOWN_POPOVER = new Set(KNOWN_POPOVER_CLASSES);
+
 export function rewriteClassStrings(text, unmapped = new Set()) {
   return text
     .replace(DRIVER_TOKEN, (token) => {
-      if (Object.hasOwn(CLASS_TABLE, token)) return CLASS_TABLE[token];
-      if (!token.startsWith("driver-popover")) unmapped.add(token);
+      if (Object.hasOwn(CLASS_TABLE, token)) {
+        const target = CLASS_TABLE[token];
+        if (target.startsWith("data-vt-")) unmapped.add(token);
+        return target;
+      }
+      const family = token.replace(/(side|align)-.+$/, "$1-").replace(/arrow-side-.+$/, "arrow-side-");
+      if (!KNOWN_POPOVER.has(token) && !KNOWN_POPOVER.has(family)) unmapped.add(token);
       return `vt-${token.slice("driver-".length)}`;
     })
     .replaceAll("[driver.js]", "[virtualtour]");
 }
 
 function splitSections(patch) {
-  const lines = patch.split("\n");
+  const lines = patch.split(/\r?\n/);
   const head = [];
   const sections = [];
   let current = null;
@@ -100,6 +136,10 @@ export function rewritePatch(patch) {
 
   for (const section of sections) {
     const paths = sectionPaths(section);
+    if (!paths) {
+      refused.push({ file: section[0], reason: "cannot parse the file paths in this diff header (quoted or unusual names); apply it by hand" });
+      continue;
+    }
     const touched = paths ? [paths.from, paths.to] : [];
     const inSrc = touched.filter((path) => path.startsWith(UPSTREAM_SRC));
     if (inSrc.length === 0) {
@@ -163,7 +203,7 @@ export function main(argv, io = {}) {
     return 1;
   }
 
-  const fetched = exec("git", ["fetch", "upstream", "--tags"], { stdio: ["ignore", "inherit", "inherit"] });
+  const fetched = exec("git", ["fetch", "upstream", "--no-tags", "+refs/heads/*:refs/remotes/upstream/*", "+refs/tags/*:refs/tags/upstream/*"], { stdio: ["ignore", "inherit", "inherit"] });
   if (fetched.status !== 0) {
     error("git fetch upstream failed");
     return 1;
@@ -186,7 +226,7 @@ export function main(argv, io = {}) {
   }
   if (result.skipped.length > 0) log(`skipped (outside ${UPSTREAM_SRC}): ${result.skipped.join(", ")}`);
   if (result.unmapped.length > 0) {
-    log(`class strings not in the namespace table, renamed by prefix only (check packages/core/src/engine/core/namespace.ts): ${result.unmapped.join(", ")}`);
+    log(`class strings needing a manual check against packages/core/src/engine/core/namespace.ts (not in the table, or mapped to a data attribute that cannot replace a class name): ${result.unmapped.join(", ")}`);
   }
 
   if (dryRun) {
@@ -202,7 +242,7 @@ export function main(argv, io = {}) {
   }
 
   const tags = exec("git", ["tag", "--contains", sha, "--sort=creatordate"]);
-  const version = (tags.stdout ?? "").split("\n").find((tag) => tag !== "") ?? "unreleased";
+  const version = (tags.stdout ?? "").split("\n").find((tag) => tag !== "")?.replace(/^upstream\//, "") ?? "unreleased";
   const full = exec("git", ["rev-parse", sha]);
   log(`Upstream: ${(full.stdout ?? "").trim() || sha} (${version})`);
   return applied.status === 0 ? 0 : 1;

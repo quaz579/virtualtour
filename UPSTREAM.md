@@ -13,7 +13,7 @@ Fork point: tag `1.12.1`, commit `0163642dc532417ea401684bd26690e2f3283d63` of h
 
 ## Mechanics
 
-- Add the upstream repository as a git remote named `upstream`: `git remote add upstream https://github.com/nilbuild/driver.js.git`. The tool fetches tags itself.
+- Add the upstream repository as a git remote named `upstream`: `git remote add upstream https://github.com/nilbuild/driver.js.git`. The tool fetches upstream tags into `refs/tags/upstream/*` itself.
 - Apply one upstream commit with `node tools/upstream-apply.mjs <sha>` (add `--dry-run` to print the rewritten patch). It runs `git format-patch -1 <sha>`, rewrites `packages/driver/src/` to `packages/core/src/engine/` and `styles/driver.css` to `styles/engine.css`, renames `driver-` class strings through the table in the tool (checked against `core/namespace.ts` by `test/upstream-apply.node.test.ts`) and `[driver.js]` to `[virtualtour]`, drops files outside `packages/driver/src/`, then runs `git apply --3way --index`.
 - The tool refuses (exit code 2) a patch that touches `hints.ts`, `checklist.ts`, `styles/hints.css`, `styles/checklist.css` (removed from the fork) or `styles/popover.css` (moved to `src/styles/base.css`; port that hunk by hand).
 - The tool never commits. Conflicts stay in the tree for the maintainer. It prints the trailer to add: `Upstream: <sha> (<version>)`.
@@ -42,7 +42,7 @@ Columns: upstream version, release date, review date, changelog entries, verdict
 | 1.14.0 | 2026-11-13 | 2026-11-18 | Changed: keyboard goes back only if it is still on the popover when the tour ends | not needed: behavior change, not a bug fix; re-check in WU-46 | WU-26 unit lead (first review) |
 | 1.14.0 | 2026-11-13 | 2026-11-18 | Fixed: highlight follows a panel that scrolls inside the page | not needed: the fork listens to scroll in the capture phase (WU-16) | WU-26 unit lead (first review) |
 | 1.14.0 | 2026-11-13 | 2026-11-18 | Fixed: `onDestroyed` runs when the tour closes before the first step settles | cherry-picked in WU-26 by hand (the fork was affected; upstream code was restructured, so no patch applied). `onDestroyed` now also fires from the pending step; the ten lifecycle-matrix snapshot lines and the one hook-order line match upstream's | WU-26 unit lead (first review) |
-| 1.14.0 | 2026-11-13 | 2026-11-18 | Fixed: `waitForElement` longer than about 24 days no longer runs out at once | cherry-picked in WU-26 by hand (the fork was affected): waits and removal grace periods clamp to the largest timer delay | WU-26 unit lead (first review) |
+| 1.14.0 | 2026-11-13 | 2026-11-18 | Fixed: `waitForElement` longer than about 24 days no longer runs out at once | cherry-picked in WU-26 by hand (the fork was affected): waits and removal grace periods clamp to the largest timer delay (about 24.8 days, effectively endless) | WU-26 unit lead (first review) |
 | Unreleased (commit `ebdcfda`) | 2026-11-14 | 2026-11-18 | Fixed: Tab no longer gets stuck on hidden or inert controls in the highlighted element | cherry-picked in WU-26 with `tools/upstream-apply.mjs`; applied cleanly. Trailer `Upstream: ebdcfda08ac99097bf6a4bf7391d65f136e47367 (unreleased)` | WU-26 unit lead (first review) |
 
 The per-entry verdicts for 1.13.0 and 1.14.0 are redone in WU-46 so the per-file table below covers every M2 change.
