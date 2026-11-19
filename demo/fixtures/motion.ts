@@ -9,7 +9,8 @@ declare global {
   }
 }
 
-function main(): void {
+async function main(): Promise<void> {
+  await import("../../packages/core/src/styles/theme.css");
   const params = new URLSearchParams(location.search);
   const tour = createTour({
     id: "motion-demo",
@@ -34,4 +35,4 @@ function main(): void {
   document.documentElement.dataset["ready"] = "true";
 }
 
-main();
+void main();
