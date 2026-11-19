@@ -1,11 +1,12 @@
 # Styles
 
-VirtualTour ships two stylesheets and one stable naming contract.
+VirtualTour ships three stylesheets and one stable naming contract.
 
 | File | Import | Purpose |
 |---|---|---|
 | `base.css` | `virtualtour/base.css` | Required. The engine's functional rules plus a plain, usable popover. |
 | `theme.css` | `virtualtour/theme.css` | Optional. Variable-driven colors, dark mode, focus ring and entrance animation. Import it after `base.css`. |
+| `avatar.css` | `virtualtour/avatar.css` | Only with `SpeakerPresenter`. Lays out the speech bubble and avatar. Import it after `base.css` and `theme.css`. |
 
 Without `theme.css` the popover stays a plain light box. In a development build, `start()` logs a warning once per tour when `base.css` is missing.
 
@@ -44,6 +45,14 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 | `--vt-instruction-background`, `--vt-instruction-color`, `--vt-instruction-padding`, `--vt-instruction-radius`, `--vt-instruction-indicator-color`, `--vt-instruction-indicator-size`, `--vt-instruction-next-color`, `--vt-instruction-done-background`, `--vt-instruction-done-color` | Instruction strip on action steps |
 | `--vt-feedback-color` | Feedback line |
 
+## Avatar variables (`avatar.css`)
+
+| Variable | Default | Used for |
+|---|---|---|
+| `--vt-avatar-gap` | `8px` | Space between the bubble and the avatar. The presenter sets it from the pack's `bubble.gap` when the pack has one. |
+
+The bubble reads `--vt-bg`, `--vt-space`, `--vt-radius` and `--vt-shadow` from the theme and falls back to the `base.css` look without it.
+
 ## Attributes
 
 | Attribute | Where | Meaning |
@@ -60,6 +69,8 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 | `data-vt-overlay` | overlay SVG | The dimming overlay |
 | `data-vt-layer` | `<dialog>` | The dialog layer |
 | `data-vt-strategy` | popover | `absolute` when positioned inside a transformed container |
+| `data-vt-dock` | speaker popover | `start` or `end`: the inline edge of the bubble the avatar sits on, or above (`start`) and below (`end`) it beside a left or right popover. Written by the presenter, which resolves `auto`. |
+| `data-vt-side` | speaker popover | `top`, `bottom`, `left`, `right` or `over`: the side the popover ended on, `over` when no side fit and it was pinned to the viewport. Written by the presenter after every reposition, whatever the tour's namespace. |
 
 ## Classes
 
@@ -77,6 +88,7 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 | Custom buttons | `vt-footer`, `vt-button`, `vt-button--secondary` |
 | Instruction and feedback | `vt-popover-instruction`, `vt-popover-instruction-text`, `vt-popover-instruction-indicator`, `vt-popover-feedback` |
 | Arrow | `vt-popover-arrow`, `vt-popover-arrow-side-*`, `vt-popover-arrow-none` |
+| Speaker | `vt-speaker`, `vt-speaker--no-avatar`, `vt-bubble`, `vt-bubble-tail`, `vt-avatar-slot`, `vt-avatar` |
 | Dialog layer | `vt-layer` |
 | Live region | `vt-live-region` |
 
@@ -84,7 +96,7 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 
 `<ns>-active`, `<ns>-fade`, `<ns>-simple`, `<ns>-no-scroll`, `<ns>-overlay`, `<ns>-overlay-animated`, `<ns>-target`, `<ns>-target-blocked`, `<ns>-target-raised`, `<ns>-extra`, `<ns>-target-parent`, `<ns>-spotlit`
 
-The shipped stylesheets never use the namespaced classes, so two tours with different namespaces can be styled independently. Popover wrappers also carry `data-<ns>-step` (step index) and `data-<ns>-side`.
+The shipped stylesheets never use the namespaced classes, so two tours with different namespaces can be styled independently. Popover wrappers also carry `data-<ns>-step` (step index) and `data-<ns>-side`. The speaker presenter also writes the fixed `data-vt-side` that `avatar.css` reads, so avatar styling does not depend on the namespace.
 
 ### Author-applied
 
@@ -95,6 +107,8 @@ Names you set yourself. The engine never emits them.
 | `data-vt-theme` | `<html>` | `dark` or `light` forces a scheme |
 | `data-vt-progress-bar` | popover | Shows the progress bar; `--vt-progress-index` and `--vt-progress-total` set its width |
 
-### Reserved (avatar mode)
+### Avatar mode
 
-`vt-speaker`, `vt-bubble`, `vt-bubble-tail`, `vt-avatar-slot`, `vt-avatar`, `data-vt-dock`. Not emitted yet.
+With `SpeakerPresenter` the popover wrapper carries `vt-speaker` and holds, in order, the arrow (`vt-popover-arrow vt-bubble-tail`), `vt-bubble` (title, description, body, instruction and footer) and `vt-avatar-slot`. The presenter moves one `vt-avatar` element (`aria-hidden`, never focusable) into the slot of each step. `vt-speaker--no-avatar` marks a step that sets `extensions.avatar.hidden`; its slot is hidden.
+
+The tail is positioned against the bubble's edge, so the bubble sits flush on the edge that faces the target and the avatar hangs off the other side, however tall or wide it is.
