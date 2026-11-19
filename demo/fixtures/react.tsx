@@ -16,7 +16,7 @@ function Controls() {
   const { tour, isRunning, currentStep, start, forward, backward, exit } = useTour();
   useEffect(() => {
     const w = window as unknown as { vtStarts?: number };
-    w.vtStarts = 0;
+    w.vtStarts ??= 0;
     return tour.on("started", () => {
       w.vtStarts = (w.vtStarts ?? 0) + 1;
     });
