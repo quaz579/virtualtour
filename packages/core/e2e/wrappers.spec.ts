@@ -15,6 +15,7 @@ const runningState = (page: Page) => page.locator("#running");
 async function openReact(page: Page, query = "") {
   await page.goto(`/fixtures/react.html${query}`);
   await page.locator("html[data-ready=true]").waitFor();
+  await page.locator("#start").waitFor();
 }
 
 test.describe("react wrapper", () => {

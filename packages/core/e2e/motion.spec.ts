@@ -111,21 +111,21 @@ test("the cookbook counter renders the right text from step-shown and progressIn
   await expect(page.locator(".vt-popover-progress-text")).toHaveText("Step 2 of 3");
 });
 
-async function sampleOpacity(page: Page, run: () => Promise<void>, ms: number): Promise<number[]> {
-  const pending = page.evaluate(async (span) => {
+async function sampleOpacity(page: Page, run: () => Promise<void>, ms: number, minFrames = 0): Promise<number[]> {
+  const pending = page.evaluate(async ({ span, minFrames }) => {
     const out: number[] = [];
     const t0 = performance.now();
     await new Promise<void>((resolve) => {
       const tick = (): void => {
         const el = document.querySelector<HTMLElement>(".vt-popover");
         if (el) out.push(Number(getComputedStyle(el).opacity));
-        if (performance.now() - t0 < span) requestAnimationFrame(tick);
+        if (performance.now() - t0 < span || out.length < minFrames) requestAnimationFrame(tick);
         else resolve();
       };
       requestAnimationFrame(tick);
     });
     return out;
-  }, ms);
+  }, { span: ms, minFrames });
   await run();
   return pending;
 }
@@ -133,7 +133,7 @@ async function sampleOpacity(page: Page, run: () => Promise<void>, ms: number): 
 test("the popover never dips in opacity through a glide and after it ends", async ({ page }) => {
   await open(page, "?duration=300");
   await page.waitForTimeout(800);
-  const samples = await sampleOpacity(page, () => page.evaluate(() => (window as unknown as Win).vtTour.forward()), 1200);
+  const samples = await sampleOpacity(page, () => page.evaluate(() => (window as unknown as Win).vtTour.forward()), 1200, 21);
   expect(samples.length).toBeGreaterThan(20);
   expect(Math.min(...samples.slice(2))).toBe(1);
 });

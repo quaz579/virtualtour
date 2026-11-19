@@ -163,6 +163,7 @@ test.describe("scroll following", () => {
 
   test("moves the popover and cut-out with the target as the scroller scrolls", async ({ page }) => {
     await start(page);
+    await settle(page);
     const initial = await popoverOffset(page);
     let previousCutout = await cutout(page);
     let previousTop = await rectOf(page, "#middle").then(rect => rect.top);
@@ -173,11 +174,14 @@ test.describe("scroll following", () => {
       previousTop = (await rectOf(page, "#middle")).top;
       await expect.poll(() => cutout(page)).not.toBe(previousCutout);
       previousCutout = await cutout(page);
-      await settle(page);
 
-      const offset = await popoverOffset(page);
-      expect(Math.abs(offset.dx - initial.dx)).toBeLessThanOrEqual(1);
-      expect(Math.abs(offset.dy - initial.dy)).toBeLessThanOrEqual(1);
+      await expect
+        .poll(async () => {
+          const offset = await popoverOffset(page);
+
+          return Math.max(Math.abs(offset.dx - initial.dx), Math.abs(offset.dy - initial.dy));
+        })
+        .toBeLessThanOrEqual(1);
     }
 
     expect(await scrollerTop(page)).toBe(100);

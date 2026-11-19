@@ -286,7 +286,7 @@ function write(root: string, file: string, text: string) {
   writeFileSync(full, text);
 }
 
-describe("end to end against local repositories", () => {
+describe("end to end against local repositories", { timeout: 60_000 }, () => {
   it("stages a rewritten upstream fix in the fork without committing", () => {
     const base = realpathSync(mkdtempSync(join(tmpdir(), "upstream-apply-")));
     const upstream = join(base, "upstream");

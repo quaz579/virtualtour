@@ -152,8 +152,11 @@ for (const dir of DIRS) {
     test("ArrowRight goes forward and ArrowLeft goes back", async ({ page }) => {
       await page.evaluate(() => {
         window.tour?.destroy();
+        const highlighted: string[] = [];
+        (window as unknown as { highlighted: string[] }).highlighted = highlighted;
         window.tour = window.__engine.createEngine({
           animate: false,
+          onHighlighted: (_element, step) => highlighted.push(step.popover?.title ?? ""),
           steps: [
             { element: "#one", popover: { title: "One" } },
             { element: "#two", popover: { title: "Two" } },
@@ -161,14 +164,17 @@ for (const dir of DIRS) {
         });
         window.tour.drive(0);
       });
+      const highlighted = (page: Page) => page.evaluate(() => (window as unknown as { highlighted: string[] }).highlighted);
+      await expect.poll(() => highlighted(page)).toEqual(["One"]);
       await expect(title(page)).toHaveText("One");
-      await settle(page);
 
       await page.keyboard.press("ArrowRight");
+      await expect.poll(() => highlighted(page)).toEqual(["One", "Two"]);
       await expect(title(page)).toHaveText("Two");
       expect(await activeIndex(page)).toBe(1);
 
       await page.keyboard.press("ArrowLeft");
+      await expect.poll(() => highlighted(page)).toEqual(["One", "Two", "One"]);
       await expect(title(page)).toHaveText("One");
       expect(await activeIndex(page)).toBe(0);
     });
