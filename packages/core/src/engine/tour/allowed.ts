@@ -75,7 +75,7 @@ export function trackAllowedElements(ctx: Context, step: DriveStep, signal: Abor
     if (active && isRaised !== active.hasAttribute(names.attr.raised)) {
       active.classList.toggle(names.targetRaised, isRaised);
       active.toggleAttribute(names.attr.raised, isRaised);
-      redrawOverlay(ctx, true);
+      redrawOverlay(ctx);
     }
   };
 
