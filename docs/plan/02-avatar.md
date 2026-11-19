@@ -41,7 +41,7 @@ Decisions this design follows (all owner decisions of 2026-11-12):
 | AV-8 | The avatar is decorative for assistive technology (`aria-hidden="true"`); the bubble is the dialog and holds the accessible name and all content. Keyboard behavior is identical to dialog mode (it is engine code). |
 | AV-9 | Pack loading: `loadAvatarPack(url)` fetches a pack JSON and preloads its sheet; `loadClassicAvatarPack({sheetUrl, mapUrl})` converts the two classic map formats; `thumbtackPack()` resolves the shipped character. Loading failures reject with `AvatarPackError` and the tour falls back to dialog mode with a dev warning. |
 | AV-10 | The speaker (avatar + bubble) is positioned as one box by the engine; flip, shift, boundary, and clamping apply unchanged. The avatar docks at the bubble's inline-end by default (`dock: 'start' \| 'end' \| 'auto'`), honoring RTL (engine `isRtl`, F-08). |
-| AV-11 | The avatar entry adds no runtime dependency and is not counted in the core size target. Its own soft target is 6 KB min+gzip excluding the Thumbtack assets. |
+| AV-11 | The avatar entry adds no runtime dependency and is not counted in the core size target. Its own soft target is 12 KB min+gzip excluding the Thumbtack assets, counted with the presenter chunk it shares with core. |
 | AV-12 | The project repository, package, docs, demo, and tests contain no third-party character art. Test packs are synthetic (generated colored shapes) or Thumbtack. |
 
 ---

@@ -6,7 +6,7 @@ import {
   fromClassicPositionMap,
 } from "./classic";
 import type { ClassicSource } from "./classic";
-import { AvatarPackError, loadSheetImage, normalizePack, preloadSheet, validatePack } from "./pack";
+import { fail, loadSheetImage, normalizePack, preloadSheet, validatePack } from "./pack";
 import type { NormalizedPack } from "./pack";
 
 declare const __DEV__: boolean | undefined;
@@ -30,10 +30,6 @@ function absolute(url: string, path: string): string {
   } catch {
     return fail(path, `cannot be resolved as a URL ("${url}")`);
   }
-}
-
-function fail(path: string, message: string): never {
-  throw new AvatarPackError(path, message);
 }
 
 async function fetchJson(url: string, path: string, options: LoadAvatarPackOptions): Promise<unknown> {
