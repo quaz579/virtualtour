@@ -3,14 +3,14 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import { build } from "vite";
+import { build, transformWithEsbuild } from "vite";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sizeFile = resolve(root, "../../SIZE.md");
 const entries = [
-  { name: "core", file: "dist/index.js", target: 21, chunks: true },
-  { name: "engine", file: "src/engine/driver.ts", target: 21, engine: true },
-  { name: "avatar", file: "dist/avatar.js", target: 6, chunks: true },
+  { name: "core", file: "dist/index.js", target: 35, chunks: true },
+  { name: "engine", file: "src/engine/driver.ts", target: 20, engine: true },
+  { name: "avatar", file: "dist/avatar.js", target: 12, chunks: true },
   { name: "motion", file: "dist/motion.js", target: 2 },
   { name: "base.css", file: "dist/base.css", target: null },
   { name: "theme.css", file: "dist/theme.css", target: null },
@@ -67,7 +67,8 @@ async function bundleEngine() {
   });
   const output = (Array.isArray(result) ? result[0] : result).output;
   const chunk = output.find((item) => item.type === "chunk" && item.isEntry);
-  return Buffer.from(chunk.code);
+  const minified = await transformWithEsbuild(chunk.code, "engine.js", { minifyWhitespace: true, target: "es2020" });
+  return Buffer.from(minified.code);
 }
 
 const baseline = readBaseline();
@@ -101,11 +102,21 @@ if (process.argv.includes("--write")) {
   const body = [
     "# Size baseline",
     "",
-    "Gzip sizes of the built entries. Refresh with `npm run size -- --write`.",
+    "Gzip sizes of the built entries, measured after whitespace minification (what `dist/` ships). Refresh with `npm run size -- --write`.",
     "",
-    "| Entry | File | Gzip (bytes) |",
-    "|---|---|---|",
-    ...rows.map((row) => `| ${row.name} | ${row.file} | ${row.gzip} |`),
+    "| Entry | File | Gzip (bytes) | Soft target (KB) |",
+    "|---|---|---|---|",
+    ...rows.map((row) => `| ${row.name} | ${row.file} | ${row.gzip} | ${row.target ?? "none"} |`),
+    "",
+    "## Targets",
+    "",
+    "Targets are soft: `npm run size` warns above them and never fails.",
+    "",
+    "- **core** (35 KB): the whole public surface in one entry, which holds the engine (about 19 KB), the tour model, JSON parsing, persistence and the default presenter. The original 21 KB target was the engine alone.",
+    "- **engine** (20 KB): the forked driver bundled on its own, the figure to compare against upstream.",
+    "- **avatar** (12 KB): the speaker presenter, sprite player, pack validation and loaders, plus the presenter chunk it shares with core. Counted with that chunk because a page importing `virtualtour/avatar` loads both.",
+    "- **motion** (2 KB): a small optional entry.",
+    "- Bundlers tree-shake unused exports, so an app that imports only `createTour` ships less than the core figure.",
     "",
   ].join("\n");
   writeFileSync(sizeFile, body);

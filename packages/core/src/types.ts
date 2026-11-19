@@ -261,7 +261,7 @@ export interface Presenter {
   unmount(): void;
   /** Which popover layout the engine builds. Default `dialog`. Read once the promise from {@link Presenter.ready} has settled. */
   layout?: "dialog" | "speaker";
-  /** Awaited once before the first step of a run is built, so a presenter can finish loading and choose its `layout`. A rejection is ignored. */
+  /** Awaited once before the first step of a run is built, so a presenter can finish loading and choose its `layout`. A rejection is ignored, and the run stops waiting after 10 seconds and shows the step with whatever the presenter has by then. */
   ready?(): Promise<void>;
 }
 
