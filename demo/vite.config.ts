@@ -33,6 +33,7 @@ export default defineConfig({
         react: resolve(__dirname, "fixtures/react.html"),
         theme: resolve(__dirname, "fixtures/theme.html"),
         avatarClassic: resolve(__dirname, "fixtures/avatar-classic.html"),
+        avatarFallback: resolve(__dirname, "fixtures/avatar-fallback.html"),
       },
     },
   },

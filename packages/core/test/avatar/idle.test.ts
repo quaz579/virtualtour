@@ -108,11 +108,11 @@ describe("IdleScheduler", () => {
   });
 
   it("never picks the same idle animation twice in a row", async () => {
-    const { idle, name } = scheduler({ quietMs: 10, random: () => 0 });
+    const { idle, name } = scheduler({ quietMs: 50, random: () => 0 });
     idle.arm();
     const seen: (string | null)[] = [];
     for (let i = 0; i < 6; i += 1) {
-      await run(10);
+      await run(50);
       seen.push(name());
       await run(100);
     }
@@ -121,10 +121,10 @@ describe("IdleScheduler", () => {
   });
 
   it("plays a single idle animation repeatedly when it is the only one", async () => {
-    const { idle, name } = scheduler({ quietMs: 10, avatarPack: pack({ roles: { rest: "rest", idle: "blink" } }) });
+    const { idle, name } = scheduler({ quietMs: 50, avatarPack: pack({ roles: { rest: "rest", idle: "blink" } }) });
     idle.arm();
     for (let i = 0; i < 3; i += 1) {
-      await run(10);
+      await run(50);
       expect(name()).toBe("blink");
       await run(100);
       expect(name()).toBe("rest");
@@ -132,12 +132,30 @@ describe("IdleScheduler", () => {
   });
 
   it("does not loop an idle animation the pack marks as looping", async () => {
-    const { idle, name } = scheduler({ quietMs: 10, avatarPack: pack({ roles: { rest: "rest", idle: "spin" } }) });
+    const { idle, name } = scheduler({ quietMs: 50, avatarPack: pack({ roles: { rest: "rest", idle: "spin" } }) });
     idle.arm();
-    await run(10);
+    await run(50);
     expect(name()).toBe("spin");
     await run(100);
     expect(name()).toBe("rest");
+  });
+
+  it.each([0, -5, Number.NaN])("uses the default quiet period for %s instead of looping without delay", async (quietMs) => {
+    const { idle, name } = scheduler({ quietMs });
+    idle.arm();
+    await run(1000);
+    expect(name()).toBe("rest");
+    await run(5000);
+    expect(name()).not.toBe("rest");
+  });
+
+  it("raises a tiny quiet period to 50 ms", async () => {
+    const { idle, name } = scheduler({ quietMs: 1 });
+    idle.arm();
+    await run(40);
+    expect(name()).toBe("rest");
+    await run(10);
+    expect(name()).not.toBe("rest");
   });
 
   it("disarm cancels the pending quiet period", async () => {

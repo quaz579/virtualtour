@@ -331,3 +331,24 @@ describe("missing stylesheet warning", () => {
     expect(warnings(warn)).toHaveLength(0);
   });
 });
+
+describe("avatar.css default colors", () => {
+  it("the bubble's fallback background against the base popover text meets 4.5:1", () => {
+    const bubble = /\.vt-speaker \.vt-bubble \{[^}]*background-color: var\(--vt-bg, (#[0-9a-f]{3,6})\)/.exec(avatarCss);
+    const text = /\.vt-popover \{[^}]*?\n  color: (#[0-9a-f]{6});/.exec(baseCss);
+    expect(bubble).not.toBeNull();
+    expect(text).not.toBeNull();
+    const expand = (hex: string): string => (hex.length === 4 ? `#${[1, 2, 3].map((i) => (hex[i] as string).repeat(2)).join("")}` : hex);
+    expect(contrast(expand(text?.[1] as string), expand(bubble?.[1] as string))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("carries the stylesheet marker on the speaker popover", () => {
+    const decls = new Map<string, string>();
+    postcss.parse(avatarCss).walkRules(".vt-popover.vt-speaker", (rule) => {
+      rule.walkDecls((decl) => {
+        decls.set(decl.prop, decl.value);
+      });
+    });
+    expect(decls.get("--vt-avatar-base")).toBe("1");
+  });
+});
