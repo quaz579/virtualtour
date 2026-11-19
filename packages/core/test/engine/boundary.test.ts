@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RepositionInfo } from "../../src/engine/driver";
 import { createDriver, popoverEl, useDriverHarness } from "./utils";
 
@@ -8,6 +8,10 @@ const POPOVER = { width: 200, height: 100 };
 
 const rect = (x: number, y: number, width: number, height: number): DOMRect =>
   ({ x, y, left: x, top: y, width, height, right: x + width, bottom: y + height, toJSON: () => ({}) }) as DOMRect;
+
+beforeEach(() => {
+  Element.prototype.scrollIntoView = () => {};
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -123,6 +127,40 @@ describe("popoverBoundary", () => {
     expect(wrapper.style.bottom).not.toBe("10px");
   });
 
+  it("keeps the requested alignment on the viewport axis the scroller is too narrow for", () => {
+    placeInScroller(rect(120, 250, 40, 40), rect(50, 100, 150, 200), [150, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0 }, "top").wrapper.style.left).toBe("120px");
+  });
+
+  it("stops a top-aligned popover at the scroller's left edge plus the arrow", () => {
+    placeInScroller(rect(20, 250, 40, 40), rect(50, 100, 300, 200), [300, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0 }, "top").wrapper.style.left).toBe("60px");
+  });
+
+  it("stops a top-aligned popover at the scroller's right edge minus the arrow", () => {
+    placeInScroller(rect(330, 250, 40, 40), rect(50, 100, 300, 200), [300, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0 }, "top").wrapper.style.left).toBe("140px");
+  });
+
+  it("clamps a bottom popover below the scroller's top edge", () => {
+    placeInScroller(rect(100, 70, 40, 35), rect(50, 100, 300, 200), [300, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0 }, "bottom").wrapper.style.bottom).toBe(
+      `${window.innerHeight - 110 - POPOVER.height}px`
+    );
+  });
+
+  it("clamps a right popover inside the scroller's left edge", () => {
+    placeInScroller(rect(20, 150, 35, 40), rect(50, 100, 300, 200), [300, 200]);
+
+    expect(show({ stagePadding: 0, popoverOffset: 0 }, "right").wrapper.style.right).toBe(
+      `${window.innerWidth - 60 - POPOVER.width}px`
+    );
+  });
+
   it("keeps the popover clear of the scroller's left edge", () => {
     placeInScroller(rect(60, 250, 40, 40), rect(50, 100, 300, 200), [300, 200]);
 
@@ -140,6 +178,7 @@ describe("side over", () => {
 
     expect(document.getElementById("target")!.hasAttribute("data-vt-target")).toBe(true);
     expect(info.side).toBe("over");
+    expect(info.targetRect).not.toBeNull();
     expect(wrapper.style.left).toBe(`${window.innerWidth / 2 - POPOVER.width / 2}px`);
     expect(wrapper.style.top).toBe(`${window.innerHeight / 2 - POPOVER.height / 2}px`);
     expect(wrapper.querySelector(".vt-popover-arrow")!.classList.contains("vt-popover-arrow-none")).toBe(true);

@@ -166,7 +166,7 @@ export type Config = {
 
   popoverClass?: string;
   popoverOffset?: number;
-  /** Gap kept between the popover and the boundary edges, in pixels. Defaults to `0`. */
+  /** Gap kept between the popover and the viewport edges, in pixels. Defaults to `0`. */
   popoverPadding?: number;
   /**
    * What the popover must stay inside. `"scrollParents"` (default) is the viewport narrowed by the scrolling

@@ -173,6 +173,7 @@ function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): P
     boundaryPadding: stepOption(ctx, step, "popoverPadding") || 0,
     boundary: ctx.getConfig("popoverBoundary") || "scrollParents",
     centered: step.popover?.side === "over" || isDummyElement(element),
+    hasTarget: !isDummyElement(element),
     sideAttribute: ctx.names.sideAttr,
   };
 }

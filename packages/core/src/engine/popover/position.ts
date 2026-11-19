@@ -13,6 +13,7 @@ export type PositionOptions = {
   boundaryPadding?: number;
   boundary?: "viewport" | "scrollParents";
   centered?: boolean;
+  hasTarget?: boolean;
   sideAttribute?: string;
 };
 
@@ -37,7 +38,12 @@ function getPopoverDimensions(popover: PopoverDOM, offset: number): PopoverDimen
 
 type Bounds = { left: number; top: number; right: number; bottom: number };
 
-function resolveBounds(anchor: Element, options: PositionOptions, realWidth: number, realHeight: number): Bounds {
+function resolveBounds(
+  anchor: Element,
+  options: PositionOptions,
+  needWidth: number,
+  needHeight: number
+): Bounds {
   const inset = options.boundaryPadding || 0;
   const viewport = {
     left: inset,
@@ -53,12 +59,12 @@ function resolveBounds(anchor: Element, options: PositionOptions, realWidth: num
   const clipped = clipRectByScrollParents(anchor, new DOMRect(0, 0, window.innerWidth, window.innerHeight), true);
   const bounds = { ...viewport };
 
-  if (clipped.width >= realWidth) {
+  if (clipped.width >= needWidth) {
     bounds.left = Math.max(viewport.left, clipped.left);
     bounds.right = Math.min(viewport.right, clipped.right);
   }
 
-  if (clipped.height >= realHeight) {
+  if (clipped.height >= needHeight) {
     bounds.top = Math.max(viewport.top, clipped.top);
     bounds.bottom = Math.min(viewport.bottom, clipped.bottom);
   }
@@ -113,7 +119,13 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   });
   const anyFits = (f: ReturnType<typeof fits>) => f.top || f.bottom || f.left || f.right;
 
-  let bounds = resolveBounds(anchor, options, popoverDimensions.realWidth, popoverDimensions.realHeight);
+  const edgeRoom = popoverArrowDimensions.width * 2;
+  let bounds = resolveBounds(
+    anchor,
+    options,
+    popoverDimensions.realWidth + edgeRoom,
+    popoverDimensions.realHeight + edgeRoom
+  );
   let fit = fits(bounds);
   if (!anyFits(fit) && options.boundary !== "viewport") {
     bounds = resolveBounds(anchor, { ...options, boundary: "viewport" }, 0, 0);
@@ -234,7 +246,7 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
     side: popoverRenderedSide,
     align: requiredAlignment,
     wrapperRect: popover.wrapper.getBoundingClientRect(),
-    targetRect: options.centered ? null : elementDimensions,
+    targetRect: (options.hasTarget === undefined ? options.centered : !options.hasTarget) ? null : elementDimensions,
   };
 }
 
