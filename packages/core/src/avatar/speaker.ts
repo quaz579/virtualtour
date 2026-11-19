@@ -115,6 +115,7 @@ export class SpeakerPresenter implements Presenter {
   private observer: MutationObserver | null = null;
   private waiting = false;
   private pointing: AvatarDirection | null = null;
+  private deferred: TourStep | null = null;
 
   constructor(tour: Tour, pack: NormalizedPack, options: SpeakerPresenterOptions = {}) {
     this.tour = tour;
@@ -140,6 +141,7 @@ export class SpeakerPresenter implements Presenter {
     this.refreshQueued = false;
     this.info = null;
     this.shown = false;
+    this.deferred = null;
     this.base.mount(popover, step, parts);
     this.configure(popover, step);
     this.watchWaiting(popover);
@@ -213,6 +215,7 @@ export class SpeakerPresenter implements Presenter {
     this.observer = null;
     this.waiting = false;
     this.pointing = null;
+    this.deferred = null;
   }
 
   private interrupt(): number {
@@ -232,9 +235,18 @@ export class SpeakerPresenter implements Presenter {
       if (waiting === this.waiting) return;
       this.waiting = waiting;
       if (this.hidden || !this.shown) return;
+      const pending = this.timer !== null ? this.step : null;
       this.interrupt();
-      if (waiting) this.start(this.resolveRoleName("think"), true);
-      else this.player.stop();
+      if (waiting) {
+        this.deferred = pending ?? this.deferred;
+        this.pointing = null;
+        this.start(this.resolveRoleName("think"), true);
+        return;
+      }
+      this.player.stop();
+      const resume = this.deferred;
+      this.deferred = null;
+      if (resume && resume === this.step) this.perform(resume);
     });
     observer.observe(popover.wrapper, { attributes: true, attributeFilter: ["class"] });
     this.observer = observer;

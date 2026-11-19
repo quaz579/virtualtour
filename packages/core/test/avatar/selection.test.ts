@@ -363,7 +363,7 @@ describe("pack failure", () => {
   it("falls back for an invalid pack object", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const onError = vi.fn();
-    const tour = make([plain], { onError }, {}, { ...definition, format: "nope" } as AvatarPack);
+    const tour = make([plain], { onError }, {}, { ...definition, format: "nope" } as unknown as AvatarPack);
     await tour.start();
     expect(wrapper().classList.contains("vt-dialog")).toBe(true);
     expect(onError).toHaveBeenCalledTimes(1);
@@ -410,6 +410,58 @@ describe("pack failure", () => {
     await tour.start();
     expect(wrapper().classList.contains("vt-speaker")).toBe(true);
     expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports once when a timeout is followed by a rejection, and waits only once", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    let fail: (reason: unknown) => void = () => {};
+    const slow = new Promise<AvatarPack>((_, reject) => (fail = reject));
+    const onError = vi.fn();
+    const tour = make([plain], { onError, loadTimeoutMs: 200 }, {}, slow);
+    const started = tour.start();
+    await vi.advanceTimersByTimeAsync(200);
+    await started;
+    fail(new Error("late"));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onError).toHaveBeenCalledTimes(1);
+    tour.finish();
+    const again = tour.start();
+    await vi.advanceTimersByTimeAsync(0);
+    await again;
+    expect(wrapper().classList.contains("vt-dialog")).toBe(true);
+  });
+
+  it("does not show a stale step when the tour restarts while the pack loads", async () => {
+    let release: (value: AvatarPack) => void = () => {};
+    const slow = new Promise<AvatarPack>((resolve) => (release = resolve));
+    const tour = make([{ ...plain, id: "a", title: "A" }], { loadTimeoutMs: 10_000 }, {}, slow);
+    const shown = vi.fn();
+    tour.on("step-shown", shown);
+    void tour.start();
+    await Promise.resolve();
+    await tour.exit();
+    void tour.start();
+    await Promise.resolve();
+    release(definition);
+    await vi.waitFor(() => expect(shown).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(shown).toHaveBeenCalledTimes(1);
+    expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
+  });
+
+  it("resumes the step animation that the think loop deferred", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const tour = fading([pointing]);
+    await tour.start();
+    wrapper().classList.add("vt-waiting");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(anim()).toBe("think");
+    vi.advanceTimersByTime(1000);
+    expect(anim()).toBe("think");
+    wrapper().classList.remove("vt-waiting");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(anim()).toBe("point-right");
   });
 
   it("does not build the engine when the tour ends while the pack loads", async () => {

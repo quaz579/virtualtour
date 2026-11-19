@@ -22,12 +22,19 @@ class PackSource {
   private pack: NormalizedPack | null = null;
   private failed = false;
   private reported = false;
-  private readonly settled: Promise<void>;
+  private timedOut = false;
+  private settled: Promise<void> | null = null;
+  private readonly input: PackInput;
   private readonly options: AvatarOptions;
 
   constructor(input: PackInput, options: AvatarOptions) {
+    this.input = input;
     this.options = options;
-    this.settled = Promise.resolve(input).then(
+    Promise.resolve(input).catch(() => undefined);
+  }
+
+  private begin(): Promise<void> {
+    this.settled ??= Promise.resolve(this.input).then(
       (value) => {
         try {
           this.pack = isNormalized(value) ? value : normalizePack(validatePack(value), document.baseURI);
@@ -37,6 +44,7 @@ class PackSource {
       },
       (error: unknown) => this.fail(error),
     );
+    return this.settled;
   }
 
   get ready(): NormalizedPack | null {
@@ -44,15 +52,17 @@ class PackSource {
   }
 
   wait(): Promise<void> {
-    if (this.pack || this.failed) return Promise.resolve();
+    const settled = this.begin();
+    if (this.pack || this.failed || this.timedOut) return Promise.resolve();
     const configured = this.options.loadTimeoutMs;
     const ms = typeof configured === "number" && Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_LOAD_TIMEOUT_MS;
     return new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
+        this.timedOut = true;
         this.report(new AvatarPackError("loadTimeoutMs", `the pack did not load within ${ms} ms; this run uses the dialog presenter`));
         resolve();
       }, ms);
-      void this.settled.then(() => {
+      void settled.then(() => {
         clearTimeout(timer);
         resolve();
       });

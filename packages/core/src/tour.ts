@@ -717,8 +717,9 @@ async function showStep(tour: Tour, index: number): Promise<void> {
   if (!state.engine) {
     const ready = guardedReady(presenterOf(tour));
     if (ready) {
+      const runId = state.runId;
       await ready;
-      if (!state.running || state.ending) return;
+      if (!isLive(state, runId)) return;
     }
   }
   const engine = ensureEngine(tour);
@@ -732,10 +733,14 @@ async function showStep(tour: Tour, index: number): Promise<void> {
 }
 
 function guardedReady(presenter: Presenter): Promise<void> | undefined {
-  try {
-    return presenter.ready?.().catch(() => undefined);
-  } catch {
+  const failed = (error: unknown): undefined => {
+    console.warn("[virtualtour] presenter.ready failed", error);
     return undefined;
+  };
+  try {
+    return presenter.ready?.().catch(failed);
+  } catch (error) {
+    return failed(error) ?? undefined;
   }
 }
 
