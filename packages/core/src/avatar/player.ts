@@ -69,9 +69,16 @@ export class SpritePlayer {
         el.style.backgroundSize = `${columns * frameWidth}px auto`;
       } else if (typeof Image !== "undefined") {
         const probe = new Image();
-        probe.onload = () => {
-          if (!this.disposed) el.style.backgroundSize = `${probe.naturalWidth / scale}px ${probe.naturalHeight / scale}px`;
+        const release = (): void => {
+          probe.onload = null;
+          probe.onerror = null;
         };
+        probe.onload = () => {
+          release();
+          if (this.disposed || !probe.naturalWidth || !probe.naturalHeight) return;
+          el.style.backgroundSize = `${probe.naturalWidth / scale}px ${probe.naturalHeight / scale}px`;
+        };
+        probe.onerror = release;
         probe.src = pack.sheetUrl;
       }
     }
@@ -87,7 +94,7 @@ export class SpritePlayer {
   /**
    * Plays a named animation. Resolves when a non-looping animation ends, or when another `play`, `stop` or
    * `dispose` interrupts it. `opts.loop` overrides the animation's own `loop` flag; a looping run resolves only
-   * on interruption. Under reduced motion it shows the still frame and resolves immediately.
+   * on interruption. Under reduced motion, or where `requestAnimationFrame` does not exist, it shows the still frame and resolves immediately.
    * Rejects with {@link AvatarPackError} for an animation the pack does not define.
    */
   play(name: string, opts: { loop?: boolean } = {}): Promise<void> {
@@ -97,7 +104,7 @@ export class SpritePlayer {
       return Promise.reject(new AvatarPackError(`animations.${name}`, "is not defined in this pack"));
     }
     this.interrupt();
-    if (this.reducedMotion()) {
+    if (this.reducedMotion() || typeof requestAnimationFrame !== "function") {
       this.show(name, this.pack.stillOf(name));
       return Promise.resolve();
     }
