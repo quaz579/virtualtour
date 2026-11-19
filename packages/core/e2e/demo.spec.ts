@@ -49,6 +49,26 @@ for (const id of ids) {
   });
 }
 
+for (const id of ["avatar", "avatar-classic"]) {
+  test(`scenario ${id}: the avatar never covers the Revenue card label`, async ({ page }) => {
+    await open(page);
+    await run(page, id);
+    await expect(page.locator(".vt-avatar")).toBeVisible();
+    const count = await page.evaluate(() => (window as unknown as { vtDemo: { tour: { steps: unknown[] } } }).vtDemo.tour.steps.length);
+    for (let index = 0; index < count; index += 1) {
+      await page.evaluate((i) => (window as unknown as { vtDemo: { tour: { goTo(i: number): Promise<void> } } }).vtDemo.tour.goTo(i), index);
+      await expect(page.locator(".vt-avatar")).toBeVisible();
+      const label = await page.locator("#card-a h3").boundingBox();
+      const avatar = await page.locator(".vt-avatar").boundingBox();
+      expect(label && avatar, `step ${index} boxes`).toBeTruthy();
+      const l = label!;
+      const a = avatar!;
+      const overlaps = a.x < l.x + l.width && a.x + a.width > l.x && a.y < l.y + l.height && a.y + a.height > l.y;
+      expect(overlaps, `step ${index} avatar ${JSON.stringify(a)} vs label ${JSON.stringify(l)}`).toBe(false);
+    }
+  });
+}
+
 test("action scenario waits for real interaction", async ({ page }) => {
   await open(page);
   await run(page, "action");

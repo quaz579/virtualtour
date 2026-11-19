@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createTour, tours } from "../../src/index";
+import { createTour, memoryStore, tours } from "../../src/index";
 import type { Tour } from "../../src/index";
 import { withAvatar } from "../../src/avatar/with-avatar";
 import type { AvatarOptions } from "../../src/avatar/speaker";
@@ -230,5 +230,17 @@ describe("greeting", () => {
     expect(anim()).toBe("rest");
     await tour.goTo(0);
     expect(anim()).toBe("wave");
+  });
+
+  it("greets the first step shown when a run resumes at a later step", async () => {
+    const store = memoryStore();
+    store.save({ tourId: "resumed", lastStepId: "b", updatedAt: "2026-01-01T00:00:00.000Z" });
+    const tour = createTour({ id: "resumed", animate: false, steps: [plain("a"), plain("b"), plain("c")], progress: { store, resume: true }, presenter: withAvatar(definition) });
+    created.push(tour);
+    await tour.start();
+    expect(tour.currentStep?.id).toBe("b");
+    expect(anim()).toBe("wave");
+    await tour.forward();
+    expect(anim()).toBe("rest");
   });
 });

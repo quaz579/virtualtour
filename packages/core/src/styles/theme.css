@@ -1,15 +1,25 @@
 :where(:root) {
-  --vt-accent: #2563eb;
-  --vt-bg: #ffffff;
-  --vt-fg: #1f2328;
-  --vt-muted: #59636e;
   --vt-radius: 8px;
   --vt-space: 16px;
-  --vt-shadow: 0 8px 24px rgb(15 23 42 / 0.2), 0 1px 3px rgb(15 23 42 / 0.2);
   --vt-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --vt-enter-duration: 180ms;
   --vt-progress-index: 0;
   --vt-progress-total: 1;
+}
+
+:where(:root, [data-vt-theme="light"]) {
+  --vt-accent: #2563eb;
+  --vt-bg: #ffffff;
+  --vt-fg: #1f2328;
+  --vt-muted: #59636e;
+  --vt-shadow: 0 8px 24px rgb(15 23 42 / 0.2), 0 1px 3px rgb(15 23 42 / 0.2);
+  --vt-instruction-background: #f2f2f2;
+  --vt-instruction-indicator-color: #f59e0b;
+  --vt-instruction-done-background: #dcfce7;
+  --vt-instruction-done-color: #15803d;
+  --vt-instruction-next-color: #a3a3a3;
+  --vt-feedback-color: #b45309;
+  --vt-nudge-color: #f59e0b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,14 +52,6 @@
   --vt-instruction-next-color: #a9b1bd;
   --vt-feedback-color: #fbbf24;
   --vt-nudge-color: #fbbf24;
-}
-
-:where([data-vt-theme="light"]) {
-  --vt-accent: #2563eb;
-  --vt-bg: #ffffff;
-  --vt-fg: #1f2328;
-  --vt-muted: #59636e;
-  --vt-shadow: 0 8px 24px rgb(15 23 42 / 0.2), 0 1px 3px rgb(15 23 42 / 0.2);
 }
 
 .vt-popover {

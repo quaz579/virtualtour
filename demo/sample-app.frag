@@ -23,7 +23,6 @@
       <h3>New invoice</h3>
       <label>Customer <input id="customer" type="text" /></label>
       <button id="save" type="button">Save invoice</button>
-      <span id="saved" hidden>Saved</span>
     </form>
     <p id="footer-note" class="note">Last synced a minute ago.</p>
   </section>

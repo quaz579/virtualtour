@@ -105,6 +105,41 @@ test("data-vt-theme overrides the system scheme in both directions", async ({ pa
   expect(luminance(parseColor(await style(page, ".vt-popover", "background-color")))).toBeLessThan(0.1);
 });
 
+const LIGHT_VARS: Record<string, string> = {
+  "--vt-accent": "#2563eb",
+  "--vt-bg": "#ffffff",
+  "--vt-fg": "#1f2328",
+  "--vt-muted": "#59636e",
+  "--vt-shadow": "0 8px 24px rgb(15 23 42 / 0.2), 0 1px 3px rgb(15 23 42 / 0.2)",
+  "--vt-instruction-background": "#f2f2f2",
+  "--vt-instruction-indicator-color": "#f59e0b",
+  "--vt-instruction-done-background": "#dcfce7",
+  "--vt-instruction-done-color": "#15803d",
+  "--vt-instruction-next-color": "#a3a3a3",
+  "--vt-feedback-color": "#b45309",
+  "--vt-nudge-color": "#f59e0b",
+};
+
+test("an explicit light theme under OS dark resets every variable dark mode changes", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await open(page, "?theme=light");
+  const read = (names: string[]) =>
+    page.evaluate((list) => Object.fromEntries(list.map((name) => [name, getComputedStyle(document.documentElement).getPropertyValue(name).trim()])), names);
+  expect(await read(Object.keys(LIGHT_VARS))).toEqual(LIGHT_VARS);
+});
+
+test("a light subtree inside a dark theme resets every variable", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await open(page, "?theme=dark");
+  const values = await page.evaluate((list) => {
+    const child = document.createElement("div");
+    child.setAttribute("data-vt-theme", "light");
+    document.body.append(child);
+    return Object.fromEntries(list.map((name) => [name, getComputedStyle(child).getPropertyValue(name).trim()]));
+  }, Object.keys(LIGHT_VARS));
+  expect(values).toEqual(LIGHT_VARS);
+});
+
 for (const scheme of ["light", "dark"] as const) {
   test(`the focus ring on a keyboard-focused .vt-button is 2px, solid and 3:1 against the ${scheme} background`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });

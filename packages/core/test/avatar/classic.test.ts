@@ -9,7 +9,7 @@ import {
   fromClassicColumnRowMap,
   fromClassicPositionMap,
 } from "../../src/avatar/classic";
-import { AvatarPackError, normalizePack, resolveRole, validatePack } from "../../src/avatar/pack";
+import { AvatarPackError, isRecord, normalizePack, resolveRole, validatePack } from "../../src/avatar/pack";
 
 const fixtures = resolve(dirname(fileURLToPath(import.meta.url)), "../../e2e/fixtures/test-pack");
 const fixture = (name: string): any => JSON.parse(readFileSync(join(fixtures, name), "utf8"));
@@ -235,5 +235,58 @@ describe("defaultClassicRoles", () => {
 
   it("matches the Idle prefix only at the start", () => {
     expect(defaultClassicRoles({ A: 1, IdleOne: 1, NotIdle: 1, Idle: 1 }).idle).toEqual(["IdleOne", "Idle"]);
+  });
+});
+
+describe("non-record inputs in classic maps", () => {
+  const nonRecords: [string, unknown][] = [
+    ["an array", []],
+    ["a nested array", [[]]],
+    ["null", null],
+    ["a number", 7],
+    ["a string", "x"],
+    ["a boolean", true],
+  ];
+
+  it.each([...nonRecords, ["undefined", undefined] as [string, unknown], ["a function", () => 1] as [string, unknown]])("isRecord rejects %s", (_label, value) => {
+    expect(isRecord(value)).toBe(false);
+  });
+
+  it("isRecord accepts plain and null-prototype objects", () => {
+    expect(isRecord({})).toBe(true);
+    expect(isRecord(Object.create(null))).toBe(true);
+  });
+
+  it.each(nonRecords)("detectClassicFormat reports %s as not a classic map", (_label, json) => {
+    expect(() => detectClassicFormat(json)).toThrow(/array map|not a recognized/);
+  });
+
+  it.each(nonRecords)("a column/row array item that is %s is rejected as an item shape", (_label, item) => {
+    expect(() => detectClassicFormat([item])).toThrow(/shaped \{ Name, Frames \}/);
+  });
+
+  it.each(nonRecords)("a column/row frame that is %s must be an object", (_label, frame) => {
+    const json = [{ Name: "A", Frames: [frame] }];
+    expect(() => fromClassicColumnRowMap(json, options)).toThrow(/Frames\[0\].*must be an object/);
+    expect(() => classicGridSize(json)).toThrow(/Frames\[0\].*must be an object/);
+  });
+
+  it.each(nonRecords.filter(([, value]) => value !== null))("ImagesOffsets that is %s must be an object or null", (_label, offsets) => {
+    const json = [{ Name: "A", Frames: [{ Duration: 1, ImagesOffsets: offsets }] }];
+    expect(() => fromClassicColumnRowMap(json, options)).toThrow(/ImagesOffsets.*must be an object or null/);
+  });
+
+  it.each(nonRecords)("position-map animations that are %s are not a recognized map", (_label, animations) => {
+    expect(() => detectClassicFormat({ frameWidth: 8, frameHeight: 8, animations })).toThrow(/not a recognized/);
+  });
+
+  it.each(nonRecords)("a position-map animation that is %s must be an object with frames", (_label, animation) => {
+    const json = { frameWidth: 8, frameHeight: 8, animations: { A: animation } };
+    expect(() => fromClassicPositionMap(json, { sheetUrl: "s.png" })).toThrow(/animations\.A.*frames array/);
+  });
+
+  it.each(nonRecords)("a position-map frame that is %s must be an object", (_label, frame) => {
+    const json = { frameWidth: 8, frameHeight: 8, animations: { A: { frames: [frame] } } };
+    expect(() => fromClassicPositionMap(json, { sheetUrl: "s.png" })).toThrow(/frames\[0\].*must be an object/);
   });
 });

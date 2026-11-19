@@ -4,7 +4,7 @@ import { createEngine, type Config, type Driver, type DriveStep } from "../../..
 const HTML = `
   <p id="intro">Intro</p>
   <button id="card-1" type="button">Card</button>
-  <ul class="feature-list" id="list"><li>One</li></ul>
+  <button class="feature-list" id="list" type="button" aria-haspopup="menu" aria-expanded="false">One</button>
   <button id="other" type="button">Other</button>
 `;
 
@@ -83,6 +83,9 @@ function stateOf(d: Driver): string {
   return parts.filter(Boolean).join(" ");
 }
 
+const popupAttributes = (element: Element) =>
+  `${idOf(element)}[${["aria-haspopup", "aria-expanded", "aria-controls"].map(name => element.getAttribute(name) ?? "").join("/")}]`;
+
 function marks(): string {
   const popovers = Array.from(document.querySelectorAll<HTMLElement>(".vt-popover"));
   const shown = popovers.filter(popover => popover.style.display !== "none");
@@ -102,7 +105,7 @@ function marks(): string {
     `busy=${popover?.getAttribute("aria-busy") ?? "-"}`,
     `overlays=${document.querySelectorAll(".vt-overlay").length}`,
     `active=${Array.from(document.querySelectorAll(".vt-target")).map(idOf).join(",") || "-"}`,
-    `aria=${Array.from(document.querySelectorAll("[aria-haspopup=dialog]")).map(idOf).join(",") || "-"}`,
+    `aria=${Array.from(document.querySelectorAll("[aria-haspopup],[aria-expanded],[aria-controls]")).map(popupAttributes).join(",") || "-"}`,
     `dummy=${document.getElementById("vt-dummy-element") ? "y" : "n"}`,
     `live=${document.querySelectorAll(".vt-live-region").length}`,
     `body=${document.body.className || "-"}`,
@@ -630,7 +633,9 @@ describe("on a driver that is not running", () => {
   const pageIsClean = () =>
     document.querySelector("[class*=vt-],[data-vt-active],[data-vt-dim],[data-vt-fade],[data-vt-lock-scroll],[data-vt-target],[data-vt-blocked],[data-vt-raised],[data-vt-extra],[data-vt-target-parent],[data-vt-overlay],[data-vt-layer]") === null &&
     document.body.className === "" &&
-    document.querySelector("[aria-haspopup=dialog]") === null;
+    document.querySelector("[aria-haspopup=dialog],[aria-controls],[aria-expanded=true]") === null &&
+    popupAttributes($("#list")!) === "list[menu/false/]" &&
+    popupAttributes($("#card-1")!) === "card-1[//]";
 
   it("moveTo() starts the tour like drive() does, and destroy() cleans it all up", async () => {
     const d = create();

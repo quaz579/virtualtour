@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createEngine } from "../src/engine/driver";
 import { createTour, tours } from "../src/index";
 import type { StepConfig, Tour, TourConfig } from "../src/index";
 import { setCurrentTour } from "../src/registry";
@@ -15,7 +16,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const PAGE = `<button id="t" type="button">Target</button><p id="p">Paragraph</p><a id="a" href="#x">Link</a><div id="r" role="button" tabindex="0">Role</div><select id="s"><option>One</option></select><input id="ib" type="submit" value="Go" /><details><summary id="sum">More</summary>Text</details><input id="tx" type="text" aria-label="Text" /><div id="rc" role="Button" tabindex="0">Mixed</div>`;
+const PAGE = `<button id="t" type="button">Target</button><p id="p">Paragraph</p><a id="a" href="#x">Link</a><div id="r" role="button" tabindex="0">Role</div><select id="s"><option>One</option></select><input id="ib" type="submit" value="Go" /><details><summary id="sum">More</summary>Text</details><input id="tx" type="text" aria-label="Text" /><div id="rc" role="Button" tabindex="0">Mixed</div><div id="role-link" role="link" tabindex="0">link</div><div id="role-menuitem" role="menuitem" tabindex="0">menuitem</div><div id="role-menuitemcheckbox" role="menuitemcheckbox" tabindex="0">menuitemcheckbox</div><div id="role-tab" role="tab" tabindex="0">tab</div><div id="role-combobox" role="combobox" tabindex="0">combobox</div><div id="role-treeitem" role="treeitem" tabindex="0">treeitem</div><div id="role-switch" role="switch" tabindex="0">switch</div><div id="role-checkbox" role="checkbox" tabindex="0">checkbox</div>`;
 
 async function show(config: TourConfig): Promise<Tour> {
   document.body.innerHTML = PAGE;
@@ -133,6 +134,14 @@ describe("popup attributes on targets", () => {
     ["a submit input", "#ib", true],
     ["a summary", "#sum", true],
     ["a button role written in mixed case", "#rc", true],
+    ["a link role", "#role-link", true],
+    ["a menuitem role", "#role-menuitem", true],
+    ["a menuitemcheckbox role", "#role-menuitemcheckbox", true],
+    ["a tab role", "#role-tab", true],
+    ["a combobox role", "#role-combobox", true],
+    ["a treeitem role", "#role-treeitem", true],
+    ["a switch role", "#role-switch", false],
+    ["a checkbox role", "#role-checkbox", false],
     ["a text input", "#tx", false],
     ["a paragraph", "#p", false],
   ];
@@ -182,6 +191,120 @@ describe("focus", () => {
     expect(tour.currentStep?.config.title).toBe("B");
     expect(wrapper().contains(document.activeElement)).toBe(true);
     tour.finish();
+    expect(document.activeElement?.id).toBe("r");
+  });
+});
+
+describe("focus return when steps change mid-tour", () => {
+  async function runFrom(config: TourConfig, trigger = "a"): Promise<Tour> {
+    document.body.innerHTML = PAGE;
+    document.querySelector<HTMLElement>(`#${trigger}`)!.focus();
+    const tour = createTour({ animate: false, ...config });
+    created.push(tour);
+    await tour.start();
+    return tour;
+  }
+  const three = (): TourConfig => ({
+    steps: [
+      { id: "a", title: "A", target: "#t" },
+      { id: "b", title: "B", target: "#t" },
+      { id: "c", title: "C", target: "#t" },
+    ],
+  });
+  const settle = async () => {
+    await nextFrame();
+    await Promise.resolve();
+    await nextFrame();
+  };
+
+  it("returns focus to the trigger after appendStep at the end and finish", async () => {
+    const tour = await runFrom(three());
+    tour.appendStep({ id: "d", title: "D", target: "#t" });
+    await settle();
+    expect(wrapper().contains(document.activeElement)).toBe(true);
+    tour.finish();
+    expect(document.activeElement?.id).toBe("a");
+  });
+
+  it("returns focus to the trigger after appendStep before the current step and finish", async () => {
+    const tour = await runFrom(three());
+    tour.appendStep({ id: "z", title: "Z", target: "#t" }, 0);
+    await settle();
+    expect(tour.currentStep?.id).toBe("a");
+    tour.finish();
+    expect(document.activeElement?.id).toBe("a");
+  });
+
+  it("returns focus to the trigger after appendStep then walking to the end", async () => {
+    const tour = await runFrom({ steps: [{ id: "a", title: "A", target: "#t" }] });
+    tour.appendStep({ id: "b", title: "B", target: "#t" });
+    await tour.forward();
+    await tour.forward();
+    await settle();
+    expect(tour.isRunning()).toBe(false);
+    expect(document.activeElement?.id).toBe("a");
+  });
+
+  it("keeps focus in the popover and returns it to the trigger after dropping the current step", async () => {
+    const tour = await runFrom(three());
+    tour.dropStep("a");
+    await settle();
+    expect(tour.currentStep?.id).toBe("b");
+    expect(wrapper().contains(document.activeElement)).toBe(true);
+    tour.finish();
+    expect(document.activeElement?.id).toBe("a");
+  });
+
+  it("returns focus to the trigger when the dropped current step was the last one", async () => {
+    const tour = await runFrom({ steps: [{ id: "a", title: "A", target: "#t" }] });
+    tour.dropStep("a");
+    await settle();
+    expect(tour.isRunning()).toBe(false);
+    expect(document.activeElement?.id).toBe("a");
+  });
+
+  it("returns focus to the trigger after dropping the current step on the second step and then finishing", async () => {
+    const tour = await runFrom(three());
+    await tour.forward();
+    tour.dropStep("b");
+    await settle();
+    expect(tour.currentStep?.id).toBe("c");
+    tour.finish();
+    expect(document.activeElement?.id).toBe("a");
+  });
+
+  it("returns focus to the trigger after dropping a step that is not on screen", async () => {
+    const tour = await runFrom(three());
+    tour.dropStep("c");
+    await settle();
+    expect(wrapper().contains(document.activeElement)).toBe(true);
+    tour.finish();
+    expect(document.activeElement?.id).toBe("a");
+  });
+
+  it("returns focus to the trigger after the engine replaces its steps with setSteps mid-tour", async () => {
+    document.body.innerHTML = PAGE;
+    document.querySelector<HTMLElement>("#a")!.focus();
+    const engine = createEngine({ animate: false, steps: [{ element: "#t", popover: { title: "A" } }, { element: "#t", popover: { title: "B" } }] });
+    engine.drive(0);
+    await nextFrame();
+    expect(wrapper().contains(document.activeElement)).toBe(true);
+    engine.setSteps([{ element: "#t", popover: { title: "C" } }]);
+    expect(document.activeElement?.id).toBe("a");
+    engine.destroy();
+  });
+
+  it("returns focus to the trigger after setSteps followed by drive and finish", async () => {
+    document.body.innerHTML = PAGE;
+    document.querySelector<HTMLElement>("#a")!.focus();
+    const engine = createEngine({ animate: false, steps: [{ element: "#t", popover: { title: "A" } }] });
+    engine.drive(0);
+    await nextFrame();
+    engine.setSteps([{ element: "#t", popover: { title: "C" } }]);
+    document.querySelector<HTMLElement>("#r")!.focus();
+    engine.drive(0);
+    await nextFrame();
+    engine.destroy();
     expect(document.activeElement?.id).toBe("r");
   });
 });

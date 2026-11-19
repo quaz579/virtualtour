@@ -53,7 +53,7 @@ Which fork tasks changed each engine file (task IDs from the plan, `docs/plan/01
 
 | File under `packages/core/src/engine/` | Fate | Fork tasks |
 |---|---|---|
-| `driver.ts` | Changed: `createEngine()`, data attributes on `<body>`, `overlay: false`, escape and arrow switches, presenter hooks, `onStepCompleted` | F-03, V-02, V-06 |
+| `driver.ts` | Changed: `createEngine()`, data attributes on `<body>`, `overlay: false`, escape and arrow switches, presenter hooks, `onStepCompleted`, `setSteps` mid-tour returns focus to the start element | F-03, V-02, V-06, WU-36 |
 | `types.ts` | Changed: new `Config`, `DriveStep` and `Popover` keys | V-02, F-04..F-14 |
 | `core/context.ts` | Changed: defaults for the new keys | V-02, F-04..F-14 |
 | `core/options.ts` | Kept | |
@@ -66,9 +66,10 @@ Which fork tasks changed each engine file (task IDs from the plan, `docs/plan/01
 | `popover/live-region.ts` | Kept (class name only) | F-03 |
 | `overlay/overlay.ts` | Changed: scroll-parent clip, extra cutouts, `mountIn`, reduced motion, strategy | F-04, F-05, F-10, F-13, F-14 |
 | `overlay/stage.ts` | Changed: four radii, extra-rect dedupe | F-05, F-12 |
-| `tour/highlight.ts` | Changed: data attributes, reduced motion, `lockScrollParent`, `bringInView` options, presenter calls | F-03, V-02, F-09, F-11, F-14 |
+| `tour/highlight.ts` | Changed: data attributes, reduced motion, `lockScrollParent`, `bringInView` options, presenter calls, `aria-haspopup`, `aria-expanded` and `aria-controls` on popup-capable targets (restored when the step ends; attributes the page set are left alone) | F-03, V-02, F-09, F-11, F-14, WU-36 |
 | `tour/step.ts` | Changed: per-step position options, `label`, `over` for targets | V-02, V-05, F-06, F-07, F-08, F-10 |
-| `tour/lifecycle.ts`, `tour/completion.ts`, `tour/removal.ts`, `tour/wait.ts`, `tour/advance.ts`, `tour/allowed.ts`, `tour/nudge.ts` | Kept apart from class names; `completion.ts` calls `onStepCompleted` | F-03, V-06 |
+| `tour/lifecycle.ts` | Changed: `enterStep` keeps the first element that had focus as the return target for the whole run, including after `setSteps` mid-tour | F-03, WU-36 |
+| `tour/completion.ts`, `tour/removal.ts`, `tour/wait.ts`, `tour/advance.ts`, `tour/allowed.ts`, `tour/nudge.ts` | Kept apart from class names; `completion.ts` calls `onStepCompleted` | F-03, V-06 |
 | `interaction/events.ts` | Changed: split key switches, capture-phase scroll listener, `onReposition` call | V-02, F-09 |
 | `interaction/gate.ts`, `gesture.ts`, `keys.ts`, `region.ts`, `trust.ts` | Kept | |
 | `styles/driver.css` as `styles/engine.css` | Changed: rules keyed on data attributes, fade under `prefers-reduced-motion: no-preference` | F-03, F-14 |

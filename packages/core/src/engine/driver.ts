@@ -603,7 +603,9 @@ export function createEngine(options: Config = {}): Driver {
     setConfig,
     setSteps: (steps: DriveStep[]) => {
       if (ctx.getState("isInitialized")) {
+        const returnTo = ctx.getState("__activeOnDestroyed") as HTMLElement | undefined;
         removeTour();
+        returnTo?.focus();
       } else {
         ctx.resetState();
       }
