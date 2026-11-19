@@ -14,23 +14,11 @@ type FutureConfigKeys =
   | "mountIn"
   | "dimMountIn";
 
-type FutureStepKeys =
-  | "popover"
-  | "popoverCrossOffset";
+/** Engine popover options. */
+export type EnginePopover = Popover;
 
-type FuturePopoverKeys = "arrow" | "arrowMinInset";
-
-/** Engine popover options, including the ones the engine reads once the matching milestone-two task lands. */
-export type EnginePopover = Omit<Popover, FuturePopoverKeys> & {
-  arrow?: boolean;
-  arrowMinInset?: number;
-};
-
-/** Engine step options, including the per-step fields the engine gains later. */
-export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
-  popover?: EnginePopover;
-  popoverCrossOffset?: number;
-};
+/** Engine step options. */
+export type EngineStep = DriveStep;
 
 /** Engine config, including the keys the engine gains later. */
 export type EngineConfig = Omit<Config, FutureConfigKeys> & {
@@ -115,7 +103,8 @@ function compileStep(
 
   const arrow = position.arrow;
   if (arrow === false) popover.arrow = false;
-  popover.arrowMinInset = (typeof arrow === "object" ? arrow.minInset : undefined) ?? DEFAULT_POSITION.arrow.minInset;
+  const minInset = typeof arrow === "object" ? arrow.minInset : undefined;
+  popover.arrowMinInset = typeof minInset === "number" && Number.isFinite(minInset) && minInset >= 0 ? minInset : DEFAULT_POSITION.arrow.minInset;
   popover.flip = position.flip ?? DEFAULT_POSITION.flip;
   popover.shift = position.shift ?? DEFAULT_POSITION.shift;
   popover.strategy = position.strategy ?? DEFAULT_POSITION.strategy;
@@ -129,7 +118,8 @@ function compileStep(
 
   const offset = position.offset;
   out.popoverOffset = typeof offset === "number" ? offset : (offset?.main ?? DEFAULT_POSITION.offset.main);
-  out.popoverCrossOffset = typeof offset === "number" ? 0 : (offset?.cross ?? DEFAULT_POSITION.offset.cross);
+  const cross = typeof offset === "object" ? offset?.cross : undefined;
+  out.popoverCrossOffset = typeof cross === "number" && Number.isFinite(cross) ? cross : DEFAULT_POSITION.offset.cross;
   out.popoverPadding = position.viewportPadding ?? DEFAULT_POSITION.viewportPadding;
   out.popoverBoundary = position.boundary ?? DEFAULT_POSITION.boundary;
 

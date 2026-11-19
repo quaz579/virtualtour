@@ -9,3 +9,11 @@ export function prefersReducedMotion(): boolean {
 
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
+
+export function isRtl(element: Element): boolean {
+  if (!isBrowser()) {
+    return false;
+  }
+
+  return getComputedStyle(element).direction === "rtl";
+}

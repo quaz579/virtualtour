@@ -12,6 +12,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, "index.html"),
         e2e: resolve(__dirname, "e2e.html"),
+        e2eRtl: resolve(__dirname, "e2e-rtl.html"),
         actionDriven: resolve(__dirname, "fixtures/action-driven.html"),
         navigation: resolve(__dirname, "fixtures/navigation.html"),
         lateTarget: resolve(__dirname, "fixtures/late-target.html"),
@@ -23,6 +24,7 @@ export default defineConfig({
         persist: resolve(__dirname, "fixtures/persist.html"),
         overlay: resolve(__dirname, "fixtures/overlay.html"),
         avatarPlayer: resolve(__dirname, "fixtures/avatar-player.html"),
+        vue: resolve(__dirname, "fixtures/vue.html"),
         react: resolve(__dirname, "fixtures/react.html"),
         theme: resolve(__dirname, "fixtures/theme.html"),
       },

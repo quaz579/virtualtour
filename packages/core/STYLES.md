@@ -65,7 +65,7 @@ Dark mode follows `prefers-color-scheme`. Set `data-vt-theme="dark"` or `data-vt
 
 ### Popover
 
-`vt-popover`, `vt-popover-side-*`, `vt-popover-align-*`, `vt-popover-waiting`, `vt-waiting`, `vt-popover-nudge`, `vt-popover-has-instruction`, `vt-popover-instruction-done`, `vt-dialog`
+`vt-popover`, `vt-popover-side-*`, `vt-popover-align-*`, `vt-popover-rtl`, `vt-popover-waiting`, `vt-waiting`, `vt-popover-nudge`, `vt-popover-has-instruction`, `vt-popover-instruction-done`, `vt-dialog`
 
 ### Parts
 

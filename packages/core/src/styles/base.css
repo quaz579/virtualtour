@@ -70,7 +70,7 @@
   all: unset;
   position: absolute;
   top: 0;
-  inset-inline-end: 0;
+  right: 0;
   width: 32px;
   height: 28px;
   cursor: pointer;
@@ -81,6 +81,11 @@
   text-align: center;
   transition: color;
   transition-duration: 200ms;
+}
+
+.vt-popover-rtl .vt-popover-close-btn {
+  right: auto;
+  left: 0;
 }
 
 .vt-popover-close-btn:hover,
