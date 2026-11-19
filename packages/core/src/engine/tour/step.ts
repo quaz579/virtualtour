@@ -170,7 +170,10 @@ function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): P
     align: step.popover?.align || "start",
     offset: stagePadding + (stepOption(ctx, step, "popoverOffset") || 0),
     padding: stagePadding,
-    centered: isDummyElement(element),
+    boundaryPadding: stepOption(ctx, step, "popoverPadding") || 0,
+    boundary: ctx.getConfig("popoverBoundary") || "scrollParents",
+    centered: step.popover?.side === "over" || isDummyElement(element),
+    hasTarget: !isDummyElement(element),
     sideAttribute: ctx.names.sideAttr,
   };
 }
@@ -222,6 +225,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
 
     doneButton: isEndStep(ctx, 1),
     smoothScroll: ctx.getConfig("smoothScroll"),
+    scrollIntoView: stepOption(ctx, step, "scrollIntoView") === false ? false : undefined,
     sanitize: ctx.getConfig("sanitize"),
 
     onNextClick: ctx.tour.pressNext,

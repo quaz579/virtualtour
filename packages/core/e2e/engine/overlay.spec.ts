@@ -250,6 +250,7 @@ test.describe("allowed elements", () => {
 
         window.tour = window.__engine.createEngine({
           animate: false,
+          popoverBoundary: "viewport",
           allowedElements,
           steps: [{ element: "#target", popover: { title: "Dialog", side: "top" } }],
         });

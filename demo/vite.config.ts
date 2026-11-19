@@ -19,6 +19,7 @@ export default defineConfig({
         content: resolve(__dirname, "fixtures/content.html"),
         sanitize: resolve(__dirname, "fixtures/sanitize.html"),
         persist: resolve(__dirname, "fixtures/persist.html"),
+        avatarPlayer: resolve(__dirname, "fixtures/avatar-player.html"),
       },
     },
   },
