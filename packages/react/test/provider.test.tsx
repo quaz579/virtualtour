@@ -1,4 +1,4 @@
-import { Component, StrictMode, act, useEffect } from "react";
+import { Activity, Component, StrictMode, act, useEffect } from "react";
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
@@ -270,6 +270,31 @@ describe("unmount", () => {
     await flush();
     expect(tour.isRunning()).toBe(false);
     answer(false);
+  });
+
+  it("honors the exit prompt again after the provider was hidden and shown", async () => {
+    const prompt = vi.fn(() => new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 20)));
+    const probe = probeOf();
+    const ui = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}>
+        <TourProvider config={config({ exitPrompt: prompt })}>
+          <Capture probe={probe} />
+        </TourProvider>
+      </Activity>
+    );
+    const root = await mount(ui("visible"));
+    await act(async () => root.render(ui("hidden")));
+    await flush();
+    await act(async () => root.render(ui("visible")));
+    await flush();
+    await act(async () => probe.latest.start());
+    let accepted: boolean | undefined;
+    await act(async () => {
+      accepted = await probe.latest.exit();
+    });
+    expect(accepted).toBe(false);
+    expect(prompt).toHaveBeenCalledTimes(1);
+    expect(probe.latest.tour.isRunning()).toBe(true);
   });
 
   it("ends a run that only begins after the provider unmounted", async () => {

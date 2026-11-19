@@ -33,7 +33,9 @@ interface TourStore {
   tour: Tour;
   disposed: boolean;
   disposePending: boolean;
+  released: Promise<boolean>;
   releasePrompts(): void;
+  arm(): void;
   snapshot: Snapshot;
   getSnapshot(): Snapshot;
   subscribe(listener: () => void): () => void;
@@ -46,10 +48,6 @@ const watched = ["started", "step-shown", "finished", "exited", "deactivated"] a
 
 function createStore(config: TourConfig): TourStore {
   const prompt = config.exitPrompt;
-  let releasePrompts: () => void = () => {};
-  const released = new Promise<boolean>((resolve) => {
-    releasePrompts = () => resolve(true);
-  });
   const wrapped: TourConfig =
     prompt === undefined || prompt === false
       ? config
@@ -57,13 +55,19 @@ function createStore(config: TourConfig): TourStore {
           ...config,
           exitPrompt: async () => {
             if (store.disposed) return true;
-            return Promise.race([typeof prompt === "string" ? window.confirm(prompt) : prompt(), released]);
+            return Promise.race([typeof prompt === "string" ? window.confirm(prompt) : prompt(), store.released]);
           },
         };
   const tour = createTour(wrapped);
   const store: TourStore = {
     tour,
-    releasePrompts: () => releasePrompts(),
+    released: Promise.resolve(true),
+    releasePrompts: () => {},
+    arm() {
+      store.released = new Promise<boolean>((resolve) => {
+        store.releasePrompts = () => resolve(true);
+      });
+    },
     disposed: false,
     disposePending: false,
     snapshot: { isRunning: false, currentStep: null },
@@ -91,6 +95,7 @@ function createStore(config: TourConfig): TourStore {
       finish: () => tour.finish(),
     },
   };
+  store.arm();
   tour.on("started", () => {
     queueMicrotask(() => {
       if (store.disposed) exitWithoutPrompt(store);
@@ -121,7 +126,10 @@ export function TourProvider(props: TourProviderProps): ReactElement {
 
   useEffect(() => {
     store.disposePending = false;
-    store.disposed = false;
+    if (store.disposed) {
+      store.disposed = false;
+      store.arm();
+    }
     return () => {
       store.disposePending = true;
       queueMicrotask(() => {
