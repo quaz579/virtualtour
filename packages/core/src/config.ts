@@ -68,6 +68,7 @@ export const DEFAULT_DIM: Readonly<NormalizedDim> = Object.freeze({
 export const DEFAULT_POSITION = Object.freeze({
   offset: Object.freeze({ main: 10, cross: 0 }),
   viewportPadding: 0,
+  boundary: "scrollParents" as const,
   flip: true,
   shift: true,
   strategy: "fixed" as const,

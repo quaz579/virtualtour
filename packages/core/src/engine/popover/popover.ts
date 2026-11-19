@@ -9,6 +9,7 @@ const PRESSABLE_BUTTONS = [P.previousButton, P.nextButton, P.closeButton].map(na
 
 export type Side = "top" | "right" | "bottom" | "left";
 export type Placement = Side | "over";
+export type PlacementRequest = Placement | "auto";
 export type Alignment = "start" | "center" | "end";
 export type AllowedButtons = "next" | "previous" | "close";
 
