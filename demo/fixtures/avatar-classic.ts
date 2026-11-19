@@ -73,12 +73,17 @@ window.vtClassicSample = async (animation) => {
   const samples: Sample[] = [];
   const startedAt = performance.now();
   let sampling = true;
-  const loop = (): void => {
-    if (!sampling) return;
+  const record = (): void => {
     const el = document.querySelector<HTMLElement>(".vt-avatar");
     if (el) samples.push({ t: performance.now() - startedAt, pos: el.style.backgroundPosition });
+  };
+  const loop = (): void => {
+    if (!sampling) return;
+    record();
     requestAnimationFrame(loop);
   };
+  const observer = new MutationObserver(record);
+  observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["style"] });
   requestAnimationFrame(loop);
   const tour = buildTour(pack, [{ id: "sample", title: "Sample", body: "Watch.", extensions: { avatar: { animation } } }]);
   window.vtClassicTour = tour;
@@ -87,6 +92,7 @@ window.vtClassicSample = async (animation) => {
   const el = document.querySelector<HTMLElement>(".vt-avatar");
   if (el) samples.push({ t: performance.now() - startedAt, pos: el.style.backgroundPosition });
   sampling = false;
+  observer.disconnect();
   return samples;
 };
 
