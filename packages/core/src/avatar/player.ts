@@ -94,7 +94,7 @@ export class SpritePlayer {
   /**
    * Plays a named animation. Resolves when a non-looping animation ends, or when another `play`, `stop` or
    * `dispose` interrupts it. `opts.loop` overrides the animation's own `loop` flag; a looping run resolves only
-   * on interruption. Under reduced motion, or where `requestAnimationFrame` does not exist, it shows the still frame and resolves immediately.
+   * on interruption, except where `requestAnimationFrame` does not exist. Under reduced motion, or where `requestAnimationFrame` does not exist, it shows the still frame and resolves immediately.
    * Rejects with {@link AvatarPackError} for an animation the pack does not define.
    */
   play(name: string, opts: { loop?: boolean } = {}): Promise<void> {

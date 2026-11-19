@@ -956,6 +956,24 @@ describe("presenter wiring", () => {
     expect(calls.filter((c) => c.startsWith("mount"))).toEqual(["mount a", "mount b"]);
   });
 
+  it("forwards physicalAlign, rtl and pinned from the engine", async () => {
+    const seen: Array<{ physicalAlign: string; rtl: boolean; pinned: boolean }> = [];
+    const { presenter } = spyPresenter({
+      afterReposition: (_p, _s, info) => seen.push({ physicalAlign: info.physicalAlign, rtl: info.rtl, pinned: info.pinned }),
+    });
+    document.body.dir = "rtl";
+    try {
+      const tour = make({ presenter: () => presenter });
+      await tour.start();
+    } finally {
+      document.body.dir = "";
+    }
+
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen[0]).toMatchObject({ rtl: true });
+    expect(typeof seen[0]!.physicalAlign).toBe("string");
+  });
+
   it("fills bubbleRect with the wrapper rect when the popover has no bubble", async () => {
     const { presenter, rects } = spyPresenter();
     const tour = make({ presenter: () => presenter });
