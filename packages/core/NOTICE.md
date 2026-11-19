@@ -7,7 +7,7 @@ VirtualTour's tour engine is a fork of driver.js.
 | Upstream repository | https://github.com/nilbuild/driver.js |
 | Fork point tag | `1.12.1` |
 | Fork point commit | `0163642dc532417ea401684bd26690e2f3283d63` |
-| Upstream release date | 2026-11-11 |
+| Upstream release date | 2026-11-12 |
 | License | MIT |
 
 `packages/core/src/engine/` derives from `packages/driver/src/` at that commit.

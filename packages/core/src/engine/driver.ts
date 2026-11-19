@@ -565,7 +565,9 @@ export function createEngine(options: Config = {}): Driver {
     const settledElement = activeElement ?? (pendingStep ? ctx.getState("activeElement") : undefined);
     const hookElement = isDummyElement(settledElement) ? undefined : settledElement;
 
-    const activeOnDestroyed = ctx.getState("__activeOnDestroyed");
+    const focused = document.activeElement;
+    const hasFocus = !focused || focused === document.body || !!ctx.getState("popover")?.wrapper.contains(focused);
+    const activeOnDestroyed = hasFocus ? ctx.getState("__activeOnDestroyed") : undefined;
 
     const onDestroyStarted = ctx.getConfig("onDestroyStarted");
     const startedStep = hookStep();
