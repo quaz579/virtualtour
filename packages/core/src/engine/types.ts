@@ -206,6 +206,12 @@ export type Popover = {
   /** Side of the target the popover sits on. `"over"` keeps the target highlighted and centers the popover. */
   side?: Placement;
   align?: Alignment;
+  /**
+   * `"fixed"` (default) positions the popover against the viewport. `"absolute"` writes coordinates relative to
+   * the popover's containing block, which stays correct when an ancestor has `transform`, `filter` or `contain: paint`
+   * or the mount container scrolls. Centered steps always use `"fixed"`.
+   */
+  strategy?: "fixed" | "absolute";
 
   showButtons?: AllowedButtons[];
   showProgress?: boolean;
