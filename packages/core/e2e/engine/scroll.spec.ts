@@ -155,7 +155,7 @@ test.describe("scroll following", () => {
   const start = async (page: Page, lockScrollParent?: boolean) => {
     await addScroller(page);
     await page.evaluate(lockScrollParent => {
-      window.tour = window.__engine.createEngine({ animate: false, ...(lockScrollParent ? { lockScrollParent } : {}) });
+      window.tour = window.__engine.createEngine({ animate: false, popoverBoundary: "viewport", ...(lockScrollParent ? { lockScrollParent } : {}) });
       window.tour.highlight({ element: "#middle", popover: { title: "Middle", side: "right" } });
     }, lockScrollParent);
     await expect(title(page)).toHaveText("Middle");
