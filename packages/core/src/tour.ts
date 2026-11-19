@@ -349,7 +349,7 @@ function enginePresenterFor(tour: Tour, presenter: Presenter): EnginePresenter {
       const step = stepOf(tour, driveStep);
       if (!step) return;
       const parts: StepParts = { buttons: [] };
-      const content = driveStep?.data?.["vtBody"] as Element | undefined;
+      const content = driveStep?.data?.["vtBody"] as Element | DocumentFragment | undefined;
       if (content) parts.content = content;
       state.mounted = { popover, step, parts };
       guarded("presenter.mount", () => presenter.mount(popover, step, parts));

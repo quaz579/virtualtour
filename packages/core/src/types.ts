@@ -42,10 +42,17 @@ export interface DimConfig {
 }
 
 /**
- * Content of a body: HTML string, list of paragraphs (one `<p>` each), element, or a function returning one of
- * them, evaluated each time the step is shown. An element is moved into the popover, not cloned.
+ * Content of a body: HTML string, list of paragraphs (one `<p>` each), element, document fragment, or a function
+ * returning one of them, evaluated each time the step is shown. An element or fragment is deep-cloned into the
+ * popover each time the step mounts, so the original is never moved or emptied and stays valid for later mounts;
+ * the clone has no event listeners or script-set state, and it is not passed through `sanitize`.
  */
-export type BodyContent = string | string[] | Element | (() => string | string[] | Element);
+export type BodyContent =
+  | string
+  | string[]
+  | Element
+  | DocumentFragment
+  | (() => string | string[] | Element | DocumentFragment);
 
 /** The element a step points at: selector, element, or a function returning either. */
 export type TargetRef = string | Element | (() => string | Element | null | undefined);
@@ -186,8 +193,8 @@ export interface StepParts {
   /** `.vt-footer`, holding custom buttons. */
   footer?: HTMLElement;
   buttons: HTMLButtonElement[];
-  /** The element a step's body resolved to; the presenter moves it into `.vt-body`. */
-  content?: Element;
+  /** The element or fragment a step's body resolved to; the presenter clones it into `.vt-body`. */
+  content?: Element | DocumentFragment;
 }
 
 /** Where the popover ended up after positioning. */

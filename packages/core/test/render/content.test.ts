@@ -42,17 +42,19 @@ describe("body types", () => {
     expect(body()).toBeNull();
   });
 
-  it("moves an element into .vt-body after the description and repoints aria-describedby", async () => {
+  it("clones an element into .vt-body after the description and repoints aria-describedby", async () => {
     const el = document.createElement("section");
     el.textContent = "custom";
     document.body.append(el);
     await show({ steps: [{ title: "T", body: el }] });
     const b = body()!;
-    expect(b.contains(el)).toBe(true);
-    expect(el.textContent).toBe("custom");
+    expect(b.contains(el)).toBe(false);
+    expect(b.querySelector("section")!.textContent).toBe("custom");
+    expect(el.isConnected).toBe(true);
+    expect(el.parentElement).toBe(document.body);
     expect(description().nextElementSibling).toBe(b);
     expect(wrapper().getAttribute("aria-describedby")).toBe(b.id);
-    expect(document.querySelectorAll("section")).toHaveLength(1);
+    expect(document.querySelectorAll("section")).toHaveLength(2);
   });
 
   it("evaluates a function body at show time and handles each result type", async () => {
@@ -71,7 +73,7 @@ describe("body types", () => {
     fn.mockReturnValue(el);
     await tour.forward();
     expect(fn).toHaveBeenCalledTimes(3);
-    expect(body()!.contains(el)).toBe(true);
+    expect(body()!.querySelector("#made-late")).not.toBeNull();
   });
 
   it("evaluates a function title at show time", async () => {

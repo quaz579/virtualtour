@@ -24,6 +24,8 @@ export type PopoverDOM = {
   closeButton: HTMLButtonElement;
   footerButtons: HTMLElement;
 
+  body?: HTMLElement;
+
   instruction?: HTMLElement;
   instructionIndicator?: HTMLElement;
 
@@ -66,6 +68,8 @@ export type PopoverRenderOptions = {
   step?: DriveStep | undefined;
   onPositioned?: (info: RepositionInfo) => void;
 
+  sanitize?: ((html: string) => string) | undefined;
+
   position: PositionOptions;
 };
 
@@ -80,13 +84,35 @@ export function hidePopover(popover: PopoverDOM | undefined) {
 const customClasses = new WeakMap<HTMLElement, string[]>();
 const appliedHtml = new WeakMap<HTMLElement, string>();
 
-function setHtml(element: HTMLElement, html: string) {
-  if (appliedHtml.get(element) === html) {
-    return;
+function cleanHtml(html: string, sanitize: ((html: string) => string) | undefined): string | undefined {
+  if (!sanitize || !html.includes("<")) {
+    return html;
   }
 
-  element.innerHTML = html;
-  appliedHtml.set(element, html);
+  try {
+    const clean = sanitize(html);
+    return typeof clean === "string" ? clean : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function setHtml(element: HTMLElement, html: string, sanitize?: (html: string) => string): string {
+  const clean = cleanHtml(html, sanitize);
+  if (clean === undefined) {
+    if (appliedHtml.get(element) !== html) {
+      element.textContent = html;
+      appliedHtml.set(element, html);
+    }
+    return "";
+  }
+
+  if (appliedHtml.get(element) !== clean) {
+    element.innerHTML = clean;
+    appliedHtml.set(element, clean);
+  }
+
+  return clean;
 }
 
 function setDisplay(element: HTMLElement, isVisible: boolean) {
@@ -147,6 +173,7 @@ function createInstruction(popover: PopoverDOM) {
 }
 
 function applyInstruction(popover: PopoverDOM, options: PopoverRenderOptions) {
+  const sanitize = options.sanitize;
   const isGated = !!options.isGated;
   if ((isGated || options.instruction) && !popover.instruction) {
     createInstruction(popover);
@@ -157,15 +184,11 @@ function applyInstruction(popover: PopoverDOM, options: PopoverRenderOptions) {
     return;
   }
 
-  const html = options.instruction || "";
+  const text = row.querySelector<HTMLElement>(`:scope > .${INSTRUCTION_TEXT}`);
+  const html = text && options.instruction ? setHtml(text, options.instruction, sanitize) : "";
   wrapper.classList.toggle(P.hasInstruction, isGated);
   wrapper.classList.toggle(P.instructionDone, isGated && !!options.isDone);
   toggleDescribedBy(wrapper, INSTRUCTION_TEXT, !!html);
-
-  const text = row.querySelector<HTMLElement>(`:scope > .${INSTRUCTION_TEXT}`);
-  if (text && html) {
-    setHtml(text, html);
-  }
   setDisplay(row, !!html);
 
   if (isGated) {
@@ -185,28 +208,30 @@ function applyFeedback(popover: PopoverDOM, options: PopoverRenderOptions) {
     return;
   }
 
-  setHtml(popover.feedback, options.feedback || "");
-  setDisplay(popover.feedback, !!options.feedback);
+  const feedback = setHtml(popover.feedback, options.feedback || "", options.sanitize);
+  setDisplay(popover.feedback, !!feedback);
 }
 
 function applyPopoverContent(popover: PopoverDOM, options: PopoverRenderOptions) {
   const { title, description, showButtons, disableButtons, showProgress, nextBtnText, prevBtnText, progressText } =
     options;
 
-  setHtml(popover.nextButton, nextBtnText);
-  setHtml(popover.previousButton, prevBtnText);
-  setHtml(popover.progress, progressText);
+  const sanitize = options.sanitize;
+  setHtml(popover.nextButton, nextBtnText, sanitize);
+  setHtml(popover.previousButton, prevBtnText, sanitize);
+  setHtml(popover.progress, progressText, sanitize);
   popover.closeButton.setAttribute("aria-label", options.closeBtnLabel);
   popover.nextButton.classList.toggle(P.doneButton, !!options.doneButton);
 
-  setHtml(popover.title, title || "");
-  setDisplay(popover.title, !!title);
+  const titleHtml = setHtml(popover.title, title || "", sanitize);
+  const hasTitle = !!titleHtml.trim();
+  setDisplay(popover.title, hasTitle);
 
-  setHtml(popover.description, description || "");
-  setDisplay(popover.description, !!description);
+  const descriptionHtml = setHtml(popover.description, description || "", sanitize);
+  setDisplay(popover.description, !!descriptionHtml);
 
   const labelled = popover.wrapper;
-  if (title) {
+  if (hasTitle) {
     labelled.setAttribute("aria-labelledby", P.titleId);
     labelled.removeAttribute("aria-label");
   } else {
@@ -310,7 +335,7 @@ export function renderPopover(anchor: Element, layer: Element, options: PopoverR
       return undefined;
     },
     target => {
-      if (popover.description.contains(target) || popover.title.contains(target)) {
+      if (popover.description.contains(target) || popover.title.contains(target) || popover.body?.contains(target)) {
         return false;
       }
 

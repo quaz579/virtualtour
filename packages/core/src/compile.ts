@@ -193,6 +193,7 @@ export function compileTour(c: NormalizedTourConfig, steps: readonly TourStepLik
     doneBtnText: c.labels.done,
     closeBtnLabel: c.labels.close,
   };
+  if (c.sanitize !== undefined) base.sanitize = c.sanitize;
   if (c.mountIn !== undefined) base.mountIn = c.mountIn;
   if (c.dimMountIn !== undefined) base.dimMountIn = c.dimMountIn;
 

@@ -99,13 +99,13 @@ describe("layer parts next to engine parts", () => {
     for (const cls of before) expect(after).toContain(cls);
     expect(wrapper.classList.contains("vt-dialog")).toBe(true);
     const body = wrapper.querySelector<HTMLElement>(".vt-body")!;
-    expect(body.contains(el)).toBe(true);
+    expect(body.textContent).toBe("custom");
     expect(body.hasAttribute("style")).toBe(false);
     expect(wrapper.getAttribute("aria-describedby")).toContain(body.id);
     expect(wrapper.querySelector(".vt-popover-title")!.textContent).toBe("New title");
   });
 
-  it("moves the content on a later show and leaves the engine's elements untouched", async () => {
+  it("mounts the content again on a later show and leaves the engine's elements untouched", async () => {
     const el = document.createElement("div");
     const tour = await show({ steps: [{ id: "a", title: "A", body: el }, { id: "b", title: "B", body: "plain" }] });
     expect(document.querySelectorAll(".vt-body")).toHaveLength(1);
@@ -113,7 +113,7 @@ describe("layer parts next to engine parts", () => {
     expect(document.querySelectorAll(".vt-body")).toHaveLength(0);
     expect(document.querySelector(".vt-popover-description")!.innerHTML).toBe("plain");
     await tour.backward();
-    expect(document.querySelector(".vt-body")!.contains(el)).toBe(true);
+    expect(document.querySelector(".vt-body")!.querySelector("div")).not.toBeNull();
   });
 
   it("warns instead of throwing when the body cannot be mounted", async () => {
