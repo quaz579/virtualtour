@@ -1,0 +1,110 @@
+import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+test.beforeEach(({}, testInfo) => {
+  test.skip(
+    testInfo.project.name === "edge" && testInfo.project.metadata["edgeMissing"] === true,
+    "msedge is not installed on this machine",
+  );
+});
+
+type Win = { vtTour: { forward(): Promise<void>; backward(): Promise<void> } };
+
+async function open(page: Page, query = ""): Promise<void> {
+  await page.goto(`/fixtures/motion.html${query}`);
+  await expect(page.locator("html")).toHaveAttribute("data-ready", "true");
+  await page.evaluate(() => (window as unknown as { vtTour: { start(): Promise<void> } }).vtTour.start());
+  await expect(page.locator(".vt-popover-title")).toHaveText("One");
+}
+
+const rect = (page: Page) => page.locator(".vt-popover").evaluate((el) => {
+  const r = el.getBoundingClientRect();
+  return { left: r.left, top: r.top, width: r.width };
+});
+
+test("the popover is between the two positions part way through a glide and lands on the computed one", async ({ page }) => {
+  await open(page, "?duration=600");
+  const first = await rect(page);
+  const mid = await page.evaluate(async () => {
+    const w = window as unknown as Win;
+    const pending = w.vtTour.forward();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const el = document.querySelector<HTMLElement>(".vt-popover")!;
+    const r = el.getBoundingClientRect();
+    await pending;
+    return { left: r.left, top: r.top, glide: el.classList.contains("vt-glide"), title: el.querySelector(".vt-popover-title")?.textContent };
+  });
+  await expect(page.locator(".vt-popover-title")).toHaveText("Two");
+  await expect(page.locator(".vt-popover.vt-glide")).toHaveCount(0);
+  const last = await rect(page);
+  const between = (v: number, a: number, b: number): boolean => v > Math.min(a, b) + 1 && v < Math.max(a, b) - 1;
+  expect(mid.glide).toBe(true);
+  expect(between(mid.left, first.left, last.left)).toBe(true);
+  expect(between(mid.top, first.top, last.top)).toBe(true);
+  expect(last.left).toBeGreaterThan(first.left + 100);
+  await page.evaluate(() => (window as unknown as { vtOff: { glide(): void } }).vtOff.glide());
+  const control = await page.evaluate(async () => {
+    const w = window as unknown as Win;
+    await w.vtTour.forward();
+    const r = document.querySelector<HTMLElement>(".vt-popover")!.getBoundingClientRect();
+    return { left: r.left, top: r.top };
+  });
+  const settled = await rect(page);
+  expect(settled.left).toBeCloseTo(control.left, 0);
+  expect(settled.top).toBeCloseTo(control.top, 0);
+});
+
+test("without glide the new popover is at its final position immediately", async ({ page }) => {
+  await open(page, "?noglide=1&duration=600");
+  const sample = await page.evaluate(async () => {
+    const w = window as unknown as Win;
+    await w.vtTour.forward();
+    const el = document.querySelector<HTMLElement>(".vt-popover")!;
+    const a = el.getBoundingClientRect();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const b = el.getBoundingClientRect();
+    return { a: a.left, b: b.left, glide: el.classList.contains("vt-glide") };
+  });
+  expect(sample.glide).toBe(false);
+  expect(sample.a).toBeCloseTo(sample.b, 0);
+});
+
+test("reduced motion puts the popover at its final position right away", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await open(page, "?duration=600");
+  const sample = await page.evaluate(async () => {
+    const w = window as unknown as Win;
+    await w.vtTour.forward();
+    const el = document.querySelector<HTMLElement>(".vt-popover")!;
+    const a = el.getBoundingClientRect();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const b = el.getBoundingClientRect();
+    return { a: a.left, b: b.left, glide: el.classList.contains("vt-glide"), animations: el.getAnimations().length };
+  });
+  expect(sample.glide).toBe(false);
+  expect(sample.animations).toBe(0);
+  expect(sample.a).toBeCloseTo(sample.b, 0);
+});
+
+test("the progress bar is index over total of the popover width on every step", async ({ page }) => {
+  await open(page, "?animate=0");
+  for (const [index, name] of [[1, "One"], [2, "Two"], [3, "Three"]] as const) {
+    if (index > 1) await page.evaluate(() => (window as unknown as Win).vtTour.forward());
+    await expect(page.locator(".vt-popover-title")).toHaveText(name);
+    const widths = await page.locator(".vt-popover").evaluate((el) => ({
+      wrapper: el.getBoundingClientRect().width,
+      bar: Number.parseFloat(getComputedStyle(el, "::after").width),
+      vars: [el.style.getPropertyValue("--vt-progress-index"), el.style.getPropertyValue("--vt-progress-total")],
+    }));
+    expect(widths.vars).toEqual([String(index), "3"]);
+    expect(Math.abs(widths.bar - (widths.wrapper * index) / 3)).toBeLessThanOrEqual(1);
+  }
+});
+
+test("the cookbook counter renders the right text from step-shown and progressInfo", async ({ page }) => {
+  await open(page, "?animate=0");
+  await expect(page.locator("#counter")).toHaveText("1/3");
+  await page.evaluate(() => (window as unknown as Win).vtTour.forward());
+  await expect(page.locator("#counter")).toHaveText("2/3");
+  await expect(page.locator(".vt-popover-progress-text")).toHaveText("Step 2 of 3");
+});
