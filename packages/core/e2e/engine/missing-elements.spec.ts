@@ -24,6 +24,27 @@ const addToSlot = (page: Page, html: string) =>
     document.querySelector("#slot")!.insertAdjacentHTML("beforeend", html);
   }, html);
 
+const watchWaiting = (page: Page) =>
+  page.evaluate(() => {
+    const w = window as unknown as { __waitingSeen: boolean };
+    w.__waitingSeen = false;
+    const check = () => {
+      if (document.querySelector(".vt-popover.vt-popover-waiting")) w.__waitingSeen = true;
+    };
+    new MutationObserver(check).observe(document, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    check();
+  });
+
+const expectWaitingSeen = (page: Page) =>
+  expect
+    .poll(() => page.evaluate(() => (window as unknown as { __waitingSeen: boolean }).__waitingSeen))
+    .toBe(true);
+
 test.beforeEach(async ({ page }) => {
   await openFixture(page);
 });
@@ -64,6 +85,7 @@ test.describe("while the tour waits for an element", () => {
   test("after the first step's wait runs out, Escape honours a close button the hook disabled and the right arrow moves on", async ({
     page,
   }) => {
+    await watchWaiting(page);
     await page.evaluate(() => {
       window.tour = window.__engine.createEngine({
         animate: false,
@@ -78,7 +100,7 @@ test.describe("while the tour waits for an element", () => {
       });
       window.tour.drive();
     });
-    await expect(popover(page)).toHaveClass(WAITING);
+    await expectWaitingSeen(page);
     await expect(description(page)).toHaveText("Unavailable, press Next to skip.");
     await expect(popover(page)).not.toHaveClass(WAITING);
 
@@ -117,6 +139,7 @@ test.describe("focus after a tour that started by waiting", () => {
 
   test("returns there too after two first-step waits in a row ran out", async ({ page }) => {
     await page.locator("#three").focus();
+    await watchWaiting(page);
     await page.evaluate(() => {
       window.tour = window.__engine.createEngine({
         animate: false,
@@ -128,7 +151,7 @@ test.describe("focus after a tour that started by waiting", () => {
       });
       window.tour.drive();
     });
-    await expect(popover(page)).toHaveClass(WAITING);
+    await expectWaitingSeen(page);
     await expect(popover(page)).not.toHaveClass(WAITING);
     await nextButton(page).click();
     await expect(title(page)).toHaveText("Two");
@@ -304,22 +327,18 @@ test.describe("missing and late elements", () => {
         animate: false,
         steps: [
           { element: "#one", advanceOn: "click", popover: { title: "Open" } },
-          { element: "#late", waitForElement: 3000, popover: { title: "Late" } },
+          { element: "#late", waitForElement: 60000, popover: { title: "Late" } },
         ],
       });
       window.tour.drive();
-      document.querySelector("#one")!.addEventListener("click", () => {
-        setTimeout(() => {
-          document.querySelector("#slot")!.innerHTML = `<button id="late" type="button">Late</button>`;
-        }, 300);
-      });
     });
 
     await page.locator("#one").click();
-    await expect(popover(page)).toHaveClass(/vt-popover-waiting/);
+    await expect(popover(page)).toHaveClass(WAITING);
     await expect(title(page)).toHaveText("Open");
+    await addToSlot(page, `<button id="late" type="button">Late</button>`);
     await expect(title(page)).toHaveText("Late");
-    await expect(popover(page)).not.toHaveClass(/vt-popover-waiting/);
+    await expect(popover(page)).not.toHaveClass(WAITING);
     await expect(page.locator("#late")).toHaveAttribute("data-vt-target");
   });
 
@@ -327,17 +346,15 @@ test.describe("missing and late elements", () => {
     await page.evaluate(() => {
       window.tour = window.__engine.createEngine({
         animate: false,
-        steps: [{ element: "#late", waitForElement: 3000, popover: { title: "Late" } }],
+        steps: [{ element: "#late", waitForElement: 60000, popover: { title: "Late" } }],
       });
       window.tour.drive();
-      setTimeout(() => {
-        document.querySelector("#slot")!.innerHTML = `<button id="late" type="button">Late</button>`;
-      }, 300);
     });
 
-    await expect(popover(page)).toHaveClass(/vt-popover-waiting/);
+    await expect(popover(page)).toHaveClass(WAITING);
+    await addToSlot(page, `<button id="late" type="button">Late</button>`);
     await expect(page.locator("#late")).toHaveAttribute("data-vt-target");
-    await expect(popover(page)).not.toHaveClass(/vt-popover-waiting/);
+    await expect(popover(page)).not.toHaveClass(WAITING);
   });
 
   test("onElementMissing hears about a removed element", async ({ page }) => {

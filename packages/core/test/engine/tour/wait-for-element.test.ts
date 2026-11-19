@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { append, createDriver, nextFrame, popoverEl, popoverTitle, tick, useDriverHarness } from "../utils";
+import { describe, expect, it, vi } from "vitest";
+import { append, createDriver, nextFrame, popoverEl, popoverTitle, useDriverHarness } from "../utils";
 
 useDriverHarness();
+
+const eventually = (check: () => void) => vi.waitFor(check, { timeout: 4000, interval: 5 });
+
+const frames = async () => {
+  await nextFrame();
+  await nextFrame();
+};
 
 function appendElement(id: string): void {
   const element = document.createElement("div");
@@ -29,7 +36,7 @@ describe("waitForElement", () => {
     expect(document.getElementById("intro")?.hasAttribute("data-vt-target")).toBe(true);
 
     appendElement("late");
-    await tick();
+    await eventually(() => expect(d.getActiveIndex()).toBe(1));
 
     expect(popoverEl()?.style.display).toBe("block");
     expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(false);
@@ -48,7 +55,7 @@ describe("waitForElement", () => {
     expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
 
     appendElement("late");
-    await tick();
+    await eventually(() => expect(d.getActiveElement()?.id).toBe("late"));
 
     expect(d.getActiveIndex()).toBe(0);
     expect(popoverTitle()).toBe("Step 1");
@@ -68,8 +75,7 @@ describe("waitForElement", () => {
     expect(d.getActiveIndex()).toBe(0);
 
     appendElement("late");
-    await tick();
-    expect(d.getActiveIndex()).toBe(1);
+    await eventually(() => expect(d.getActiveIndex()).toBe(1));
   });
 
   it("falls back to the centered popover when the wait times out", async () => {
@@ -85,9 +91,8 @@ describe("waitForElement", () => {
     expect(popoverTitle()).toBe("Step 1");
     expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
 
-    await tick(80);
+    await eventually(() => expect(d.getActiveIndex()).toBe(1));
 
-    expect(d.getActiveIndex()).toBe(1);
     expect(popoverEl()?.style.display).toBe("block");
     expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(false);
     expect(popoverTitle()).toBe("Step 2");
@@ -108,8 +113,9 @@ describe("waitForElement", () => {
     d.moveNext();
     expect(popoverTitle()).toBe("Step 1");
 
-    await tick(80);
+    await eventually(() => expect(d.getActiveIndex()).toBe(2));
 
+    expect(popoverTitle()).toBe("Step 3");
     expect(d.getActiveIndex()).toBe(2);
     expect(popoverTitle()).toBe("Step 3");
   });
@@ -127,7 +133,7 @@ describe("waitForElement", () => {
     d.destroy();
 
     appendElement("late");
-    await tick();
+    await frames();
 
     expect(d.isActive()).toBe(false);
     expect(popoverTitle()).toBeUndefined();
@@ -148,7 +154,7 @@ describe("waitForElement", () => {
     expect(popoverTitle()).toBe("Step 3");
 
     appendElement("late");
-    await tick();
+    await frames();
 
     expect(d.getActiveIndex()).toBe(2);
     expect(popoverTitle()).toBe("Step 3");
@@ -166,11 +172,11 @@ describe("waitForElement", () => {
     await nextFrame();
 
     d.advance();
-    setTimeout(() => appendElement("modal"), 20);
     expect(d.getActiveIndex()).toBe(0);
     expect(popoverTitle()).toBe("Step 1");
 
-    await tick(60);
+    appendElement("modal");
+    await eventually(() => expect(d.getActiveIndex()).toBe(1));
 
     expect(d.getActiveIndex()).toBe(1);
     expect(popoverTitle()).toBe("Step 2");
@@ -191,7 +197,7 @@ describe("waitForElement", () => {
 
     d.highlight({ element: "#card-1", popover: { title: "Highlighted" } });
     append("late", "div");
-    await tick(30);
+    await frames();
 
     expect(popoverTitle()).toBe("Highlighted");
   });
@@ -206,13 +212,12 @@ describe("waitForElement", () => {
     });
     d.drive();
     d.moveNext();
-    await tick(30);
+    await frames();
 
     expect(d.getActiveIndex()).toBe(0);
     expect(popoverEl()?.classList.contains("vt-popover-waiting")).toBe(true);
 
     appendElement("late");
-    await tick(30);
-    expect(d.getActiveIndex()).toBe(1);
+    await eventually(() => expect(d.getActiveIndex()).toBe(1));
   });
 });
