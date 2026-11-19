@@ -1,5 +1,5 @@
 import { destroyDriverClick, onDriverClick } from "../core/click";
-import { PositionOptions, repositionPopover } from "./position";
+import { arrowClassName, PositionOptions, repositionPopover } from "./position";
 import type { DriveStep, EnginePresenter, RepositionInfo } from "../types";
 import { bringInView, removeFromLayer } from "../core/utils";
 import { fixedNames } from "../core/namespace";
@@ -13,9 +13,15 @@ export type PlacementRequest = Placement | "auto";
 export type Alignment = "start" | "center" | "end";
 export type AllowedButtons = "next" | "previous" | "close";
 
+export type PopoverLayout = "dialog" | "speaker";
+
 export type PopoverDOM = {
   wrapper: HTMLElement;
   arrow: HTMLElement;
+  /** The visible bubble; only present in the `speaker` layout, where the arrow is measured against it. */
+  bubble?: HTMLElement;
+  /** The empty slot beside the bubble that a presenter fills with an avatar; only present in the `speaker` layout. */
+  avatarSlot?: HTMLElement;
   title: HTMLElement;
   description: HTMLElement;
   footer: HTMLElement;
@@ -56,6 +62,7 @@ export type PopoverRenderOptions = {
   feedback?: string | undefined;
 
   popoverClass?: string | undefined;
+  layout?: PopoverLayout | undefined;
   smoothScroll?: boolean | undefined;
   scrollIntoView?: false | undefined;
 
@@ -158,8 +165,9 @@ function toggleDescribedBy(wrapper: HTMLElement, id: string, isOn: boolean) {
 function insertRow(popover: PopoverDOM, className: string): HTMLElement {
   const row = createElement("div", className);
 
-  const footer = popover.footer.parentNode === popover.wrapper ? popover.footer : null;
-  popover.wrapper.insertBefore(row, footer);
+  const container = popover.bubble ?? popover.wrapper;
+  const footer = popover.footer.parentNode === container ? popover.footer : null;
+  container.insertBefore(row, footer);
 
   return row;
 }
@@ -296,14 +304,14 @@ export function updatePopoverContent(popover: PopoverDOM, anchor: Element, optio
 }
 
 export function renderPopover(anchor: Element, layer: Element, options: PopoverRenderOptions): PopoverDOM {
-  const popover = createPopover();
+  const popover = createPopover(options.layout);
   layer.appendChild(popover.wrapper);
 
   const popoverWrapper = popover.wrapper;
-  popoverWrapper.className = P.root;
+  popoverWrapper.className = popover.bubble ? `${P.root} ${fixedNames.speaker}` : P.root;
   applyPopoverContent(popover, options);
 
-  popoverWrapper.style.display = "block";
+  popoverWrapper.style.display = popover.bubble ? "" : "block";
   popoverWrapper.style.left = "";
   popoverWrapper.style.top = "";
   popoverWrapper.style.bottom = "";
@@ -312,7 +320,7 @@ export function renderPopover(anchor: Element, layer: Element, options: PopoverR
   popoverWrapper.id = P.contentId;
   popoverWrapper.setAttribute("role", "dialog");
 
-  popover.arrow.className = P.arrow;
+  popover.arrow.className = arrowClassName(popover);
 
   onDriverClick(
     popover.wrapper,
@@ -428,11 +436,12 @@ function createElement<K extends "div" | "span" | "button">(tag: K, className: s
   return element;
 }
 
-function createPopover(): PopoverDOM {
-  const wrapper = createElement("div", P.root);
+function createPopover(layout: PopoverLayout = "dialog"): PopoverDOM {
+  const speaker = layout === "speaker";
+  const wrapper = createElement("div", speaker ? `${P.root} ${fixedNames.speaker}` : P.root);
   wrapper.setAttribute("aria-describedby", P.descriptionId);
 
-  const arrow = createElement("div", P.arrow);
+  const arrow = createElement("div", speaker ? `${P.arrow} ${fixedNames.bubbleTail}` : P.arrow);
 
   const title = createElement("div", P.title, P.titleId);
   title.style.display = "none";
@@ -457,6 +466,30 @@ function createPopover(): PopoverDOM {
 
   footerButtons.append(previousButton, nextButton);
   footer.append(progress, footerButtons);
+
+  if (speaker) {
+    const bubble = createElement("div", fixedNames.bubble);
+    const avatarSlot = createElement("div", fixedNames.avatarSlot);
+    bubble.append(closeButton, title, description, footer);
+    wrapper.setAttribute(fixedNames.attr.dock, "end");
+    wrapper.append(arrow, bubble, avatarSlot);
+
+    return {
+      wrapper,
+      arrow,
+      bubble,
+      avatarSlot,
+      title,
+      description,
+      footer,
+      previousButton,
+      nextButton,
+      closeButton,
+      footerButtons,
+      progress,
+    };
+  }
+
   wrapper.append(closeButton, arrow, title, description, footer);
 
   return {

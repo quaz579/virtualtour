@@ -15,6 +15,7 @@ const attributes = Object.freeze({
   overlay: "data-vt-overlay",
   layer: "data-vt-layer",
   strategy: "data-vt-strategy",
+  dock: "data-vt-dock",
 });
 
 const popover = Object.freeze({
@@ -55,6 +56,10 @@ const fixed = Object.freeze({
   attr: attributes,
   popover,
   noArrow: `${FIXED_PREFIX}-no-arrow`,
+  speaker: `${FIXED_PREFIX}-speaker`,
+  bubble: `${FIXED_PREFIX}-bubble`,
+  bubbleTail: `${FIXED_PREFIX}-bubble-tail`,
+  avatarSlot: `${FIXED_PREFIX}-avatar-slot`,
   layer: `${FIXED_PREFIX}-layer`,
   liveRegion: `${FIXED_PREFIX}-live-region`,
   dummyId: `${FIXED_PREFIX}-dummy-element`,

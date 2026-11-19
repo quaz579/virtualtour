@@ -129,4 +129,29 @@ describe("frame scheduler", () => {
     bad();
     good();
   });
+
+  it("gives each subscription of the same function its own lifetime", () => {
+    const calls: string[] = [];
+    const shared = () => calls.push("shared");
+    const first = subscribe(shared);
+    const second = subscribe(shared);
+    flush();
+    expect(calls).toEqual(["shared", "shared"]);
+    first();
+    first();
+    flush();
+    expect(calls).toEqual(["shared", "shared", "shared"]);
+    second();
+    expect(queue.size).toBe(0);
+  });
+
+  it("does nothing and returns a callable unsubscribe where requestAnimationFrame does not exist", () => {
+    vi.stubGlobal("requestAnimationFrame", undefined);
+    const calls: number[] = [];
+    const off = subscribe(now => calls.push(now));
+
+    expect(() => off()).not.toThrow();
+    expect(calls).toEqual([]);
+    expect(requested).toBe(0);
+  });
 });

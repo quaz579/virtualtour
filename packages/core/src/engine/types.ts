@@ -14,13 +14,23 @@ export type HookOpts = {
   signal?: AbortSignal | undefined;
 };
 
+export type PhysicalAlign = "left" | "right" | "top" | "bottom" | "center";
+
 /** What `onReposition` and `EnginePresenter.afterReposition` receive after the popover is placed. */
 export type RepositionInfo = {
-  /** The side the popover was rendered on. */
+  /** The side the popover was rendered on. When `pinned` is true this is the requested side, not where the popover sits. */
   side: Placement;
   /** The alignment as written in the options: `start` and `end` are logical, so in right-to-left layouts `start` sits at the physical right edge for `top` and `bottom`. */
   align: Alignment;
+  /** `align` resolved to a physical edge: `left`/`right` for `top` and `bottom` sides (swapped in right-to-left layouts), `top`/`bottom` for `left` and `right`, and `center` for `over` or a centered alignment. */
+  physicalAlign: PhysicalAlign;
+  /** Whether the anchor is laid out right to left. */
+  rtl: boolean;
+  /** True when no side fit: the popover is pinned to the bottom centre of the viewport and its arrow is hidden, whatever `side` says. */
+  pinned: boolean;
   wrapperRect: DOMRect;
+  /** The visible bubble; equals `wrapperRect` for layouts without one. */
+  bubbleRect: DOMRect;
   /** `null` when the step has no real target element. */
   targetRect: DOMRect | null;
 };
