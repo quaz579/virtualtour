@@ -122,7 +122,27 @@ describe("01-architecture.md §7.2 ordering", () => {
     expect(log.some((entry) => entry.endsWith(":disposed"))).toBe(false);
   });
 
-  it.todo("action step S completed (step 'completed' and tour 'step-completed' arrive with the engine completion hook in V-06)");
+  it("action step S completed", async () => {
+    const tour = make({ steps: [{ id: "a", title: "A", instruction: "Do it" }, { id: "b", title: "B" }] });
+    await tour.start();
+    const log = record(tour);
+    tour.steps[0]!.on("completed", () => log.push("a:completed"));
+    tour.on("step-completed", (p) => log.push(`tour:step-completed ${p.step.id}`));
+    tours.on("step-completed", (p) => p.tour === tour && log.push(`reg:step-completed ${p.step.id}`));
+    tour.advance();
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("b"));
+
+    expect(log).toEqual([
+      "a:completed",
+      "tour:step-completed a",
+      "reg:step-completed a",
+      "a:will-hide",
+      "a:hidden",
+      "b:will-show",
+      "b:shown",
+      "tour:step-shown b a",
+    ]);
+  });
 
   it("hideCurrent()", async () => {
     const tour = make();
@@ -968,11 +988,9 @@ describe("presenter wiring", () => {
   it("fills bubbleRect from the .vt-bubble element when the layout has one", async () => {
     const marker = new DOMRect(1, 2, 3, 4);
     const { presenter, rects } = spyPresenter({
+      layout: "speaker",
       mount: (popover: PopoverDOM) => {
-        const bubble = document.createElement("div");
-        bubble.className = "vt-bubble";
-        bubble.getBoundingClientRect = () => marker;
-        popover.wrapper.append(bubble);
+        popover.bubble!.getBoundingClientRect = () => marker;
       },
     });
     const tour = make({ presenter: () => presenter });

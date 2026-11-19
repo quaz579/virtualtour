@@ -130,6 +130,51 @@ describe("SpritePlayer element", () => {
     expect(el.style.backgroundSize).toBe("128px 64px");
   });
 
+  it("ignores a sheet that fails to load and detaches its probe handlers", () => {
+    const loads: { onload: (() => void) | null; onerror: (() => void) | null; naturalWidth: number; naturalHeight: number; src: string }[] = [];
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        naturalWidth = 0;
+        naturalHeight = 0;
+        src = "";
+        constructor() {
+          loads.push(this);
+        }
+      },
+    );
+    const sheet = { src: "sheet.png", frameWidth: 32, frameHeight: 24, scale: 2 };
+    const { el } = make({ pack: { ...definition, sheet } });
+    expect(typeof loads[0]?.onerror).toBe("function");
+    loads[0]?.onerror?.();
+    expect(el.style.backgroundSize).toBe("");
+    expect(loads[0]?.onload).toBeNull();
+    expect(loads[0]?.onerror).toBeNull();
+  });
+
+  it("does not set a background size from a sheet that loads with no dimensions", () => {
+    const loads: { onload: (() => void) | null; onerror: (() => void) | null; naturalWidth: number; naturalHeight: number; src: string }[] = [];
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        naturalWidth = 0;
+        naturalHeight = 0;
+        src = "";
+        constructor() {
+          loads.push(this);
+        }
+      },
+    );
+    const sheet = { src: "sheet.png", frameWidth: 32, frameHeight: 24, scale: 2 };
+    const { el } = make({ pack: { ...definition, sheet } });
+    loads[0]?.onload?.();
+    expect(el.style.backgroundSize).toBe("");
+  });
+
   it("escapes quotes, backslashes and newlines in the sheet URL", () => {
     const { pack } = make();
     const hostile = { ...pack, sheetUrl: "https://example.test/a'b\\c\nd.png" };
@@ -245,6 +290,46 @@ describe("SpritePlayer timing", () => {
     expect(player.current).toBeNull();
     expect(pos(el)).toBe("0px 0px");
     expect(queue.size).toBe(0);
+  });
+
+  describe("visibilitychange listener", () => {
+    const visibilityCalls = (spy: ReturnType<typeof vi.spyOn>): unknown[] =>
+      spy.mock.calls.filter(call => call[0] === "visibilitychange").map(call => call[1]);
+
+    it("is added per play and removed again when the animation ends", async () => {
+      const add = vi.spyOn(document, "addEventListener");
+      const remove = vi.spyOn(document, "removeEventListener");
+      const { player } = make();
+      const done = player.play("wave");
+      expect(visibilityCalls(add)).toHaveLength(1);
+      expect(visibilityCalls(remove)).toHaveLength(0);
+      advanceTo(1000);
+      await done;
+      expect(visibilityCalls(remove)).toEqual(visibilityCalls(add));
+    });
+
+    it("is removed when another play, stop or dispose interrupts the run", async () => {
+      const add = vi.spyOn(document, "addEventListener");
+      const remove = vi.spyOn(document, "removeEventListener");
+      const { player } = make();
+      void player.play("spin");
+      void player.play("wave");
+      expect(visibilityCalls(add)).toHaveLength(2);
+      expect(visibilityCalls(remove)).toHaveLength(1);
+      player.stop();
+      expect(visibilityCalls(remove)).toHaveLength(2);
+      void player.play("spin");
+      player.dispose();
+      expect(visibilityCalls(remove)).toHaveLength(3);
+      expect(visibilityCalls(remove)).toEqual(visibilityCalls(add));
+    });
+
+    it("is never added under reduced motion", async () => {
+      const add = vi.spyOn(document, "addEventListener");
+      const { player } = make({ reduced: () => true });
+      await player.play("wave");
+      expect(visibilityCalls(add)).toHaveLength(0);
+    });
   });
 
   it("hidden-tab time does not advance a one-shot animation", () => {
@@ -364,6 +449,25 @@ describe("SpritePlayer roles, stills and errors", () => {
     expect(player.current).toBe("blink");
     void player.playRole("idle");
     expect(player.current).toBe("wobble");
+  });
+
+  it("playRole idle avoids the previous idle across plays of other roles", async () => {
+    const { player } = make({ random: () => 0.99 });
+    void player.playRole("idle");
+    expect(player.current).toBe("wobble");
+    void player.playRole("greet");
+    void player.playRole("idle");
+    expect(player.current).toBe("blink");
+  });
+
+  it("shows the still frame and resolves instead of hanging where requestAnimationFrame does not exist", async () => {
+    vi.stubGlobal("requestAnimationFrame", undefined);
+    const { el, player } = make();
+    await player.play("wave");
+    expect(player.current).toBeNull();
+    expect(pos(el)).toBe("-64px 0px");
+    await player.playRole("idle");
+    expect(player.current).toBeNull();
   });
 
   it("still shows an animation's still frame and interrupts a run", async () => {

@@ -148,6 +148,18 @@ export function unlatch(ctx: Context, activation: Activation) {
   activation.recheck?.();
 }
 
+export function reopen(ctx: Context, activation: Activation): boolean {
+  if (!isCurrent(ctx, activation) || hasElementWait(ctx)) {
+    return false;
+  }
+
+  const wasDone = !!activation.done;
+  activation.done = false;
+  unlatch(ctx, activation);
+
+  return wasDone;
+}
+
 export function isLeaving(ctx: Context, activation: Activation): boolean {
   return activation.latched || hasElementWait(ctx);
 }

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour theme fixture</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      .demo-container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 40px;
+      }
+      #target {
+        width: 120px;
+        margin-top: 80px;
+        padding: 12px;
+        border: 1px solid #888;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-container">
+      <h1>Theme fixture</h1>
+      <button id="start" type="button">Start tour</button>
+      <button id="plain-button" type="button">Plain button</button>
+      <div id="target">Target</div>
+    </div>
+
+    <script type="module" src="./theme.ts"></script>
+  </body>
+</html>
