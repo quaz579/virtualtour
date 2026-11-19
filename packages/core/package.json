@@ -33,8 +33,10 @@
     "schemas",
     "LICENSE",
     "NOTICE.md",
-    "ART.md",
-    "src/avatar/thumbtack/LICENSE-ART.md"
+    "README.md",
+    "CHANGELOG.md",
+    "STYLES.md",
+    "ART.md"
   ],
   "scripts": {
     "build": "vite build && vite build --mode dev && node tools/build-dts.mjs",

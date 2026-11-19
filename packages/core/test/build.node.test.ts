@@ -108,6 +108,60 @@ describe("build output", () => {
 
 const repoRoot = resolve(root, "../..");
 
+const builtPatterns = [/^dist\/[^/]+\.js$/, /^dist\/[^/]+\.js\.map$/, /^dist\/[^/]+\.d\.ts$/, /^dist\/[^/]+\.css$/];
+
+const packContents: Record<string, { exact: string[]; required: string[] }> = {
+  virtualtour: {
+    exact: [
+      "ART.md",
+      "CHANGELOG.md",
+      "LICENSE",
+      "NOTICE.md",
+      "README.md",
+      "STYLES.md",
+      "package.json",
+      "schemas/avatar-pack.v1.schema.json",
+      "schemas/tour.v1.schema.json",
+      "dist/thumbtack/LICENSE-ART.md",
+      "dist/thumbtack/pack.json",
+      "dist/thumbtack/sheet.png",
+    ],
+    required: ["dist/index.js", "dist/index.d.ts", "dist/avatar.js", "dist/motion.js", "dist/base.css", "dist/theme.css", "dist/avatar.css"],
+  },
+  "virtualtour-react": { exact: ["LICENSE", "README.md", "package.json"], required: ["dist/index.js", "dist/index.d.ts"] },
+  "virtualtour-vue": { exact: ["LICENSE", "README.md", "package.json"], required: ["dist/index.js", "dist/index.d.ts"] },
+};
+
+function packedPaths(workspace: string): string[] {
+  const out = execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts", "--workspace", workspace], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  const [report] = JSON.parse(out) as Array<{ files: Array<{ path: string }> }>;
+  return report!.files.map((file) => file.path);
+}
+
+describe("package contents", () => {
+  beforeAll(() => {
+    execFileSync("npm", ["run", "build"], { cwd: repoRoot, stdio: "ignore" });
+  }, 180_000);
+
+  it.each(Object.keys(packContents))("%s packs exactly the intended files", (workspace) => {
+    const { exact, required } = packContents[workspace]!;
+    const paths = packedPaths(workspace);
+    for (const path of [...exact, ...required]) {
+      expect(paths, `${workspace} is missing ${path}`).toContain(path);
+    }
+    const unexpected = paths.filter((path) => !exact.includes(path) && !builtPatterns.some((pattern) => pattern.test(path)));
+    expect(unexpected, `${workspace} packs files nobody listed`).toEqual([]);
+  }, 120_000);
+
+  it("ships exactly one image, the Thumbtack sheet", () => {
+    expect(packedPaths("virtualtour").filter((path) => /\.(png|jpe?g|gif|webp|svg)$/i.test(path))).toEqual(["dist/thumbtack/sheet.png"]);
+  });
+});
+
 const consumerFiles: Record<string, string> = {
   "core.ts": `import { createTour, type Tour, type TourConfig, type TourStep } from "virtualtour";
 const config: TourConfig = { steps: [] };

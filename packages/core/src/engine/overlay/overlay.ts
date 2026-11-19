@@ -129,6 +129,8 @@ function placeOverlay(ctx: Context, overlaySvg: SVGSVGElement, element: Element)
   }
 }
 
+const lastExtras = new WeakMap<SVGSVGElement, { key: string; path: string }>();
+
 function allowedCutouts(ctx: Context, overlaySvg: SVGSVGElement, cutout: StageCutout): string {
   const scope: ParentNode = overlaySvg.closest("dialog") ?? document;
   const isClipping = !!stepOption(ctx, ctx.getState("activeStep"), "clipStageToScrollParents");
@@ -142,7 +144,16 @@ function allowedCutouts(ctx: Context, overlaySvg: SVGSVGElement, cutout: StageCu
     }
   });
 
-  return generateExtraCutoutsPathString(cutout, dedupeRects(cutout, rects));
+  const key = JSON.stringify([cutout, rects.map(({ x, y, width, height }) => [x, y, width, height])]);
+  const last = lastExtras.get(overlaySvg);
+  if (last?.key === key) {
+    return last.path;
+  }
+
+  const path = generateExtraCutoutsPathString(cutout, dedupeRects(cutout, rects));
+  lastExtras.set(overlaySvg, { key, path });
+
+  return path;
 }
 
 function renderOverlay(ctx: Context, stagePosition: StageDefinition, element: Element) {

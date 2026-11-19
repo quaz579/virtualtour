@@ -1,5 +1,9 @@
 # virtualtour
 
+Guided tours and onboarding for the web, derived from driver.js (MIT). Entry points: `virtualtour`, `virtualtour/avatar`, `virtualtour/motion`; stylesheets `virtualtour/base.css` (required), `theme.css` and `avatar.css`. The exported names are listed in `API-FREEZE.md`, the class and variable names in `STYLES.md`, and the release history in `CHANGELOG.md`.
+
+## Developing
+
 Commands, run from the repository root:
 
 - `npm ci`: install dependencies
