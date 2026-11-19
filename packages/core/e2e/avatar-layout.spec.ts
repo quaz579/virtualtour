@@ -11,7 +11,7 @@ test.beforeEach(({}, testInfo) => {
 type Side = "top" | "bottom" | "left" | "right";
 type Run = {
   target?: string;
-  side?: Side | "over";
+  side?: Side | "over" | "auto";
   align?: "start" | "center" | "end";
   dock?: "start" | "end" | "auto";
   scale?: number;

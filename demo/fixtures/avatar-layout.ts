@@ -19,7 +19,7 @@ interface RunOptions {
 
 declare global {
   interface Window {
-    vtTour?: Tour;
+    vtLayoutTour?: Tour;
     vtPresenter?: SpeakerPresenter;
     vtRun: (options?: RunOptions) => Promise<void>;
   }
@@ -38,7 +38,7 @@ const packFor = (frame?: [number, number]) => {
 };
 
 window.vtRun = async (options = {}) => {
-  window.vtTour?.finish();
+  window.vtLayoutTour?.finish();
   const step = {
     id: "speak",
     title: "Speaker title",
@@ -57,7 +57,7 @@ window.vtRun = async (options = {}) => {
       return window.vtPresenter;
     },
   });
-  window.vtTour = tour;
+  window.vtLayoutTour = tour;
   await tour.start();
 };
 
