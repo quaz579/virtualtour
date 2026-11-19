@@ -140,7 +140,7 @@ export function initEvents(ctx: Context) {
   window.addEventListener("keyup", onWindowKeyup, false);
   window.addEventListener("keydown", onWindowKeydown, false);
   window.addEventListener("resize", onWindowResize);
-  window.addEventListener("scroll", onWindowScroll);
+  window.addEventListener("scroll", onWindowScroll, true);
   document.addEventListener("close", onWindowResize, true);
 }
 
@@ -158,5 +158,5 @@ export function destroyEvents(ctx: Context) {
   ctx.getState("__openObserver")?.disconnect();
   window.removeEventListener("resize", events.onResize);
   document.removeEventListener("close", events.onResize, true);
-  window.removeEventListener("scroll", events.onScroll);
+  window.removeEventListener("scroll", events.onScroll, true);
 }

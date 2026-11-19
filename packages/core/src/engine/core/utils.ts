@@ -106,38 +106,89 @@ function isElementInView(element: Element) {
 }
 
 function isClippedByScrollContainer(element: Element, rect: DOMRect) {
+  const clipped = clipRectByScrollParents(element, rect, true);
+
+  return (
+    clipped.left !== rect.left ||
+    clipped.top !== rect.top ||
+    clipped.right !== rect.right ||
+    clipped.bottom !== rect.bottom
+  );
+}
+
+function createsContainingBlock(style: CSSStyleDeclaration) {
+  const set = (value: string | undefined) => !!value && value !== "none";
+
+  return (
+    style.position !== "static" ||
+    set(style.transform) ||
+    set(style.perspective) ||
+    set(style.filter) ||
+    set(style.backdropFilter) ||
+    set(style.translate) ||
+    set(style.rotate) ||
+    set(style.scale) ||
+    /size|inline-size/.test(style.containerType ?? "") ||
+    style.contentVisibility === "auto" ||
+    /layout|paint|strict|content/.test(style.contain ?? "") ||
+    /transform|perspective|filter/.test(style.willChange ?? "")
+  );
+}
+
+export function clipRectByScrollParents(element: Element, rect: DOMRect, scrollableOnly = false): DOMRect {
+  let left = rect.left;
+  let top = rect.top;
+  let right = rect.right;
+  let bottom = rect.bottom;
   let current: Element | null = element;
+  let skipping = false;
 
   while (current) {
-    if (getComputedStyle(current).position === "fixed") {
-      return false;
+    const currentPosition = getComputedStyle(current).position;
+    if (currentPosition === "fixed") {
+      break;
+    }
+
+    if (currentPosition === "absolute") {
+      skipping = true;
     }
 
     const parent: HTMLElement | null = current.parentElement;
     if (!parent || parent === document.body || parent === document.documentElement) {
-      return false;
+      break;
     }
 
-    if (isScrollable(parent)) {
+    const style = getComputedStyle(parent);
+    const isContainingBlock = createsContainingBlock(style);
+    const clipsOn = (value: string) => (scrollableOnly ? value === "auto" || value === "scroll" : !!value && value !== "visible");
+    const clipsX = clipsOn(style.overflowX);
+    const clipsY = clipsOn(style.overflowY);
+    if ((!skipping || isContainingBlock) && (clipsX || clipsY)) {
       const box = parent.getBoundingClientRect();
-      const top = box.top + parent.clientTop;
-      const left = box.left + parent.clientLeft;
+      const boxLeft = box.left + parent.clientLeft;
+      const boxTop = box.top + parent.clientTop;
+      const boxRight = boxLeft + (parent.clientWidth || box.width);
+      const boxBottom = boxTop + (parent.clientHeight || box.height);
 
-      const isClipped =
-        rect.top < top ||
-        rect.left < left ||
-        rect.bottom > top + (parent.clientHeight || box.height) ||
-        rect.right > left + (parent.clientWidth || box.width);
-
-      if (isClipped) {
-        return true;
+      if (clipsX) {
+        left = Math.min(Math.max(left, boxLeft), boxRight);
+        right = Math.max(Math.min(right, boxRight), left);
       }
+
+      if (clipsY) {
+        top = Math.min(Math.max(top, boxTop), boxBottom);
+        bottom = Math.max(Math.min(bottom, boxBottom), top);
+      }
+    }
+
+    if (isContainingBlock) {
+      skipping = false;
     }
 
     current = parent;
   }
 
-  return false;
+  return new DOMRect(left, top, right - left, bottom - top);
 }
 
 export function isElementVisible(el: HTMLElement) {

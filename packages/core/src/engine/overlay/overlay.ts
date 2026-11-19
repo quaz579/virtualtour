@@ -1,4 +1,5 @@
 import {
+  clipRectByScrollParents,
   easeInOutQuad,
   isDummyElement,
   isInsideAllowedElement,
@@ -21,11 +22,36 @@ import {
   stageViewBox,
 } from "./stage";
 
+function stageRect(ctx: Context, element: Element): DOMRect {
+  const rect = element.getBoundingClientRect();
+  if (!stepOption(ctx, ctx.getState("activeStep"), "clipStageToScrollParents")) {
+    return rect;
+  }
+
+  const padding = stageOptions(ctx, element).padding;
+  const padded = new DOMRect(
+    rect.x - padding,
+    rect.y - padding,
+    rect.width + padding * 2,
+    rect.height + padding * 2
+  );
+  const clipped = clipRectByScrollParents(element, padded);
+
+  const empty = clipped.width <= 0 || clipped.height <= 0;
+
+  return new DOMRect(
+    clipped.x + padding,
+    clipped.y + padding,
+    empty ? -padding * 2 : clipped.width - padding * 2,
+    empty ? -padding * 2 : clipped.height - padding * 2
+  );
+}
+
 export function transitionStage(ctx: Context, elapsed: number, duration: number, from: Element, to: Element) {
   let activeStagePosition = ctx.getState("__activeStagePosition");
 
-  const fromDefinition = activeStagePosition ? activeStagePosition : from.getBoundingClientRect();
-  const toDefinition = to.getBoundingClientRect();
+  const fromDefinition = activeStagePosition ? activeStagePosition : stageRect(ctx, from);
+  const toDefinition = stageRect(ctx, to);
 
   const x = easeInOutQuad(elapsed, fromDefinition.x, toDefinition.x - fromDefinition.x, duration);
   const y = easeInOutQuad(elapsed, fromDefinition.y, toDefinition.y - fromDefinition.y, duration);
@@ -48,7 +74,7 @@ export function trackActiveElement(ctx: Context, element: Element) {
     return;
   }
 
-  const definition = element.getBoundingClientRect();
+  const definition = stageRect(ctx, element);
 
   const activeStagePosition: StageDefinition = {
     x: definition.x,
@@ -146,8 +172,8 @@ export function redrawOverlay(ctx: Context, isOutsideDialogToo = false) {
   }
 }
 
-function stageOptions(ctx: Context) {
-  const element = ctx.getState("activeElement");
+function stageOptions(ctx: Context, target?: Element) {
+  const element = target ?? ctx.getState("activeElement");
   if (element && (isDummyElement(element) || isInsideAllowedElement(element))) {
     return { padding: 0, radius: 0 };
   }

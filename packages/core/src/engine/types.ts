@@ -112,6 +112,8 @@ export type Config = {
   overlayClickBehavior?: "close" | "nextStep" | "none" | DriverHook;
   stagePadding?: number;
   stageRadius?: number | StageCornerRadius;
+  /** Cut out only the part of the highlighted element that its scrolling ancestors show. Defaults to `true`. */
+  clipStageToScrollParents?: boolean;
 
   disableActiveInteraction?: boolean | "clicks";
 
@@ -225,6 +227,7 @@ export type DriveStep = {
   advanceDelay?: number;
   stagePadding?: number;
   stageRadius?: number | StageCornerRadius;
+  clipStageToScrollParents?: boolean;
   popoverOffset?: number;
   data?: Record<string, any>;
 };
