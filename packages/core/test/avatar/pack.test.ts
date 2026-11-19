@@ -371,6 +371,15 @@ describe("preloadSheet", () => {
     vi.useRealTimers();
   });
 
+  it("does not time out while a slow decode is in progress", async () => {
+    vi.useFakeTimers();
+    stubImage("load", () => new Promise<void>((resolve) => setTimeout(resolve, 2000)));
+    const result = preloadSheet("https://x.test/sheet.png", { timeoutMs: 500 });
+    await vi.advanceTimersByTimeAsync(2000);
+    await expect(result).resolves.toBeUndefined();
+    vi.useRealTimers();
+  });
+
   it("still resolves when decode rejects after a successful load", async () => {
     stubImage("load", () => Promise.reject(new Error("bad image")));
     await expect(preloadSheet("https://x.test/odd.png")).resolves.toBeUndefined();

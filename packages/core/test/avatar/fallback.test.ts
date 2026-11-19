@@ -35,6 +35,7 @@ type Outcome = "load" | "error" | "hang";
 let outcome: Outcome;
 let requested: string[];
 let released: string[];
+let pendingLoad: (() => void) | undefined;
 const created: Tour[] = [];
 
 const plain = (id: string): StepConfig => ({ id, title: id, body: "Body" });
@@ -52,6 +53,7 @@ beforeEach(() => {
   outcome = "load";
   requested = [];
   released = [];
+  pendingLoad = undefined;
   vi.stubGlobal(
     "Image",
     class {
@@ -65,6 +67,7 @@ beforeEach(() => {
         }
         this.url = value;
         requested.push(value);
+        if (outcome === "hang") pendingLoad = () => this.onload?.();
         if (outcome === "load") queueMicrotask(() => this.onload?.());
         if (outcome === "error") queueMicrotask(() => this.onerror?.());
       }
@@ -121,7 +124,7 @@ describe("sheet preload", () => {
     expect(error).not.toHaveBeenCalled();
   });
 
-  it("gives up on a sheet that never loads after loadTimeoutMs and releases the request", async () => {
+  it("starts as a dialog when the sheet is slower than loadTimeoutMs, and a later run uses it once it loads", async () => {
     outcome = "hang";
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -134,7 +137,24 @@ describe("sheet preload", () => {
     await started;
     expect(wrapper().classList.contains("vt-dialog")).toBe(true);
     expect(onError).toHaveBeenCalledTimes(1);
-    expect(released).toEqual([requested[0]]);
+    expect(released).toEqual([]);
+    pendingLoad?.();
+    await vi.advanceTimersByTimeAsync(0);
+    tour.finish();
+    await tour.start();
+    expect(wrapper().classList.contains("vt-speaker")).toBe(true);
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  it("caps loadTimeoutMs below the engine's presenter bound", async () => {
+    outcome = "hang";
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tour = make([plain("a")], { loadTimeoutMs: 60000 });
+    const started = tour.start();
+    await vi.advanceTimersByTimeAsync(9000);
+    await started;
+    expect(wrapper().classList.contains("vt-dialog")).toBe(true);
   });
 });
 

@@ -27,7 +27,7 @@ export interface AvatarOptions {
   idle?: boolean;
   /** Milliseconds of quiet before an idle animation plays. Default 6000. Values below 50 count as 50; zero or negative values use the default. */
   idleQuietMs?: number;
-  /** How long a run waits for the pack, and for its sheet image, before it starts in dialog mode. Default 3000. Used by `withAvatar`; `SpeakerPresenter` is given a loaded pack and has nothing to wait for. */
+  /** How long a run waits for the pack, and for its sheet image, before it starts in dialog mode. Default 3000, at most 9000. Used by `withAvatar`; `SpeakerPresenter` is given a loaded pack and has nothing to wait for. */
   loadTimeoutMs?: number;
   /** Called once when the pack or its sheet fails to load or arrives too late. Used by `withAvatar`. */
   onError?: (error: AvatarPackError) => void;

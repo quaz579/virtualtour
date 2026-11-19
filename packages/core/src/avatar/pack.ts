@@ -359,6 +359,8 @@ export function loadSheetImage(url: string, options: PreloadSheetOptions = {}): 
       timer = setTimeout(() => fail(`${url} did not load within ${timeoutMs} ms`), timeoutMs);
     }
     image.onload = () => {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
       const size = { width: image.naturalWidth, height: image.naturalHeight };
       if (typeof image.decode === "function") image.decode().then(() => finish(() => resolve(size)), () => finish(() => resolve(size)));
       else finish(() => resolve(size));
