@@ -80,7 +80,10 @@ describe("art tripwire", () => {
       ...walk(coreRoot, join(coreRoot, "src/avatar")),
       ...walk(repoRoot, join(repoRoot, "docs")),
     ];
-    expect(entries.length).toBeGreaterThan(10);
+    const paths = entries.map((entry) => entry.path);
+    expect(paths).toContain("e2e/fixtures/test-pack/pack.json");
+    expect(paths).toContain("src/avatar/thumbtack/pack.json");
+    expect(paths.some((path) => path.startsWith("docs/plan/"))).toBe(true);
     expect(violations(entries)).toEqual([]);
   });
 
@@ -113,8 +116,8 @@ describe("art tripwire", () => {
       Object.fromEntries(Array.from({ length: count }, (_v, i) => [`a${i}`, { frames: [] }]));
 
     it("flags a PNG over 200 KB but not one at the limit", () => {
-      expect(violations(scratch({ "a/big.png": Buffer.alloc(MAX_PNG_BYTES + 1) }))).toHaveLength(1);
-      expect(violations(scratch({ "a/ok.png": Buffer.alloc(MAX_PNG_BYTES) }))).toEqual([]);
+      expect(violations(scratch({ "a/big.png": Buffer.alloc(204_801) }))).toHaveLength(1);
+      expect(violations(scratch({ "a/ok.png": Buffer.alloc(204_800) }))).toEqual([]);
     });
 
     it("flags a JSON map with 40 or more animations in either shape", () => {
@@ -125,7 +128,7 @@ describe("art tripwire", () => {
       expect(violations(scratch({ "m.json": JSON.stringify(list.slice(0, 39)) }))).toEqual([]);
     });
 
-    it.each(BANNED_NAMES)("flags a file name containing %s in any case and folder", (word) => {
+    it.each(["clippy", "clippit", "office-assistant"])("flags a file name containing %s in any case and folder", (word) => {
       expect(violations(scratch({ [`x/${word.toUpperCase()}-sheet.txt`]: "x" }))).toHaveLength(1);
       expect(violations(scratch({ [`${word}/readme.txt`]: "x" }))).toHaveLength(1);
     });

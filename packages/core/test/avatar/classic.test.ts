@@ -137,6 +137,13 @@ describe("column/row format", () => {
     expect(pack.roles).toEqual({ rest: "Zed" });
   });
 
+  it("keeps a hostile animation name as data", () => {
+    const json = JSON.parse('[{"Name":"__proto__","Frames":[{"Duration":5,"ImagesOffsets":{"Column":0,"Row":0}}]}]');
+    const pack = fromClassicColumnRowMap(json, options);
+    expect(Object.keys(pack.animations)).toEqual(["__proto__"]);
+    expect(Object.getPrototypeOf(pack.animations)).toBe(Object.prototype);
+  });
+
   it("resolves roles through the normalized pack", () => {
     const pack = normalizePack(validatePack(fromClassicColumnRowMap(fixture("classic-a.json"), options)), "https://x.test/");
     expect(resolveRole(pack, "greet")).toBe("Wave");
@@ -223,6 +230,7 @@ describe("defaultClassicRoles", () => {
     expect(roles).toMatchObject({ rest: "RestPose", greet: "Greeting", exit: "GoodBye", think: "Processing", alert: "GetAttention" });
     expect(roles.point).toEqual({ any: "GetAttention" });
     expect(defaultClassicRoles({ Default: 1 }).rest).toBe("Default");
+    expect(defaultClassicRoles({ Hide: 1 }).exit).toBe("Hide");
   });
 
   it("matches the Idle prefix only at the start", () => {

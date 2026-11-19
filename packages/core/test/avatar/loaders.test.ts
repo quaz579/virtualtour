@@ -127,6 +127,19 @@ describe("loadClassicAvatarPack", () => {
     expect(pack.frames["Wave"]?.map((f) => f.x)).toEqual([32, 64, 96]);
   });
 
+  it("divides width by columns and height by rows on a non-square sheet", async () => {
+    imageSize = { w: 200, h: 90 };
+    const json = JSON.stringify([
+      { Name: "A", Frames: [{ Duration: 5, ImagesOffsets: { Column: 3, Row: 0 } }, { Duration: 5, ImagesOffsets: { Column: 0, Row: 2 } }] },
+    ]);
+    const pack = await loadClassicAvatarPack({
+      sheetUrl: "https://x.test/m/sheet.png",
+      mapUrl: "https://x.test/m/n.json",
+      fetch: respond({ "/m/n.json": json }) as never,
+    });
+    expect(pack.sheet).toMatchObject({ frameWidth: 50, frameHeight: 30, columns: 4 });
+  });
+
   it("uses the caller's frameSize without measuring the sheet", async () => {
     imageSize = { w: 999, h: 999 };
     const pack = await loadClassicAvatarPack({
@@ -212,6 +225,14 @@ describe("thumbtackPack", () => {
     await thumbtackPack();
     expect(spy.urls).toHaveLength(1);
     expect(spy.urls[0]).toMatch(/\/src\/avatar\/thumbtack\/pack\.json$/);
+    vi.unstubAllGlobals();
+  });
+
+  it("treats a base without a trailing slash as a folder", async () => {
+    const spy = captured();
+    vi.stubGlobal("fetch", spy.fetch);
+    await thumbtackPack("https://cdn.test/vt");
+    expect(spy.urls).toEqual(["https://cdn.test/vt/thumbtack/pack.json"]);
     vi.unstubAllGlobals();
   });
 

@@ -112,10 +112,11 @@ export async function loadClassicAvatarPack(source: ClassicSource): Promise<Norm
 
 /**
  * Loads the Thumbtack pack that ships with the package. `baseUrl` is the directory that holds the `thumbtack/`
- * folder and must end with a slash; it defaults to the folder of this module so bundlers that copy the package assets
+ * folder (a missing trailing slash is added); it defaults to the folder of this module so bundlers that copy the package assets
  * keep working. Pass a CDN or self-hosted base to serve the files elsewhere.
  */
 export async function thumbtackPack(baseUrl?: string): Promise<NormalizedPack> {
-  const base = baseUrl === undefined ? import.meta.url : absolute(baseUrl, "baseUrl");
+  const folder = baseUrl === undefined || baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const base = folder === undefined ? import.meta.url : absolute(folder, "baseUrl");
   return loadAvatarPack(new URL("thumbtack/pack.json", base).href);
 }
