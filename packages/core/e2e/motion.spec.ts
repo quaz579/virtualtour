@@ -35,7 +35,12 @@ test("the popover is between the two positions part way through a glide and land
     return { left: r.left, top: r.top, glide: el.classList.contains("vt-glide"), title: el.querySelector(".vt-popover-title")?.textContent };
   });
   await expect(page.locator(".vt-popover-title")).toHaveText("Two");
-  await expect(page.locator(".vt-popover.vt-glide")).toHaveCount(0);
+  await page.waitForTimeout(900);
+  const settledState = await page.locator(".vt-popover").evaluate((el) => ({
+    animations: el.getAnimations().length,
+    opacity: getComputedStyle(el).opacity,
+  }));
+  expect(settledState).toEqual({ animations: 0, opacity: "1" });
   const last = await rect(page);
   const between = (v: number, a: number, b: number): boolean => v > Math.min(a, b) + 1 && v < Math.max(a, b) - 1;
   expect(mid.glide).toBe(true);

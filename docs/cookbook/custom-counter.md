@@ -23,13 +23,12 @@ tour.on("step-shown", () => {
 
 ## Progress bar from CSS variables
 
-`progressVars` sets `--vt-progress-index` and `--vt-progress-total` on the popover each time a step is shown. It returns a function that stops updating and removes them. The theme stylesheet draws a bar from the two variables when the popover has `data-vt-progress-bar`.
+`progressVars` sets `--vt-progress-index` and `--vt-progress-total` on the popover each time a step is shown. It returns a function that stops updating and removes them. Style the bar yourself with the two variables.
 
 ```ts
 import { progressVars } from "virtualtour/motion";
 
 const off = progressVars(tour);
-tour.on("step-shown", ({ step }) => step.element?.setAttribute("data-vt-progress-bar", ""));
 ```
 
 Any rule can use the variables:

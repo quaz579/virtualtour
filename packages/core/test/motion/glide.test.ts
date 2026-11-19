@@ -43,13 +43,13 @@ describe("glide", () => {
     expect(animations[0]!.options).toMatchObject({ duration: 250, easing: "cubic-bezier(.2,.8,.2,1)" });
   });
 
-  it("marks the wrapper vt-glide while moving and removes it when the animation ends", async () => {
+  it("marks the wrapper vt-glide and keeps it after the animation ends so the fade does not restart", async () => {
     const tour = await start({ steps });
     glide(tour);
     await tour.forward();
     expect(wrapper().classList.contains("vt-glide")).toBe(true);
     animations[0]!.finish();
-    expect(wrapper().classList.contains("vt-glide")).toBe(false);
+    expect(wrapper().classList.contains("vt-glide")).toBe(true);
   });
 
   it("does not glide to the first step", async () => {
@@ -144,7 +144,6 @@ describe("glide", () => {
     const running = animations[0]!;
     off();
     expect(running.cancel).toHaveBeenCalled();
-    expect(wrapper().classList.contains("vt-glide")).toBe(false);
     await tour.forward();
     expect(animations).toHaveLength(1);
   });

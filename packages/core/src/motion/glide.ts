@@ -31,21 +31,20 @@ function isCentered(step: TourStep): boolean {
  * Slides the popover from where the previous step left it to where the next step puts it, instead of fading the new
  * popover in. Does nothing under reduced motion, when the tour's `animate` is off, when one step is centered and the
  * other is not, or when the two steps use different popover layouts. Returns a function that stops listening and
- * cancels a glide in progress.
+ * cancels a glide in progress. The wrapper keeps `vt-glide` for as long as it lives, so the engine's fade does not restart when the glide ends.
  */
 export function glide(tour: Tour, options: GlideOptions = {}): () => void {
   const durationMs = options.durationMs ?? 250;
   const easing = options.easing ?? "cubic-bezier(.2,.8,.2,1)";
   let departure: Departure | null = null;
-  let running: { animation: Animation; element: HTMLElement } | null = null;
+  let running: { animation: Animation } | null = null;
   let stopHide: (() => void) | null = null;
 
   const settle = (): void => {
     if (!running) return;
-    const { animation, element } = running;
+    const { animation } = running;
     running = null;
     animation.cancel();
-    element.classList.remove(GLIDE_CLASS);
   };
 
   const watch = (step: TourStep): void => {
@@ -87,14 +86,10 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
       [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0px, 0px)" }],
       { duration: durationMs, easing },
     );
-    running = { animation, element };
-    const done = (): void => {
-      if (running?.animation !== animation) return;
-      running = null;
-      element.classList.remove(GLIDE_CLASS);
-    };
-    animation.addEventListener("finish", done);
-    animation.addEventListener("cancel", done);
+    running = { animation };
+    animation.addEventListener("finish", () => {
+      if (running?.animation === animation) running = null;
+    });
   });
 
   const current = tour.currentStep;
