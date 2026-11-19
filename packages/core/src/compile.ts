@@ -15,12 +15,7 @@ type FutureConfigKeys =
 
 type FutureStepKeys =
   | "popover"
-  | "popoverCrossOffset"
-<<<<<<< HEAD
-  | "scrollIntoView";
-=======
-  | "popoverPadding";
->>>>>>> origin/main
+  | "popoverCrossOffset";
 
 type FuturePopoverKeys = "side" | "arrow" | "arrowMinInset" | "flip" | "shift" | "strategy";
 
@@ -38,11 +33,6 @@ export type EnginePopover = Omit<Popover, FuturePopoverKeys> & {
 export type EngineStep = Omit<DriveStep, FutureStepKeys> & {
   popover?: EnginePopover;
   popoverCrossOffset?: number;
-<<<<<<< HEAD
-  scrollIntoView?: ScrollIntoViewValue;
-=======
-  popoverPadding?: number;
->>>>>>> origin/main
 };
 
 /** Engine config, including the keys the engine gains later. */
