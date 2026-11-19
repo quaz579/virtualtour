@@ -7,7 +7,7 @@ test.beforeEach(({}, testInfo) => {
   );
 });
 
-type Tour = { forward(): Promise<unknown>; backward(): Promise<unknown>; finish(): unknown; start(): Promise<unknown> };
+type Tour = { advance(): void; forward(): Promise<unknown>; backward(): Promise<unknown>; finish(): unknown; start(): Promise<unknown> };
 type Engine = { updatePopover(patch: Record<string, string>): void; nudge(arg: string | Record<string, string>): void };
 type Win = { vtTour: Tour; vtEngine: () => Engine; vtLog: string[]; vtPayload: string; __vtPwned?: number };
 
@@ -49,7 +49,7 @@ test("payloads in title, body, instruction, counter and labels never execute", a
 
 test("payloads in a string array body never execute", async ({ page }) => {
   await open(page);
-  await page.evaluate(() => void (window as unknown as Win).vtTour.forward());
+  await page.evaluate(() => (window as unknown as Win).vtTour.advance());
   await expect.poll(() => log(page)).toContain("shown:array");
   await settle(page);
   expect(await pwned(page)).toBeUndefined();
@@ -87,7 +87,8 @@ test("control: the same payload executes when no sanitizer is configured", async
 
 test("a user Element body and a DocumentFragment body survive close and a second mount", async ({ page }) => {
   await open(page);
-  await page.evaluate(() => void (window as unknown as Win).vtTour.forward());
+  await page.evaluate(() => (window as unknown as Win).vtTour.advance());
+  await expect.poll(() => log(page)).toContain("shown:array");
   await page.evaluate(() => void (window as unknown as Win).vtTour.forward());
   await expect.poll(() => log(page)).toContain("shown:element");
   await expect(page.locator(".vt-body")).toHaveText("Original element body");
@@ -100,10 +101,12 @@ test("a user Element body and a DocumentFragment body survive close and a second
   await expect(page.locator(".demo-container > #orig-body")).toHaveText("Original element body");
   await page.evaluate(() => void (window as unknown as Win).vtTour.start());
   await expect.poll(() => page.evaluate(() => (window as unknown as Win).vtLog.filter((l) => l === "shown:first").length)).toBe(2);
-  await page.evaluate(async () => {
-    await (window as unknown as Win).vtTour.forward();
-    await (window as unknown as Win).vtTour.forward();
-  });
+  await expect.poll(() => log(page)).toContain("shown:first");
+  const shownCount = (id: string) => page.evaluate((name) => (window as unknown as Win).vtLog.filter((l) => l === name).length, `shown:${id}`);
+  await page.evaluate(() => (window as unknown as Win).vtTour.advance());
+  await expect.poll(() => shownCount("array")).toBe(2);
+  await page.evaluate(() => void (window as unknown as Win).vtTour.forward());
+  await expect.poll(() => shownCount("element")).toBe(2);
   await expect(page.locator(".vt-body")).toHaveText("Original element body");
   await page.evaluate(() => void (window as unknown as Win).vtTour.forward());
   await expect(page.locator(".vt-body .fragment-note")).toHaveText("Fragment body");

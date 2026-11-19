@@ -1,6 +1,6 @@
 # Advancing a tour from page code
 
-Stub. This recipe grows with the action-step work.
+Stub. This recipe grows with the docs work. For steps that wait for the user, see the [action steps guide](../guide/action-steps.md).
 
 ## Move the tour from your own button
 

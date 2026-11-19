@@ -2,7 +2,7 @@ import type { Context } from "../core/context";
 import { fixedNames } from "../core/namespace";
 
 const POPOVER_CLASS = fixedNames.popover.nudge;
-const timers = new WeakMap<Element, number>();
+const timers = new WeakMap<Element, ReturnType<typeof globalThis.setTimeout>>();
 
 function nudgeDuration(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(fixedNames.nudgeDurationVar).trim();
@@ -15,10 +15,10 @@ function nudgeDuration(): number {
 }
 
 function untilAnimationEnds(element: Element, onEnd: () => void) {
-  window.clearTimeout(timers.get(element));
+  globalThis.clearTimeout(timers.get(element));
 
   const finish = () => {
-    window.clearTimeout(timers.get(element));
+    globalThis.clearTimeout(timers.get(element));
     timers.delete(element);
     element.removeEventListener("animationend", onAnimationEnd);
     onEnd();
@@ -34,7 +34,7 @@ function untilAnimationEnds(element: Element, onEnd: () => void) {
   };
 
   element.addEventListener("animationend", onAnimationEnd);
-  timers.set(element, window.setTimeout(finish, nudgeDuration() + 150));
+  timers.set(element, globalThis.setTimeout(finish, nudgeDuration() + 150));
 }
 
 function restartAnimation(wrapper: HTMLElement) {
@@ -51,4 +51,9 @@ export function nudge(ctx: Context) {
 
   restartAnimation(wrapper);
   untilAnimationEnds(wrapper, () => wrapper.classList.remove(POPOVER_CLASS));
+
+  const step = ctx.getState("__activation")?.step;
+  if (step) {
+    ctx.getConfig("onNudge")?.(step);
+  }
 }
