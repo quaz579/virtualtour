@@ -64,6 +64,7 @@ export type {
   InteractionRegion,
   PopoverPatch,
   RepositionInfo,
+  PhysicalAlign,
   Driver,
   DriveStep,
   Popover,

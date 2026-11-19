@@ -459,10 +459,6 @@ function leaveStep(tour: Tour, step: TourStep): void {
   emitStep(step, "hidden", { step });
 }
 
-function bubbleRectOf(wrapper: HTMLElement): DOMRect | undefined {
-  return wrapper.querySelector<HTMLElement>(".vt-bubble")?.getBoundingClientRect();
-}
-
 function enginePresenterFor(tour: Tour, presenter: Presenter): EnginePresenter {
   const state = internalsOf(tour);
   const adapter: EnginePresenter = {
@@ -482,7 +478,10 @@ function enginePresenterFor(tour: Tour, presenter: Presenter): EnginePresenter {
         side: info.side,
         align: info.align,
         wrapperRect: info.wrapperRect,
-        bubbleRect: bubbleRectOf(mounted.popover.wrapper) ?? info.wrapperRect,
+        bubbleRect: info.bubbleRect,
+        physicalAlign: info.physicalAlign,
+        rtl: info.rtl,
+        pinned: info.pinned,
         targetRect: info.targetRect,
       };
       guarded("presenter.afterReposition", () => presenter.afterReposition(mounted.popover, mounted.step, full));
