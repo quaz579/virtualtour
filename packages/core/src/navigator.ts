@@ -9,21 +9,10 @@ export type NavigationOutcome =
   | { kind: "stay" };
 
 /**
- * Picks the step to show when moving from `from` (`-1` before the first show). Forward past the last step finishes;
- * backward from the first step stays put; backward with nothing eligible before `from` exits.
- */
-export function selectIndex(
-  total: number,
-  from: number,
-  direction: "forward" | "backward",
-  isEligible: (index: number) => boolean = () => true
-): NavigationOutcome {
-  return selectEligible(total, from, direction, isEligible) as NavigationOutcome;
-}
-
-/**
- * Same selection as {@link selectIndex} with an eligibility check that may be asynchronous. Candidates are tried one
- * after another in the direction of travel. The outcome is returned synchronously unless a check returned a promise.
+ * Picks the step to show when moving from `from` (`-1` before the first show). Candidates are tried one after another
+ * in the direction of travel, and the eligibility check may be asynchronous. Forward past the last step finishes;
+ * backward from the first step stays put; backward with nothing eligible before `from` exits. The outcome is returned
+ * synchronously unless a check returned a promise.
  */
 export function selectEligible(
   total: number,

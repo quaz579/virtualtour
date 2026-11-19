@@ -14,6 +14,7 @@ import { Context } from "../core/context";
 import { stepOption } from "../core/options";
 import {
   createStageSvg,
+  dedupeRects,
   generateExtraCutoutsPathString,
   generateStageSvgPathString,
   StageCutout,
@@ -128,17 +129,20 @@ function placeOverlay(ctx: Context, overlaySvg: SVGSVGElement, element: Element)
   }
 }
 
-function allowedCutouts(overlaySvg: SVGSVGElement, cutout: StageCutout): string {
-  const dialog = overlaySvg.closest("dialog");
-  if (!dialog) {
-    return "";
-  }
+function allowedCutouts(ctx: Context, overlaySvg: SVGSVGElement, cutout: StageCutout): string {
+  const scope: ParentNode = overlaySvg.closest("dialog") ?? document;
+  const isClipping = !!stepOption(ctx, ctx.getState("activeStep"), "clipStageToScrollParents");
 
-  const allowedRects = Array.from(dialog.querySelectorAll(EXTRA_SELECTOR)).map(allowed =>
-    allowed.getBoundingClientRect()
-  );
+  const rects: DOMRect[] = [];
+  scope.querySelectorAll(EXTRA_SELECTOR).forEach(allowed => {
+    const rect = allowed.getBoundingClientRect();
+    const clipped = isClipping ? clipRectByScrollParents(allowed, rect) : rect;
+    if (clipped.width > 0 && clipped.height > 0) {
+      rects.push(clipped);
+    }
+  });
 
-  return generateExtraCutoutsPathString(cutout, allowedRects);
+  return generateExtraCutoutsPathString(cutout, dedupeRects(cutout, rects));
 }
 
 function renderOverlay(ctx: Context, stagePosition: StageDefinition, element: Element) {
@@ -157,17 +161,17 @@ function renderOverlay(ctx: Context, stagePosition: StageDefinition, element: El
   const options = stageOptions(ctx);
   const path =
     generateStageSvgPathString(stagePosition, options) +
-    allowedCutouts(overlaySvg, stageCutout(stagePosition, options));
+    allowedCutouts(ctx, overlaySvg, stageCutout(stagePosition, options));
   if (pathElement.getAttribute("d") !== path) {
     pathElement.setAttribute("d", path);
   }
 }
 
-export function redrawOverlay(ctx: Context, isOutsideDialogToo = false) {
+export function redrawOverlay(ctx: Context) {
   const stagePosition = ctx.getState("__activeStagePosition");
   const element = ctx.getState("activeElement");
   const overlaySvg = ctx.getState("__overlaySvg");
-  if (stagePosition && element && overlaySvg && (isOutsideDialogToo || overlaySvg.closest("dialog"))) {
+  if (stagePosition && element && overlaySvg) {
     renderOverlay(ctx, stagePosition, element);
   }
 }

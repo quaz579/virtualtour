@@ -38,11 +38,16 @@ export interface NormalizedTourConfig {
   presenter?: PresenterFactory;
   sanitize?: (html: string) => string;
   animate: boolean;
+  waitBudget: number;
 }
 
 export type EngineNamespace = NonNullable<Config["namespace"]>;
 
 export const DEFAULT_NAMESPACE = "vt";
+
+export const DEFAULT_WAIT_BUDGET_MS = 10000;
+
+export const DEFAULT_HOOK_TIMEOUT_MS = 10000;
 
 export const DEFAULT_KEYS = Object.freeze({ escape: true, arrows: true });
 
@@ -200,6 +205,7 @@ export function normalizeTourConfig(config: TourConfig): NormalizedTourConfig {
     counter: config.counter ?? false,
     labels: mergeObjects(DEFAULT_LABELS, config.labels ?? {}) as NormalizedTourConfig["labels"],
     animate: config.animate ?? true,
+    waitBudget: config.waitBudget ?? DEFAULT_WAIT_BUDGET_MS,
   };
   if (config.name !== undefined) out.name = config.name;
   if (config.mountIn !== undefined) out.mountIn = config.mountIn;

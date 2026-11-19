@@ -104,3 +104,23 @@ test("opening the panel in the step before attaches the next step to its target"
   await expect.poll(() => log(page)).toContain("shown:panel");
   expect(await currentTarget(page)).toBe("panel-btn");
 });
+
+test("a prepare that never settles times out with a warning and the step shows", async ({ page }) => {
+  await open(page, "/fixtures/prepare.html?mode=hang");
+  await expect.poll(() => log(page)).toContain("shown:intro");
+  await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => log(page), { timeout: 4000 }).toContain("shown:stuck");
+  const warnings = await page.evaluate(() => (window as unknown as { vtWarnings: string[] }).vtWarnings);
+  expect(warnings.some((w) => w.includes("prepare did not settle within 400 ms"))).toBe(true);
+  await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => log(page)).toContain("shown:after");
+});
+
+test("consecutive missing steps spend at most the wait budget", async ({ page }) => {
+  await open(page, "/fixtures/late-target.html?never=1&waitFor=1000&skip=1&missing=4&waitBudget=1500");
+  await expect.poll(() => log(page), { timeout: 8000 }).toContain("shown:end");
+  const m = await marks(page);
+  const waited = (m["started"] ?? 0) - (m["clicked"] ?? 0);
+  expect(waited).toBeGreaterThanOrEqual(1400);
+  expect(waited).toBeLessThan(3500);
+});
