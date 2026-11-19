@@ -18,14 +18,28 @@ export interface UseTourResult {
 const watched = ["started", "step-shown", "finished", "exited", "deactivated"] as const;
 const key: InjectionKey<UseTourResult> = Symbol("virtualtour-vue");
 
-function wrapExitPrompt(config: TourConfig, gate: { bypass: boolean }): TourConfig {
+interface Gate {
+  disposed: boolean;
+  released: Promise<boolean>;
+  release(): void;
+}
+
+function createGate(): Gate {
+  const gate: Gate = { disposed: false, released: Promise.resolve(true), release: () => {} };
+  gate.released = new Promise<boolean>((resolve) => {
+    gate.release = () => resolve(true);
+  });
+  return gate;
+}
+
+function wrapExitPrompt(config: TourConfig, gate: Gate): TourConfig {
   const prompt = config.exitPrompt;
   if (prompt === undefined || prompt === false) return config;
   return {
     ...config,
     exitPrompt: async () => {
-      if (gate.bypass) return true;
-      return typeof prompt === "string" ? window.confirm(prompt) : prompt();
+      if (gate.disposed) return true;
+      return Promise.race([typeof prompt === "string" ? window.confirm(prompt) : prompt(), gate.released]);
     },
   };
 }
@@ -42,11 +56,10 @@ export const TourProvider = defineComponent({
     autoStart: { type: Boolean, default: false },
   },
   setup(props, { slots }) {
-    const gate = { bypass: false };
+    const gate = createGate();
     const tour = createTour(wrapExitPrompt(props.config, gate));
     const running = shallowRef(false);
     const step = shallowRef<TourStep | null>(null);
-    let disposed = false;
     let offs: Array<() => void> = [];
 
     const sync = (): void => {
@@ -55,16 +68,16 @@ export const TourProvider = defineComponent({
     };
 
     const exitWithoutPrompt = (): void => {
+      gate.release();
       if (!tour.isRunning()) return;
-      gate.bypass = true;
-      void tour.exit().finally(() => {
-        gate.bypass = false;
+      tour.exit().catch((error: unknown) => {
+        console.error("[virtualtour-vue] exit on unmount failed:", error);
       });
     };
 
     tour.on("started", () => {
       queueMicrotask(() => {
-        if (disposed) exitWithoutPrompt();
+        if (gate.disposed) exitWithoutPrompt();
       });
     });
 
@@ -91,7 +104,7 @@ export const TourProvider = defineComponent({
     });
 
     onBeforeUnmount(() => {
-      disposed = true;
+      gate.disposed = true;
       offs.forEach((off) => off());
       offs = [];
       exitWithoutPrompt();

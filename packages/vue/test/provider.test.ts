@@ -7,7 +7,8 @@ import { TourProvider, useTour } from "../src/index";
 import type { UseTourResult } from "../src/index";
 
 const live = new Map<Tour, number>();
-const failures = { start: false };
+const failures = { start: false, exit: false };
+const startCalls = new Map<Tour, number>();
 
 vi.mock("virtualtour", async (importOriginal) => {
   const actual = await importOriginal<typeof import("virtualtour")>();
@@ -17,7 +18,12 @@ vi.mock("virtualtour", async (importOriginal) => {
       const tour = actual.createTour(config);
       const on = tour.on.bind(tour) as (event: string, listener: never) => () => void;
       live.set(tour, 0);
-      if (failures.start) tour.start = () => Promise.reject(new Error("boom"));
+      const start = tour.start.bind(tour);
+      tour.start = () => {
+        startCalls.set(tour, (startCalls.get(tour) ?? 0) + 1);
+        return failures.start ? Promise.reject(new Error("boom")) : start();
+      };
+      if (failures.exit) tour.exit = () => Promise.reject(new Error("bang"));
       (tour as unknown as { on: typeof on }).on = (event, listener) => {
         live.set(tour, (live.get(tour) ?? 0) + 1);
         const off = on(event, listener);
@@ -285,6 +291,58 @@ describe("unmount", () => {
     expect(tour.isRunning()).toBe(false);
   });
 
+  it("ends a run whose exit prompt is still pending when the provider unmounts, whatever the answer", async () => {
+    for (const answer of [false, true]) {
+      let resolvePrompt: (value: boolean) => void = () => {};
+      const prompt = vi.fn(
+        () =>
+          new Promise<boolean>((resolve) => {
+            resolvePrompt = resolve;
+          }),
+      );
+      const probe = probeOf();
+      const mounted = await mount(probe, config({ exitPrompt: prompt }));
+      await probe.latest.start();
+      const tour = probe.latest.tour;
+      const asked = probe.latest.exit();
+      await flush();
+      expect(prompt).toHaveBeenCalledTimes(1);
+      mounted.unmount();
+      await flush();
+      resolvePrompt(answer);
+      await asked;
+      await flush();
+      expect(tour.isRunning()).toBe(false);
+      expect(document.querySelector(".vt-popover")).toBeNull();
+    }
+  });
+
+  it("ends a run whose string exit prompt answered stay before the provider unmounted", async () => {
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    const probe = probeOf();
+    const mounted = await mount(probe, config({ exitPrompt: "Sure?" }));
+    await probe.latest.start();
+    const tour = probe.latest.tour;
+    expect(await probe.latest.exit()).toBe(false);
+    mounted.unmount();
+    await flush();
+    expect(tour.isRunning()).toBe(false);
+    expect(document.querySelector(".vt-popover")).toBeNull();
+  });
+
+  it("logs a failing exit on unmount instead of leaving an unhandled rejection", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    failures.exit = true;
+    const probe = probeOf();
+    const mounted = await mount(probe);
+    failures.exit = false;
+    await probe.latest.start();
+    mounted.unmount();
+    await flush();
+    expect(error).toHaveBeenCalledWith("[virtualtour-vue] exit on unmount failed:", expect.anything());
+  });
+
   it("removes the listeners it added", async () => {
     const probe = probeOf();
     const mounted = await mount(probe);
@@ -327,6 +385,13 @@ describe("autoStart", () => {
     await flush();
     expect(started).toBe(1);
     expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
+  });
+
+  it("calls start once and not at all when the tour is already running", async () => {
+    const probe = probeOf();
+    await mount(probe, config(), true);
+    await until(() => text() === "true:a");
+    expect(startCalls.get(probe.latest.tour)).toBe(1);
   });
 
   it("does not start when autoStart is off", async () => {
