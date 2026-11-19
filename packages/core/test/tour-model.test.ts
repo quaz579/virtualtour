@@ -281,7 +281,7 @@ describe("presenter wiring", () => {
     const tour = createTour({ presenter: factory });
     expect(factory).not.toHaveBeenCalled();
     expect(presenterOf(tour)).toBe(presenter);
-    expect(factory).toHaveBeenCalledWith(tour);
+    expect(factory).toHaveBeenCalledWith(tour, expect.objectContaining({ namespace: "vt" }));
     releasePresenter(tour);
     expect(unmount).toHaveBeenCalledTimes(1);
     expect(presenterOf(tour)).toBe(presenter);

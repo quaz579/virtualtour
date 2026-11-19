@@ -259,12 +259,24 @@ export interface Presenter {
   /** An action step's instruction was met. Runs before the step's `completed` event. */
   onCompleted?(step: TourStep): void;
   unmount(): void;
-  /** Which popover layout the engine builds. Default `dialog`. */
+  /** Which popover layout the engine builds. Default `dialog`. Read once the promise from {@link Presenter.ready} has settled. */
   layout?: "dialog" | "speaker";
+  /** Awaited once before the first step of a run is built, so a presenter can finish loading and choose its `layout`. A rejection is ignored. */
+  ready?(): Promise<void>;
+}
+
+/** What a tour tells the presenter factory about itself. */
+export interface PresenterContext {
+  /** The tour's `namespace`. */
+  namespace: string;
+  /** The tour's `sanitize` hook, already memoized. */
+  sanitize?: (html: string) => string;
+  /** Milliseconds the engine's entrance fade takes: `dim.transitionMs`, or 0 when `animate` is off. */
+  fadeMs: number;
 }
 
 /** Builds the presenter for a tour. */
-export type PresenterFactory = (tour: Tour) => Presenter;
+export type PresenterFactory = (tour: Tour, context: PresenterContext) => Presenter;
 
 /** Configuration of a tour. */
 export interface TourConfig {
