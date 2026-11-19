@@ -50,7 +50,7 @@ function stageRect(ctx: Context, element: Element): DOMRect {
 export function transitionStage(ctx: Context, elapsed: number, duration: number, from: Element, to: Element) {
   let activeStagePosition = ctx.getState("__activeStagePosition");
 
-  const fromDefinition = activeStagePosition ? activeStagePosition : from.getBoundingClientRect();
+  const fromDefinition = activeStagePosition ? activeStagePosition : stageRect(ctx, from);
   const toDefinition = stageRect(ctx, to);
 
   const x = easeInOutQuad(elapsed, fromDefinition.x, toDefinition.x - fromDefinition.x, duration);

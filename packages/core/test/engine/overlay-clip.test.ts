@@ -71,6 +71,12 @@ describe("clipRectByScrollParents", () => {
     expect(clipped.height).toBe(80);
   });
 
+  it("ignores overflow hidden ancestors when only scrollable ones count", () => {
+    const { item } = mount({ scrollerStyle: "overflow:hidden" });
+
+    expect(clipRectByScrollParents(item, rect(10, 220, 100, 200), true).height).toBe(200);
+  });
+
   it("ignores ancestors that do not clip", () => {
     const { item } = mount({ scrollerStyle: "overflow-x:visible;overflow-y:visible" });
     const raw = rect(10, 220, 100, 200);

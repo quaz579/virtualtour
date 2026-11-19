@@ -4,8 +4,8 @@ Gzip sizes of the built entries. Refresh with `npm run size -- --write`.
 
 | Entry | File | Gzip (bytes) |
 |---|---|---|
-| core | dist/index.js | 26328 |
-| engine | src/engine/driver.ts | 18378 |
+| core | dist/index.js | 26425 |
+| engine | src/engine/driver.ts | 18469 |
 | avatar | dist/avatar.js | 2686 |
 | motion | dist/motion.js | 56 |
 | base.css | dist/base.css | 1939 |

@@ -106,7 +106,7 @@ function isElementInView(element: Element) {
 }
 
 function isClippedByScrollContainer(element: Element, rect: DOMRect) {
-  const clipped = clipRectByScrollParents(element, rect);
+  const clipped = clipRectByScrollParents(element, rect, true);
 
   return (
     clipped.left !== rect.left ||
@@ -125,12 +125,17 @@ function createsContainingBlock(style: CSSStyleDeclaration) {
     set(style.perspective) ||
     set(style.filter) ||
     set(style.backdropFilter) ||
+    set(style.translate) ||
+    set(style.rotate) ||
+    set(style.scale) ||
+    /size|inline-size/.test(style.containerType ?? "") ||
+    style.contentVisibility === "auto" ||
     /layout|paint|strict|content/.test(style.contain ?? "") ||
     /transform|perspective|filter/.test(style.willChange ?? "")
   );
 }
 
-export function clipRectByScrollParents(element: Element, rect: DOMRect): DOMRect {
+export function clipRectByScrollParents(element: Element, rect: DOMRect, scrollableOnly = false): DOMRect {
   let left = rect.left;
   let top = rect.top;
   let right = rect.right;
@@ -155,8 +160,9 @@ export function clipRectByScrollParents(element: Element, rect: DOMRect): DOMRec
 
     const style = getComputedStyle(parent);
     const isContainingBlock = createsContainingBlock(style);
-    const clipsX = !!style.overflowX && style.overflowX !== "visible";
-    const clipsY = !!style.overflowY && style.overflowY !== "visible";
+    const clipsOn = (value: string) => (scrollableOnly ? value === "auto" || value === "scroll" : !!value && value !== "visible");
+    const clipsX = clipsOn(style.overflowX);
+    const clipsY = clipsOn(style.overflowY);
     if ((!skipping || isContainingBlock) && (clipsX || clipsY)) {
       const box = parent.getBoundingClientRect();
       const boxLeft = box.left + parent.clientLeft;
