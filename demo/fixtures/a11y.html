@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>VirtualTour accessibility fixture</title>
+    <style>
+      body {
+        margin: 0;
+        color: #1a1a1a;
+        background: #ffffff;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 40px;
+      }
+      main button,
+      main input {
+        font: inherit;
+        padding: 6px 12px;
+      }
+      .row {
+        margin: 24px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Accessibility fixture</h1>
+      <div class="row">
+        <button id="start" type="button">Start tour</button>
+      </div>
+      <div class="row">
+        <button id="t1" type="button">Target one</button>
+        <button id="t2" type="button">Target two</button>
+        <button id="t3" type="button">Target three</button>
+      </div>
+      <div class="row">
+        <label for="field">Search</label>
+        <input id="field" type="text" />
+      </div>
+      <div class="row">
+        <div id="widget" role="group" aria-label="Widget"><input id="widget-input" type="text" aria-label="Widget input" /></div>
+      </div>
+      <div class="row">
+        <p id="spot">Spotlit paragraph with an <button id="spot-extra" type="button">extra control</button></p>
+      </div>
+    </main>
+
+    <script type="module" src="./a11y.ts"></script>
+  </body>
+</html>

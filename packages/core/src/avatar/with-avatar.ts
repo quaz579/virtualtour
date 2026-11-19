@@ -3,7 +3,7 @@ import { DialogPresenter } from "../presenter";
 import type { TourStep } from "../step";
 import type { Tour } from "../tour";
 import type { Presenter, PresenterContext, PresenterFactory, RepositionInfo, StepParts } from "../types";
-import { AvatarPackError, normalizePack, validatePack } from "./pack";
+import { AvatarPackError, normalizePack, preloadSheet, validatePack } from "./pack";
 import type { AvatarPack, NormalizedPack } from "./pack";
 import { SpeakerPresenter } from "./speaker";
 import type { AvatarOptions } from "./speaker";
@@ -11,8 +11,14 @@ import type { AvatarOptions } from "./speaker";
 declare const __DEV__: boolean | undefined;
 
 const DEFAULT_LOAD_TIMEOUT_MS = 3000;
+const MAX_LOAD_TIMEOUT_MS = 9000;
 
 type PackInput = AvatarPack | NormalizedPack | Promise<AvatarPack | NormalizedPack>;
+
+function loadTimeout(options: AvatarOptions): number {
+  const configured = options.loadTimeoutMs;
+  return typeof configured === "number" && Number.isFinite(configured) && configured >= 0 ? Math.min(configured, MAX_LOAD_TIMEOUT_MS) : DEFAULT_LOAD_TIMEOUT_MS;
+}
 
 function isNormalized(pack: AvatarPack | NormalizedPack): pack is NormalizedPack {
   return "frames" in pack && "sheetUrl" in pack;
@@ -35,9 +41,15 @@ class PackSource {
 
   private begin(): Promise<void> {
     this.settled ??= Promise.resolve(this.input).then(
-      (value) => {
+      async (value) => {
         try {
-          this.pack = isNormalized(value) ? value : normalizePack(validatePack(value), document.baseURI);
+          if (isNormalized(value)) {
+            this.pack = value;
+            return;
+          }
+          const pack = normalizePack(validatePack(value), document.baseURI);
+          await preloadSheet(pack.sheetUrl);
+          this.pack = pack;
         } catch (error) {
           this.fail(error);
         }
@@ -54,8 +66,7 @@ class PackSource {
   wait(): Promise<void> {
     const settled = this.begin();
     if (this.pack || this.failed || this.timedOut) return Promise.resolve();
-    const configured = this.options.loadTimeoutMs;
-    const ms = typeof configured === "number" && Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_LOAD_TIMEOUT_MS;
+    const ms = loadTimeout(this.options);
     return new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
         this.timedOut = true;
@@ -93,6 +104,7 @@ class AvatarPresenter implements Presenter {
   private readonly source: PackSource;
   private readonly options: AvatarOptions;
   private delegate: Presenter | null = null;
+  private disposed = false;
 
   constructor(tour: Tour, context: PresenterContext, source: PackSource, options: AvatarOptions) {
     this.tour = tour;
@@ -103,7 +115,7 @@ class AvatarPresenter implements Presenter {
 
   ready(): Promise<void> {
     return this.source.wait().then(() => {
-      this.choose();
+      if (!this.disposed) this.choose();
     });
   }
 
@@ -136,6 +148,7 @@ class AvatarPresenter implements Presenter {
   }
 
   unmount(): void {
+    this.disposed = true;
     this.delegate?.unmount();
   }
 
@@ -159,9 +172,9 @@ class AvatarPresenter implements Presenter {
 /**
  * Builds a presenter factory that shows each step as a speech bubble with an animated character beside it. Pass it
  * as `presenter` in the tour config and load `virtualtour/avatar.css`. The pack may be a promise; each run waits for
- * it up to `loadTimeoutMs`, and falls back to the dialog presenter when it fails or arrives too late, calling
+ * it up to `loadTimeoutMs` (at most 9000, below the engine's 10 s presenter bound), and falls back to the dialog presenter when it fails or arrives too late, calling
  * `onError` once. A later run uses the pack once it has loaded. Steps choose their animation with
- * `extensions.avatar.animation`; otherwise the first step without a target greets and a step with a target points.
+ * `extensions.avatar.animation`; otherwise the first step a run shows greets when it has no target and a step with a target points.
  */
 export function withAvatar(pack: PackInput, options: AvatarOptions = {}): PresenterFactory {
   const source = new PackSource(pack, options);

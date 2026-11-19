@@ -6,7 +6,7 @@ import {
   fromClassicPositionMap,
 } from "./classic";
 import type { ClassicSource } from "./classic";
-import { AvatarPackError, fail, normalizePack, preloadSheet, validatePack } from "./pack";
+import { fail, loadSheetImage, normalizePack, preloadSheet, validatePack } from "./pack";
 import type { NormalizedPack } from "./pack";
 
 declare const __DEV__: boolean | undefined;
@@ -18,6 +18,10 @@ export interface LoadAvatarPackOptions {
 }
 
 let warnedClassicLicense = false;
+
+function sheetOptions(options: LoadAvatarPackOptions): { signal?: AbortSignal } {
+  return options.signal ? { signal: options.signal } : {};
+}
 
 function absolute(url: string, path: string): string {
   try {
@@ -45,15 +49,6 @@ async function fetchJson(url: string, path: string, options: LoadAvatarPackOptio
   }
 }
 
-function measureSheet(url: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
-    image.onerror = () => reject(new AvatarPackError("sheetUrl", `could not load ${url}`));
-    image.src = url;
-  });
-}
-
 /**
  * Fetches a `virtualtour-avatar/1` pack, validates it, resolves `sheet.src` against the pack URL and preloads the
  * sheet. Relative URLs resolve against the page.
@@ -63,7 +58,7 @@ export async function loadAvatarPack(url: string, options: LoadAvatarPackOptions
   const packUrl = absolute(url, "url");
   const json = await fetchJson(packUrl, "url", options);
   const pack = normalizePack(validatePack(json), packUrl);
-  await preloadSheet(pack.sheetUrl);
+  await preloadSheet(pack.sheetUrl, sheetOptions(options));
   return pack;
 }
 
@@ -83,20 +78,22 @@ export async function loadClassicAvatarPack(source: ClassicSource): Promise<Norm
     ...(source.roles !== undefined ? { roles: source.roles } : {}),
   };
   let converted;
+  let loadedSheet = false;
   if (detectClassicFormat(json) === "position") {
     converted = fromClassicPositionMap(json, { ...convert, ...(source.frameSize ? { frameSize: source.frameSize } : {}) });
   } else {
     let frameSize = source.frameSize;
     if (!frameSize) {
       const grid = classicGridSize(json);
-      const sheet = await measureSheet(sheetUrl);
+      const sheet = await loadSheetImage(sheetUrl, sheetOptions(source));
+      loadedSheet = true;
       frameSize = { w: sheet.width / grid.columns, h: sheet.height / grid.rows };
       if (!(frameSize.w > 0) || !(frameSize.h > 0)) fail("frameSize", "cannot be derived from a sheet with no size");
     }
     converted = fromClassicColumnRowMap(json, { ...convert, frameSize });
   }
   const pack = normalizePack(validatePack(converted), sheetUrl);
-  await preloadSheet(pack.sheetUrl);
+  if (!loadedSheet) await preloadSheet(pack.sheetUrl, sheetOptions(source));
   if (!warnedClassicLicense && (typeof __DEV__ === "undefined" || __DEV__)) {
     warnedClassicLicense = true;
     console.warn(
