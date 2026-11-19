@@ -1,4 +1,4 @@
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { TourProvider, useTour } from "../../packages/react/src/index";
 
@@ -13,7 +13,14 @@ const config = {
 };
 
 function Controls() {
-  const { isRunning, currentStep, start, forward, backward, exit } = useTour();
+  const { tour, isRunning, currentStep, start, forward, backward, exit } = useTour();
+  useEffect(() => {
+    const w = window as unknown as { vtStarts?: number };
+    w.vtStarts = 0;
+    return tour.on("started", () => {
+      w.vtStarts = (w.vtStarts ?? 0) + 1;
+    });
+  }, [tour]);
   return (
     <div className="demo-container">
       <h1>VirtualTour React fixture</h1>

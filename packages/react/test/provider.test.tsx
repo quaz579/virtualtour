@@ -244,6 +244,34 @@ describe("unmount", () => {
     expect(probe.latest.tour.isRunning()).toBe(true);
   });
 
+  it("ends the run when the provider unmounts while an exit prompt is still open", async () => {
+    let answer: (value: boolean) => void = () => {};
+    const prompt = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const probe = probeOf();
+    const root = await mount(
+      <TourProvider config={config({ exitPrompt: prompt })}>
+        <Capture probe={probe} />
+      </TourProvider>,
+    );
+    await act(async () => probe.latest.start());
+    const tour = probe.latest.tour;
+    void tour.exit();
+    await flush();
+    expect(prompt).toHaveBeenCalledTimes(1);
+    expect(tour.isRunning()).toBe(true);
+
+    await act(async () => root.unmount());
+    roots.length = 0;
+    await flush();
+    expect(tour.isRunning()).toBe(false);
+    answer(false);
+  });
+
   it("ends a run that only begins after the provider unmounted", async () => {
     let release: () => void = () => {};
     const gate = new Promise<void>((resolve) => {
@@ -368,6 +396,23 @@ describe("autoStart", () => {
     expect(tour.isRunning()).toBe(false);
   });
 
+  it("keeps a tour started after a strict-mode remount alive", async () => {
+    const probe = probeOf();
+    await mount(
+      <StrictMode>
+        <TourProvider config={config()}>
+          <Capture probe={probe} />
+        </TourProvider>
+      </StrictMode>,
+    );
+    await flush();
+    await act(async () => probe.latest.start());
+    await flush();
+    await flush();
+    expect(probe.latest.tour.isRunning()).toBe(true);
+    expect(text()).toBe("true:a");
+  });
+
   it("does not restart after the tour finished when autoStart stays true", async () => {
     const probe = probeOf();
     await mount(
@@ -436,6 +481,25 @@ describe("config", () => {
     expect(probe.latest.tour.steps.map((s) => s.id)).toEqual(["x", "y"]);
     expect(first.isRunning()).toBe(false);
     expect(probe.latest.isRunning).toBe(false);
+  });
+
+  it("a new key with autoStart ends the old run and starts the new one", async () => {
+    const probe = probeOf();
+    const root = await mount(
+      <TourProvider key="one" config={config({ steps: steps("a") })} autoStart>
+        <Capture probe={probe} />
+      </TourProvider>,
+    );
+    await until(() => text() === "true:a");
+    const first = probe.latest.tour;
+    await act(async () => root.render(
+      <TourProvider key="two" config={config({ steps: steps("x", "y") })} autoStart>
+        <Capture probe={probe} />
+      </TourProvider>,
+    ));
+    await until(() => text() === "true:x");
+    expect(first.isRunning()).toBe(false);
+    expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
   });
 
   it("two providers keep independent tours", async () => {

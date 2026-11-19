@@ -67,9 +67,9 @@ test.describe("react wrapper", () => {
     await openReact(page, "?strict=1&autostart=1");
     await expect(popover(page)).toBeVisible();
     await expect(stepState(page)).toHaveText("one");
-    await page.waitForTimeout(300);
     await expect(popover(page)).toHaveCount(1);
     await expect(stepState(page)).toHaveText("one");
+    expect(await page.evaluate(() => (window as unknown as { vtStarts: number }).vtStarts)).toBe(1);
   });
 
   test("react: unmounting the provider removes a running tour", async ({ page }) => {

@@ -1,5 +1,5 @@
 import { createContext, createElement, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { createTour } from "virtualtour";
 import type { Tour, TourConfig, TourStep } from "virtualtour";
 
@@ -12,7 +12,7 @@ export interface TourProviderProps {
   children?: ReactNode;
 }
 
-/** What {@link useTour} returns. `isRunning` and `currentStep` are reactive; the methods are stable across renders. */
+/** What {@link useTour} returns. `isRunning` and `currentStep` update on the tour events started, step-shown, finished, exited and deactivated, so a step removed while shown is not reflected until the next event. The methods are stable across renders. */
 export interface UseTourResult {
   tour: Tour;
   isRunning: boolean;
@@ -32,8 +32,8 @@ interface Snapshot {
 interface TourStore {
   tour: Tour;
   disposed: boolean;
-  disposeTimer: ReturnType<typeof setTimeout> | null;
-  gate: { bypass: boolean };
+  disposePending: boolean;
+  releasePrompts(): void;
   snapshot: Snapshot;
   getSnapshot(): Snapshot;
   subscribe(listener: () => void): () => void;
@@ -46,23 +46,26 @@ const watched = ["started", "step-shown", "finished", "exited", "deactivated"] a
 
 function createStore(config: TourConfig): TourStore {
   const prompt = config.exitPrompt;
-  const gate = { bypass: false };
+  let releasePrompts: () => void = () => {};
+  const released = new Promise<boolean>((resolve) => {
+    releasePrompts = () => resolve(true);
+  });
   const wrapped: TourConfig =
     prompt === undefined || prompt === false
       ? config
       : {
           ...config,
           exitPrompt: async () => {
-            if (gate.bypass) return true;
-            return typeof prompt === "string" ? window.confirm(prompt) : prompt();
+            if (store.disposed) return true;
+            return Promise.race([typeof prompt === "string" ? window.confirm(prompt) : prompt(), released]);
           },
         };
   const tour = createTour(wrapped);
   const store: TourStore = {
     tour,
-    gate,
+    releasePrompts: () => releasePrompts(),
     disposed: false,
-    disposeTimer: null,
+    disposePending: false,
     snapshot: { isRunning: false, currentStep: null },
     getSnapshot() {
       const isRunning = tour.isRunning();
@@ -97,10 +100,10 @@ function createStore(config: TourConfig): TourStore {
 }
 
 function exitWithoutPrompt(store: TourStore): void {
+  store.releasePrompts();
   if (!store.tour.isRunning()) return;
-  store.gate.bypass = true;
-  void store.tour.exit().finally(() => {
-    store.gate.bypass = false;
+  store.tour.exit().catch((error: unknown) => {
+    console.error("[virtualtour-react] exit on unmount failed:", error);
   });
 }
 
@@ -111,22 +114,21 @@ const TourContext = createContext<UseTourResult | null>(null);
  * render (safe on the server), starts only in an effect, and ends without an exit prompt when the provider unmounts.
  * React strict mode's extra mount and unmount cycle neither starts a second run nor ends the first.
  */
-export function TourProvider(props: TourProviderProps): ReactNode {
+export function TourProvider(props: TourProviderProps): ReactElement {
   const { config, autoStart = false, children } = props;
   const [store] = useState(() => createStore(config));
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, () => serverSnapshot);
 
   useEffect(() => {
-    if (store.disposeTimer !== null) {
-      clearTimeout(store.disposeTimer);
-      store.disposeTimer = null;
-    }
+    store.disposePending = false;
     store.disposed = false;
     return () => {
-      store.disposeTimer = setTimeout(() => {
-        store.disposeTimer = null;
+      store.disposePending = true;
+      queueMicrotask(() => {
+        if (!store.disposePending) return;
+        store.disposePending = false;
         store.dispose();
-      }, 0);
+      });
     };
   }, [store]);
 
