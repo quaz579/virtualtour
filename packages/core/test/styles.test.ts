@@ -11,9 +11,10 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 const baseCss = read("src/styles/base.css");
 const themeCss = read("src/styles/theme.css");
+const avatarCss = read("src/styles/avatar.css");
 const engineCss = read("src/engine/styles/engine.css");
 const stylesMd = read("STYLES.md");
-const allCss = [baseCss, themeCss, engineCss].join("\n");
+const allCss = [baseCss, themeCss, avatarCss, engineCss].join("\n");
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -70,7 +71,7 @@ function cssVariables(css: string): Set<string> {
 
 describe("stylesheets", () => {
   it("parse without errors", () => {
-    for (const css of [baseCss, themeCss, engineCss]) expect(() => postcss.parse(css)).not.toThrow();
+    for (const css of [baseCss, themeCss, avatarCss, engineCss]) expect(() => postcss.parse(css)).not.toThrow();
   });
 
   it("a parser rejects broken CSS, so the parse check means something", () => {
