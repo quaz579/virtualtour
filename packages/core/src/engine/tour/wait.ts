@@ -6,7 +6,7 @@ import {
   isCurrent,
   placeholderOf,
   setElementWait,
-  unlatch,
+  reopen,
 } from "./lifecycle";
 import type { Context } from "../core/context";
 import { mountDummyElement, removeDummyElement } from "./highlight";
@@ -52,8 +52,8 @@ export function waitForStepElement(
     setElementWait(ctx);
     onSettled(found);
 
-    if (originating) {
-      unlatch(ctx, originating);
+    if (originating && reopen(ctx, originating)) {
+      ctx.tour.refreshPopover();
     }
   };
 
