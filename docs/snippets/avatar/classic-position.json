@@ -1,0 +1,14 @@
+{
+  "frameWidth": 124,
+  "frameHeight": 93,
+  "animations": {
+    "RestPose": { "frames": [{ "duration": 100, "position": [0, 0] }] },
+    "Wave": {
+      "frames": [
+        { "duration": 100, "position": [124, 0] },
+        { "duration": 100, "images": [[248, 0]] }
+      ],
+      "loop": false
+    }
+  }
+}
