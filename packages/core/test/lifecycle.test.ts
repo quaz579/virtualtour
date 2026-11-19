@@ -491,7 +491,16 @@ describe("01-architecture.md §7.2 ordering", () => {
     expect(tours.current).toBe(second);
   });
 
-  it.todo("configure() on a shown step (TourStep.configure arrives with V-05 part 2)");
+  it("configure() on a shown step emits no events and keeps the wrapper", async () => {
+    const tour = make();
+    await tour.start();
+    const log = record(tour, { registry: true });
+    const before = wrapper();
+    tour.stepById("a")!.configure({ title: "Changed", body: "New body" });
+    expect(log).toEqual([]);
+    expect(wrapper()).toBe(before);
+    expect(before!.querySelector(".vt-popover-title")!.textContent).toBe("Changed");
+  });
 });
 
 describe("tour lifecycle", () => {

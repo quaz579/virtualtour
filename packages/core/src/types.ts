@@ -197,6 +197,12 @@ export interface StepParts {
   content?: Element | DocumentFragment;
 }
 
+/** Where a tour stands: `index` is 1-based and 0 while no step is on screen. */
+export interface ProgressInfo {
+  index: number;
+  total: number;
+}
+
 /** Where the popover ended up after positioning. */
 export interface RepositionInfo {
   side: Side | "over";

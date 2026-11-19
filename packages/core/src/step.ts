@@ -1,10 +1,12 @@
 import { Emitter } from "./events";
 import type { StepEvents } from "./events";
+import { mergeStepConfig } from "./config";
 import { resolveTarget } from "./dom/target";
 import type { StepConfig, TourStepLike } from "./types";
 import type { Tour } from "./tour";
 
 interface StepState {
+  config: StepConfig;
   element: HTMLElement | undefined | null;
   resolvedTarget: Element | null;
   resolved: boolean;
@@ -15,6 +17,13 @@ interface StepState {
 
 const states = new WeakMap<object, StepState>();
 
+let onConfigured: (step: TourStep) => void = () => {};
+
+/** Registers the function that re-renders a shown step after `configure`. Internal. */
+export function setConfiguredHook(hook: (step: TourStep) => void): void {
+  onConfigured = hook;
+}
+
 function stateOf(step: TourStep): StepState {
   return states.get(step) as StepState;
 }
@@ -23,13 +32,12 @@ function stateOf(step: TourStep): StepState {
 export class TourStep {
   readonly id: string;
   readonly tour: Tour;
-  readonly config: Readonly<StepConfig>;
 
   constructor(tour: Tour, id: string, config: StepConfig) {
     this.tour = tour;
     this.id = id;
-    this.config = config;
     states.set(this, {
+      config,
       element: undefined,
       resolvedTarget: null,
       resolved: false,
@@ -37,6 +45,11 @@ export class TourStep {
       disposed: false,
       emitter: new Emitter<StepEvents>(),
     });
+  }
+
+  /** The step's configuration with the tour's step defaults applied; {@link TourStep.configure} replaces it. */
+  get config(): Readonly<StepConfig> {
+    return stateOf(this).config;
   }
 
   /** The popover wrapper of the most recent show: `undefined` before the first show, `null` after dispose. */
@@ -47,6 +60,20 @@ export class TourStep {
   /** The element the step points at, once the tour has resolved it. */
   get resolvedTarget(): Element | null {
     return stateOf(this).resolvedTarget;
+  }
+
+  /**
+   * Merges `patch` into the step's configuration the way the tour merges `stepDefaults`: nested groups merge key
+   * by key, arrays such as `buttons` are replaced, and `undefined` values and `id` are ignored. While the step is on
+   * screen its title, body, label, buttons, classes, close button and counter update in place, with the same popover element and
+   * no events; every other field, `target` and `position` included, takes effect the next time the step shows.
+   */
+  configure(patch: Partial<StepConfig>): void {
+    const state = stateOf(this);
+    const merged = mergeStepConfig(state.config, patch);
+    merged.id = this.id;
+    state.config = merged;
+    if (state.shown) onConfigured(this);
   }
 
   /** Moves the tour to this step. */
