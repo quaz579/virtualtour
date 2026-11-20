@@ -1,4 +1,4 @@
-import { compileStepForShow, compileTour } from "./compile";
+import { compileStepForShow, compileTour, counterText as formatCounter } from "./compile";
 import type { EngineStep } from "./compile";
 import { DEFAULT_HOOK_TIMEOUT_MS, normalizeTourConfig, resolveStepConfig } from "./config";
 import type { NormalizedTourConfig } from "./config";
@@ -532,7 +532,7 @@ function evaluatedStep(tour: Tour, index: number): EngineStep {
   warnIfUnnamed(tour, step, out);
   const counter = state.normalized.counter;
   if (typeof counter === "function") {
-    out.popover = { ...out.popover, progressText: counter(index + 1, state.steps.length) };
+    out.popover = { ...out.popover, progressText: formatCounter(counter, index + 1, state.steps.length) };
   }
   return out;
 }
@@ -565,12 +565,7 @@ function counterText(tour: Tour): string | undefined {
   if (counter === false) return undefined;
   const { index, total } = tour.progressInfo();
   if (typeof counter !== "function") return `${index} of ${total}`;
-  try {
-    return counter(index, total);
-  } catch (error) {
-    console.error("[virtualtour] counter threw:", error);
-    return undefined;
-  }
+  return formatCounter(counter, index, total);
 }
 
 function refreshProgress(tour: Tour): void {

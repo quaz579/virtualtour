@@ -141,6 +141,72 @@ describe("sanitize", () => {
     expect(sanitize.mock.calls.filter((c) => c[0] === "same").length).toBe(first * 2);
   });
 
+  it("shows the title and body as escaped text when the hook throws, and the tour still starts", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const tour = await show({
+      sanitize: () => {
+        throw new Error("boom");
+      },
+      steps: [{ title: "<i>T</i>", body: "<b>B</b>" }],
+    });
+    expect(tour.isRunning()).toBe(true);
+    expect(document.querySelector(".vt-popover-title")!.textContent).toBe("<i>T</i>");
+    expect(description().textContent).toBe("<b>B</b>");
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("[virtualtour] sanitize threw"), expect.any(Error));
+  });
+
+  it("shows the default counter when the counter throws on show and on refresh, and the tour still starts", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const tour = await show({
+      counter: (index: number) => {
+        if (index > 1) throw new Error("boom");
+        return `step ${index}`;
+      },
+      steps: [{ title: "A" }, { title: "B" }],
+    });
+    expect(tour.isRunning()).toBe(true);
+    expect(document.querySelector(".vt-popover-progress-text")!.textContent).toBe("step 1");
+    await tour.forward();
+    expect(tour.isRunning()).toBe(true);
+    expect(document.querySelector(".vt-popover-progress-text")!.textContent).toBe("2 of 2");
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("[virtualtour] counter threw"), expect.any(Error));
+  });
+
+  it("shows an array body as plain text when the sanitizer throws, instead of hiding it", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await show({
+      sanitize: () => {
+        throw new Error("boom");
+      },
+      steps: [{ title: "T", body: ["<i>a</i>", "b"] }],
+    });
+    expect(description().style.display).toBe("");
+    expect(description().textContent).toBe("<i>a</i> b");
+  });
+
+  it("keeps the tour running when a step is added and the throwing counter is refreshed", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const tour = await show({
+      counter: () => {
+        throw new Error("boom");
+      },
+      steps: [{ title: "A" }, { title: "B" }],
+    });
+    tour.appendStep({ title: "C" });
+    expect(tour.isRunning()).toBe(true);
+    expect(document.querySelector(".vt-popover-progress-text")!.textContent).toBe("1 of 3");
+  });
+
+  it("shows the default counter when the counter returns a non-string on show", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const tour = await show({
+      counter: (() => 7) as unknown as (index: number, total: number) => string,
+      steps: [{ title: "A" }, { title: "B" }],
+    });
+    expect(tour.isRunning()).toBe(true);
+    expect(document.querySelector(".vt-popover-progress-text")!.textContent).toBe("1 of 2");
+  });
+
   it("does not sanitize an element body or the label", async () => {
     const sanitize = vi.fn((html: string) => html);
     const el = document.createElement("div");

@@ -12,9 +12,9 @@ Titles, bodies and several other strings are HTML. Set `sanitize` on the tour to
 | Counter text, and the `next`, `back` and `done` labels | |
 | Custom button `text` | |
 
-For `title`, `body` and `instruction`, the hook runs on every string, including plain text. Button labels and strings the engine inserts itself skip the hook when they contain no `<`. Check the result of your hook for plain text too.
+For `title` and `body`, the hook runs on every string, including plain text. Button labels, `instruction` and the other strings the engine inserts itself skip the hook when they contain no `<`. Check the result of your hook for plain text too.
 
-If the hook throws while a step's `title`, `body` or `instruction` is built, `tour.start()` rejects with that error and no popover is shown, so catch errors inside your hook. Strings the engine inserts itself fall back to plain text when the hook throws or returns a non-string.
+If the hook throws, or returns something other than a string, while a step's `title` or `body` is built, the tour logs an error with `console.error` and shows that text as plain text, escaped, so the tour still starts. The `instruction`, the `nudge()` message, the feedback row and button labels fall back to plain text without a log, as does a counter's text when it contains markup and the hook fails. An array `body` whose hook fails is shown as one line of escaped text. A counter function that throws, or returns something other than a string, is logged and the step shows the default `N of M` counter instead.
 
 ## Without a hook
 

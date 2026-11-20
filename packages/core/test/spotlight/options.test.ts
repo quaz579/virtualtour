@@ -238,6 +238,25 @@ describe("state classes", () => {
     expect(el("a").classList.contains("vt-spotlit")).toBe(false);
   });
 
+  it("the guard re-adds only the spotlit classes a rewrite dropped", async () => {
+    await started({ dim: true, steps: [{ target: "#a", spotlight: { class: "keep" } }] });
+    const add = vi.spyOn(el("a").classList, "add");
+    el("a").className = "keep framework-owned";
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(add.mock.calls).toEqual([["vt-spotlit"]]);
+    expect(el("a").classList.contains("vt-spotlit")).toBe(true);
+  });
+
+  it("the guard adds nothing when a rewrite keeps every spotlit class", async () => {
+    await started({ dim: true, steps: [{ target: "#a", spotlight: { class: "keep" } }] });
+    const add = vi.spyOn(el("a").classList, "add");
+    el("a").className = "vt-spotlit keep framework-owned";
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(add).not.toHaveBeenCalled();
+  });
+
   it("applyStateClasses and removeStateClasses work on bare elements", async () => {
     const added = applyStateClasses(el("b"), ["x-spotlit"]);
     expect(added).toEqual(["x-spotlit"]);
