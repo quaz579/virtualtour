@@ -33,6 +33,7 @@ Member-level shape (fields of a config type, method signatures) is covered by th
 - `SerializeTourOptions` (interface)
 - `Side` (type)
 - `SpotlightOptions` (interface)
+- `StepConfigPatch` (type)
 - `StepConfig` (interface)
 - `StepEvents` (interface)
 - `StepJsonV1` (interface)

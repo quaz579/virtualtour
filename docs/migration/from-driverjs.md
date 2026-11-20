@@ -85,7 +85,7 @@ driver.js has one callback per hook and one object with methods. VirtualTour has
 | `destroy` | `tour.exit()`, `tour.finish()` | `exit()` asks the prompt first and resolves `false` if declined. |
 | `advance` | `tour.advance()` | Completes the action step on screen. |
 | `nudge` | `tour.nudge()` | |
-| `updatePopover` | `step.configure()` | Merges a patch and re-renders in place. |
+| `updatePopover` | `step.configure()` | Merges a patch and re-renders in place. Pass `null` for a field to clear it back to the default. |
 | `getActiveStep` | `tour.currentStep` | `null` when no step is on screen. |
 | `getActiveElement` | `step.resolvedTarget` | Read it from `tour.currentStep`. |
 | `getActiveIndex` | `tour.progressInfo()` | 1-based `index`, and 0 when no step is on screen. |

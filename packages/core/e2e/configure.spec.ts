@@ -56,3 +56,25 @@ test("configure changes body and button text in place, keeps the wrapper and kee
   expect(await page.evaluate(() => !!document.querySelector(".vt-popover")?.contains(document.activeElement))).toBe(true);
   expect(await log(page)).toEqual(["shown:titled"]);
 });
+
+test("configure with null clears title, body, classes and buttons on the shown popover", async ({ page }) => {
+  await open(page);
+  const configure = (patch: object) =>
+    page.evaluate((p) => {
+      (window as unknown as { vtTour: { stepById(id: string): { configure(p: object): void } } }).vtTour.stepById("titled").configure(p);
+    }, patch);
+
+  await configure({ title: "Retitled", body: "Plain replacement body", classes: "cleared-class", buttons: [{ text: "Custom only", action: "forward" }] });
+  await expect(popover(page).locator(".vt-popover-title")).toHaveText("Retitled");
+  await expect(popover(page)).toHaveClass(/cleared-class/);
+  await expect(popover(page).locator(".vt-footer .vt-button")).toHaveText(["Custom only"]);
+
+  await configure({ title: null, body: null, classes: null, buttons: null });
+
+  await expect(popover(page).locator(".vt-popover-title")).toHaveText("");
+  await expect(popover(page).locator(".vt-popover-description")).toHaveText("");
+  await expect(popover(page)).not.toHaveClass(/cleared-class/);
+  await expect(popover(page).getByRole("button", { name: "Custom only" })).toHaveCount(0);
+  await expect(popover(page).locator(".vt-popover-next-btn, .vt-popover-footer-btns button").first()).toBeVisible();
+  expect(await log(page)).toEqual(["shown:titled"]);
+});

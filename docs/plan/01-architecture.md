@@ -314,7 +314,7 @@ class TourStep {
   finish(): void;
   dispose(): void;
   isShown(): boolean;
-  configure(patch: Partial<StepConfig>): void;  // merge + re-render in place if shown (engine updatePopover + presenter.update)
+  configure(patch: StepConfigPatch): void;      // merge + re-render in place if shown (engine updatePopover + presenter.update); null clears a field to the tour default
 
   on / once / off               // StepEvents
 }
