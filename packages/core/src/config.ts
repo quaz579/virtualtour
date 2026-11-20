@@ -1,5 +1,5 @@
 import type { Config } from "./engine/types";
-import type { CornerRadius, DimConfig, PresenterFactory, ProgressConfig, StepConfig, TourConfig } from "./types";
+import type { CornerRadius, DimConfig, PresenterFactory, ProgressConfig, StepConfig, StepConfigPatch, TourConfig } from "./types";
 
 declare const __DEV__: boolean | undefined;
 
@@ -137,6 +137,55 @@ export function mergeStepConfig(base: Partial<StepConfig>, patch: Partial<StepCo
         : cloneValue(value);
   }
   return out as StepConfig;
+}
+
+function ownValue(source: Record<string, unknown> | undefined, key: string): unknown {
+  return source && Object.prototype.hasOwnProperty.call(source, key) ? source[key] : undefined;
+}
+
+function plainOrUndefined(value: unknown): Record<string, unknown> | undefined {
+  return isPlainObject(value) ? value : undefined;
+}
+
+function applyClearingPatch(
+  base: Record<string, unknown>,
+  patch: Record<string, unknown>,
+  defaults: Record<string, unknown> | undefined,
+  nested: (key: string) => boolean
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(base)) {
+    if (value !== undefined && !UNSAFE_KEYS.has(key)) out[key] = cloneValue(value);
+  }
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined || UNSAFE_KEYS.has(key)) continue;
+    if (value === null) {
+      const fallback = ownValue(defaults, key);
+      if (fallback === undefined) delete out[key];
+      else out[key] = cloneValue(fallback);
+      continue;
+    }
+    const current = out[key];
+    out[key] =
+      nested(key) && isPlainObject(value)
+        ? applyClearingPatch(isPlainObject(current) ? current : {}, value, plainOrUndefined(ownValue(defaults, key)), () => true)
+        : cloneValue(value);
+  }
+  return out;
+}
+
+export function patchStepConfig(
+  base: Partial<StepConfig>,
+  patch: StepConfigPatch,
+  defaults: Partial<StepConfig>
+): StepConfig {
+  const rest = Object.fromEntries(Object.entries(patch).filter(([key]) => key !== "id"));
+  return applyClearingPatch(
+    base as Record<string, unknown>,
+    rest,
+    defaults as Record<string, unknown>,
+    (key) => MERGED_STEP_KEYS.has(key)
+  ) as StepConfig;
 }
 
 /** Merges the tour's step defaults under a step definition. */

@@ -1,12 +1,13 @@
 import { Emitter } from "./events";
 import type { StepEvents } from "./events";
-import { mergeStepConfig } from "./config";
+import { patchStepConfig } from "./config";
 import { resolveTarget } from "./dom/target";
-import type { StepConfig, TourStepLike } from "./types";
+import type { StepConfig, StepConfigPatch, TourStepLike } from "./types";
 import type { Tour } from "./tour";
 
 interface StepState {
   config: StepConfig;
+  defaults: StepConfig;
   element: HTMLElement | undefined | null;
   resolvedTarget: Element | null;
   resolved: boolean;
@@ -24,6 +25,10 @@ export function setConfiguredHook(hook: (step: TourStep) => void): void {
   onConfigured = hook;
 }
 
+export function setStepDefaults(step: TourStep, defaults: StepConfig): void {
+  stateOf(step).defaults = defaults;
+}
+
 function stateOf(step: TourStep): StepState {
   return states.get(step) as StepState;
 }
@@ -38,6 +43,7 @@ export class TourStep {
     this.id = id;
     states.set(this, {
       config,
+      defaults: {},
       element: undefined,
       resolvedTarget: null,
       resolved: false,
@@ -64,13 +70,14 @@ export class TourStep {
 
   /**
    * Merges `patch` into the step's configuration the way the tour merges `stepDefaults`: nested groups merge key
-   * by key, arrays such as `buttons` are replaced, and `undefined` values and `id` are ignored. While the step is on
+   * by key, arrays such as `buttons` are replaced, and `undefined` values and `id` are ignored. A `null` clears the
+   * field back to the tour's default for it, or removes it when there is none. While the step is on
    * screen its title, body, label, buttons, classes, close button and counter update in place, with the same popover element and
    * no events; every other field, `target` and `position` included, takes effect the next time the step shows.
    */
-  configure(patch: Partial<StepConfig>): void {
+  configure(patch: StepConfigPatch): void {
     const state = stateOf(this);
-    const merged = mergeStepConfig(state.config, patch);
+    const merged = patchStepConfig(state.config, patch, state.defaults);
     merged.id = this.id;
     state.config = merged;
     if (state.shown) onConfigured(this);
