@@ -172,6 +172,31 @@ describe("sanitize", () => {
     expect(error).toHaveBeenCalledWith(expect.stringContaining("[virtualtour] counter threw"), expect.any(Error));
   });
 
+  it("shows an array body as plain text when the sanitizer throws, instead of hiding it", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await show({
+      sanitize: () => {
+        throw new Error("boom");
+      },
+      steps: [{ title: "T", body: ["<i>a</i>", "b"] }],
+    });
+    expect(description().style.display).toBe("");
+    expect(description().textContent).toBe("<i>a</i> b");
+  });
+
+  it("keeps the tour running when a step is added and the throwing counter is refreshed", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const tour = await show({
+      counter: () => {
+        throw new Error("boom");
+      },
+      steps: [{ title: "A" }, { title: "B" }],
+    });
+    tour.appendStep({ title: "C" });
+    expect(tour.isRunning()).toBe(true);
+    expect(document.querySelector(".vt-popover-progress-text")!.textContent).toBe("1 of 3");
+  });
+
   it("shows the default counter when the counter returns a non-string on show", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const tour = await show({

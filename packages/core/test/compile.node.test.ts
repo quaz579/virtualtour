@@ -534,7 +534,7 @@ describe("compileTour sanitizer and counter failures", () => {
   it("escapes a body string and each paragraph of a body array when the sanitizer throws", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     expect(compileOne({ body: "<i>x</i>" }, { sanitize: boom }).step.popover?.description).toBe("&lt;i&gt;x&lt;/i&gt;");
-    expect(compileOne({ body: ["<i>a</i>", "b"] }, { sanitize: boom }).step.popover?.description).toBe("<p>&lt;i&gt;a&lt;/i&gt;</p><p>b</p>");
+    expect(compileOne({ body: ["<i>a</i>", "b"] }, { sanitize: boom }).step.popover?.description).toBe("&lt;i&gt;a&lt;/i&gt; b");
   });
 
   it("escapes the text when the sanitizer returns something other than a string", () => {

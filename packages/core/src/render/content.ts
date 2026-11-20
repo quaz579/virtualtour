@@ -13,19 +13,23 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-/** Runs `html` through the sanitizer when there is one. */
-export function cleanHtml(html: string, sanitize: Sanitizer): string {
-  if (!sanitize) return html;
+function cleanParts(html: string, sanitize: Sanitizer): { html: string; failed: boolean } {
+  if (!sanitize) return { html, failed: false };
   let clean: unknown;
   try {
     clean = sanitize(html);
   } catch (error) {
     console.error("[virtualtour] sanitize threw; the text is shown as plain text:", error);
-    return escapeHtml(html);
+    return { html: escapeHtml(html), failed: true };
   }
-  if (typeof clean === "string") return clean;
+  if (typeof clean === "string") return { html: clean, failed: false };
   console.error("[virtualtour] sanitize did not return a string; the text is shown as plain text.");
-  return escapeHtml(html);
+  return { html: escapeHtml(html), failed: true };
+}
+
+/** Runs `html` through the sanitizer when there is one. */
+export function cleanHtml(html: string, sanitize: Sanitizer): string {
+  return cleanParts(html, sanitize).html;
 }
 
 /** Resolves a text value; a function is called only when `evaluate` is true. */
@@ -52,7 +56,11 @@ export function resolveTitle(
 export function resolveBody(body: BodyContent | undefined, evaluate: boolean, sanitize: Sanitizer): ResolvedBody {
   const value = typeof body === "function" ? (evaluate ? body() : undefined) : body;
   if (typeof value === "string") return { description: cleanHtml(value, sanitize) };
-  if (Array.isArray(value)) return { description: value.map((p) => `<p>${cleanHtml(p, sanitize)}</p>`).join("") };
+  if (Array.isArray(value)) {
+    const parts = value.map((p) => cleanParts(p, sanitize));
+    if (parts.some((part) => part.failed)) return { description: escapeHtml(value.join(" ")) };
+    return { description: parts.map((part) => `<p>${part.html}</p>`).join("") };
+  }
   if (value !== undefined && value !== null && typeof (value as Element).nodeType === "number") {
     return { element: value as Element | DocumentFragment };
   }
