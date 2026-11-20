@@ -145,7 +145,7 @@ describe("STYLES.md matches the shipped CSS", () => {
       n.liveRegion,
     ];
     expect(fixedClasses.filter((value) => !documented.has(value) && !wildcard(value))).toEqual([]);
-    const namespaced = [n.active, n.fade, n.simple, n.noScroll, n.target, n.targetBlocked, n.targetRaised, n.extra, n.targetParent, n.overlay, n.overlayAnimated];
+    const namespaced = [n.active, n.fade, n.simple, n.noScroll, n.target, n.targetBlocked, n.targetRaised, n.extra, n.targetParent, n.spotlit, n.overlay, n.overlayAnimated];
     expect(namespaced.map((value) => value.replace(/^zz/, "<ns>")).filter((value) => !documented.has(value))).toEqual([]);
   });
 

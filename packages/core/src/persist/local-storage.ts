@@ -31,10 +31,14 @@ function parseRecord(raw: string | null, tourId: string): ProgressRecord | null 
 
 /**
  * A store backed by `window.localStorage`, keyed `<prefix>:<tourId>` (default prefix `virtualtour`) with a JSON value.
- * Storage is read only when a method runs, never at import. Unavailable storage, a full quota and corrupt or
- * foreign values never throw: `load` returns `null` and `save` and `clear` do nothing.
+ * A `prefix` containing `:` throws, because the key would be ambiguous. Storage is read only when a method runs,
+ * never at import. Unavailable storage, a full quota and corrupt or foreign values never throw: `load` returns
+ * `null` and `save` and `clear` do nothing.
  */
 export function localStorageStore(prefix: string = DEFAULT_PREFIX): ProgressStore {
+  if (prefix.includes(":")) {
+    throw new Error(`[virtualtour] localStorageStore prefix ${JSON.stringify(prefix)} must not contain ":", because keys are "<prefix>:<tourId>".`);
+  }
   const keyOf = (tourId: string): string => `${prefix}:${tourId}`;
   return {
     load(tourId) {

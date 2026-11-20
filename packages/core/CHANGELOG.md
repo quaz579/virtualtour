@@ -10,6 +10,7 @@ First release. The tour engine is derived from driver.js 1.12.1 (tag `1.12.1`, c
 - `parseTourJson` and `serializeTour`, with `schemas/tour.v1.schema.json`.
 - `virtualtour/avatar`: `withAvatar`, `SpeakerPresenter`, pack loaders and validation, Thumbtack (CC0). `virtualtour/motion`: `glide`, `progressVars`.
 - Stylesheets: `base.css` (required), `theme.css` (optional, light and dark), `avatar.css`. See `STYLES.md` for every class and variable.
+- `localStorageStore` throws for a prefix that contains `:`, because the key would be ambiguous.
 - The exact exported surface is frozen in `API-FREEZE.md`.
 
 ### Engine changes from driver.js, by fork task

@@ -90,6 +90,7 @@ export function names(ns = FIXED_PREFIX) {
     targetRaised: `${ns}-target-raised`,
     extra: `${ns}-extra`,
     targetParent: `${ns}-target-parent`,
+    spotlit: `${ns}-spotlit`,
     overlay: `${ns}-overlay`,
     overlayAnimated: `${ns}-overlay-animated`,
     stepAttr: `data-${ns}-step`,

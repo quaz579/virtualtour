@@ -88,6 +88,11 @@ export class SpritePlayer {
     this.show(pack.roles.rest, this.pack.stillOf(pack.roles.rest));
   }
 
+  /** True once {@link SpritePlayer.dispose} has run. */
+  get isDisposed(): boolean {
+    return this.disposed;
+  }
+
   /** Name of the animation that is running, or `null` when idle, stopped or showing a still. */
   get current(): string | null {
     return this.run ? this.run.name : null;
@@ -143,13 +148,14 @@ export class SpritePlayer {
   }
 
   /**
-   * Plays the animation a role resolves to. The same idle animation is not picked twice in a row.
+   * Plays the animation a role resolves to. The same idle animation is not picked twice in a row, whoever asks.
+   * `opts.loop` is passed to {@link SpritePlayer.play}.
    * @see {@link resolveRole}
    */
-  playRole(role: AvatarRole, dir?: AvatarDirection): Promise<void> {
+  playRole(role: AvatarRole, dir?: AvatarDirection, opts: { loop?: boolean } = {}): Promise<void> {
     const name = resolveRole(this.pack, role, dir, role === "idle" ? this.lastIdle : undefined, this.random);
-    if (role === "idle") this.lastIdle = name;
-    return this.play(name);
+    if (role === "idle" && !this.disposed && Object.prototype.hasOwnProperty.call(this.pack.frames, name)) this.lastIdle = name;
+    return this.play(name, opts);
   }
 
   /** Stops any running animation (resolving its promise) and shows the still frame of the `rest` role. */

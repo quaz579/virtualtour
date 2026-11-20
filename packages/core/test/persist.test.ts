@@ -77,6 +77,20 @@ describe("localStorageStore", () => {
     expect(localStorageStore().load("billing")).toBeNull();
   });
 
+  it.each(["a:b", ":", "app:", ":app"])("rejects the prefix %j, which contains a colon, before storage is touched", (prefix) => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    expect(() => localStorageStore(prefix)).toThrow(/must not contain ":"/);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it("keeps a colon in a tour id apart from another prefix, so the keys never collide", () => {
+    localStorageStore("a").save({ tourId: "b:c", updatedAt: "u" });
+    expect(localStorageStore("a").load("b:c")).toEqual({ tourId: "b:c", updatedAt: "u" });
+    expect(localStorage.getItem("a:b:c")).not.toBeNull();
+    expect(localStorageStore("a").load("c")).toBeNull();
+    expect(() => localStorageStore("a:b")).toThrow();
+  });
+
   it.each(["{not json", "null", "[]", '"text"', "7", JSON.stringify({ tourId: "other", updatedAt: "x" }), JSON.stringify({ tourId: "billing" })])(
     "treats %s as no record",
     (raw) => {
