@@ -299,3 +299,23 @@ describe("presenter wiring", () => {
     expect(n.presenter).toBe(presenter);
   });
 });
+
+describe("steps-changed", () => {
+  it("fires after appendStep and dropStep with the list already updated", () => {
+    const tour = createTour({ steps: [{ id: "a" }, { id: "b" }] });
+    const seen: string[][] = [];
+    tour.on("steps-changed", ({ tour: t }) => seen.push(ids(t) as string[]));
+    tour.appendStep({ id: "c" });
+    tour.dropStep("a");
+    expect(seen).toEqual([["a", "b", "c"], ["b", "c"]]);
+  });
+
+  it("does not fire for an unknown drop or a rejected append", () => {
+    const tour = createTour({ steps: [{ id: "a" }] });
+    const seen = vi.fn();
+    tour.on("steps-changed", seen);
+    tour.dropStep("nope");
+    expect(() => tour.appendStep({ id: "x" }, 9)).toThrow(TourNavigationError);
+    expect(seen).not.toHaveBeenCalled();
+  });
+});

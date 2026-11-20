@@ -44,6 +44,30 @@ describe("glide", () => {
     expect(seen).toEqual([1]);
   });
 
+  it("still glides from step-shown when MutationObserver never reports", async () => {
+    vi.stubGlobal("MutationObserver", class { observe(): void {} disconnect(): void {} takeRecords(): [] { return []; } });
+    const tour = await start({ steps });
+    const seen: number[] = [];
+    tour.on("step-shown", () => seen.push(animations.length));
+    glide(tour);
+    await tour.forward();
+    expect(animations).toHaveLength(1);
+    expect(seen).toEqual([0]);
+  });
+
+  it("disconnects its observer once the popover has been handled and when the tour ends", async () => {
+    const disconnect = vi.spyOn(MutationObserver.prototype, "disconnect");
+    const tour = await start({ steps });
+    glide(tour);
+    await tour.forward();
+    const afterForward = disconnect.mock.calls.length;
+    expect(afterForward).toBeGreaterThan(0);
+    const live = vi.spyOn(MutationObserver.prototype, "observe");
+    const before = live.mock.calls.length;
+    tour.finish();
+    expect(live.mock.calls.length).toBe(before);
+  });
+
   it("uses 250 ms and the default easing when no options are given", async () => {
     const tour = await start({ steps });
     glide(tour);
@@ -229,15 +253,71 @@ describe("glide", () => {
     expect(on).not.toHaveBeenCalled();
   });
 
-  it("two glides on one tour each animate and each off() detaches only its own", async () => {
-    const tour = await start({ steps });
-    const offA = glide(tour);
-    const offB = glide(tour);
-    await tour.forward();
-    expect(animations.length).toBe(2);
-    offA();
-    offB();
-    await tour.forward();
-    expect(animations.length).toBe(2);
+  describe("composition", () => {
+    it("two calls on one tour start a single animation", async () => {
+      const tour = await start({ steps });
+      glide(tour);
+      glide(tour);
+      await tour.forward();
+      expect(animations).toHaveLength(1);
+    });
+
+    it("the options of the first call win", async () => {
+      const tour = await start({ steps });
+      glide(tour, { durationMs: 400, easing: "linear" });
+      glide(tour, { durationMs: 900, easing: "ease-in" });
+      await tour.forward();
+      expect(animations[0]!.options).toMatchObject({ duration: 400, easing: "linear" });
+    });
+
+    it("keeps gliding until every returned function has been called", async () => {
+      const tour = await start({ steps });
+      const first = glide(tour);
+      const second = glide(tour);
+      first();
+      await tour.forward();
+      expect(animations).toHaveLength(1);
+      second();
+      await tour.forward();
+      expect(animations).toHaveLength(1);
+    });
+
+    it("a returned function counts only once", async () => {
+      const tour = await start({ steps });
+      const first = glide(tour);
+      glide(tour);
+      first();
+      first();
+      await tour.forward();
+      expect(animations).toHaveLength(1);
+    });
+
+    it("a call after everything stopped starts a fresh glide with its own options", async () => {
+      const tour = await start({ steps });
+      glide(tour, { durationMs: 400 })();
+      glide(tour, { durationMs: 600 });
+      await tour.forward();
+      expect(animations).toHaveLength(1);
+      expect(animations[0]!.options).toMatchObject({ duration: 600 });
+    });
+
+    it("a call after tour.off() brings the glide back without doubling it", async () => {
+      const tour = await start({ steps });
+      glide(tour);
+      tour.off();
+      glide(tour);
+      await tour.forward();
+      expect(animations).toHaveLength(1);
+    });
+
+    it("glides on different tours are independent", async () => {
+      const a = await start({ steps });
+      const off = glide(a);
+      const b = await start({ steps });
+      glide(b);
+      off();
+      await b.forward();
+      expect(animations).toHaveLength(1);
+    });
   });
 });

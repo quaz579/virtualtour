@@ -28,6 +28,7 @@ Payloads always include `tour`.
 | `activated` | `{ tour }` | Right after `started`. |
 | `step-shown` | `{ tour, step, previous }` | A step is on screen. `previous` is the step that was hidden just before it, or `null` for the first show of a run. |
 | `step-completed` | `{ tour, step }` | The user met an [action step](./action-steps)'s instruction. Only fires for steps that have an `instruction`. |
+| `steps-changed` | `{ tour }` | `appendStep` or `dropStep` changed the step list. Use it to redraw anything that shows a step count or position. |
 | `finished` | `{ tour }` | The tour completed. |
 | `exited` | `{ tour, reason }` | The tour ended without finishing. See [Exit reasons](#exit-reasons). |
 | `bypassed` | `{ tour, reason: "completed" }` | `start()` found saved progress that says the user already finished and did not run. Fires instead of `started`. See [Persistence](./persistence). |

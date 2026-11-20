@@ -17,6 +17,8 @@ interface Departure {
   dialog: boolean;
 }
 
+const attached = new WeakMap<Tour, { count: number; detach: () => void; rearm: () => void }>();
+
 const GLIDE_CLASS = "vt-glide";
 const DIALOG_CLASS = "vt-dialog";
 const POPOVER_CLASS = "vt-popover";
@@ -33,9 +35,32 @@ function isCentered(step: TourStep): boolean {
  * Slides the popover from where the previous step left it to where the next step puts it, instead of fading the new
  * popover in: the engine's entrance animations on the new popover are finished at once. Does nothing under reduced
  * motion, when the tour's `animate` is off, when one step is centered and the other is not, or when the two steps use
- * different popover layouts. Returns a function that stops listening and cancels a glide in progress.
+ * different popover layouts.
+ *
+ * Calls on the same tour share one glide and are reference counted: the options of the first call win and later
+ * options are ignored. Each call returns its own function, which works once; the glide stops listening and cancels
+ * a glide in progress when every returned function has been called.
  */
 export function glide(tour: Tour, options: GlideOptions = {}): () => void {
+  let shared = attached.get(tour);
+  if (!shared) {
+    shared = { count: 0, ...attach(tour, options) };
+    attached.set(tour, shared);
+  } else shared.rearm();
+  const entry = shared;
+  entry.count += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    entry.count -= 1;
+    if (entry.count > 0) return;
+    attached.delete(tour);
+    entry.detach();
+  };
+}
+
+function attach(tour: Tour, options: GlideOptions): { detach: () => void; rearm: () => void } {
   const durationMs = options.durationMs ?? 250;
   const easing = options.easing ?? "cubic-bezier(.2,.8,.2,1)";
   let departure: Departure | null = null;
@@ -59,7 +84,7 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
     const from = departure;
     departure = null;
     disarm();
-    if (!from || from.step === step || running?.element === element) return;
+    if (!from || from.step === step) return;
     settle();
     if (typeof element.animate !== "function") return;
     if (prefersReducedMotion() || !document.body.hasAttribute(FADE_ATTR)) return;
@@ -100,8 +125,10 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
         for (const node of addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
           const element = node.classList.contains(POPOVER_CLASS) ? node : node.querySelector<HTMLElement>(`.${POPOVER_CLASS}`);
-          const step = element && tour.steps[Number(element.getAttribute(STEP_ATTR))];
-          if (element && step) return begin(step, element);
+          const index = element?.getAttribute(STEP_ATTR);
+          const step = index ? tour.steps[Number(index)] : undefined;
+          if (!element || !step) continue;
+          return begin(step, element);
         }
       }
     });
@@ -129,30 +156,39 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
     });
   };
 
-  const stopShown = tour.on("step-shown", ({ step }) => {
-    const element = step.element;
-    if (running && running.element !== element) settle();
-    if (element && departure) begin(step, element);
-    departure = null;
-    disarm();
-    watch(step);
-  });
-
-  const current = tour.currentStep;
-  if (current?.isShown()) watch(current);
-
   const forget = (): void => {
     departure = null;
     disarm();
   };
-  const stopEnd = [tour.on("finished", forget), tour.on("exited", forget)];
 
-  return () => {
-    stopShown();
-    for (const stop of stopEnd) stop();
+  const onShown = ({ step, previous }: { step: TourStep; previous: TourStep | null }): void => {
+    const element = step.element;
+    if (running && running.element !== element) settle();
+    if (element && departure && departure.step === previous) begin(step, element);
+    forget();
+    watch(step);
+  };
+
+  let stops: (() => void)[] = [];
+  const rearm = (): void => {
+    for (const stop of stops) stop();
+    stops = [
+      tour.on("step-shown", onShown),
+      tour.on("finished", forget),
+      tour.on("exited", forget),
+    ];
+  };
+  rearm();
+
+  const current = tour.currentStep;
+  if (current?.isShown()) watch(current);
+
+  const detach = (): void => {
+    for (const stop of stops) stop();
     stopHide?.();
     stopHide = null;
     forget();
     settle();
   };
+  return { detach, rearm };
 }
