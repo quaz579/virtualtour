@@ -8,7 +8,7 @@ test.beforeEach(({}, testInfo) => {
   );
 });
 
-type Win = { vtTour: { forward(): Promise<void>; backward(): Promise<void>; nudge(message?: string): void; hideCurrent(): void } };
+type Win = { vtTour: { start(): Promise<void>; forward(): Promise<void>; backward(): Promise<void>; nudge(message?: string): void; hideCurrent(): void } };
 
 async function open(page: Page, query = ""): Promise<void> {
   await page.goto(`/fixtures/motion.html${query}`);
@@ -164,3 +164,87 @@ test("showing a step after hideCurrent does not glide from the page corner", asy
   });
   expect(result).toBe(false);
 });
+
+type Frame = { title: string | null; left: number; top: number; opacity: number; shown: boolean };
+
+async function frames(page: Page, act: (w: Win) => Promise<void>, settleMs = 1100): Promise<Frame[]> {
+  return page.evaluate(
+    async ({ body, settleMs }) => {
+      const out: Frame[] = [];
+      let run = true;
+      const tick = (): void => {
+        const el = document.querySelector<HTMLElement>(".vt-popover");
+        if (el) {
+          const style = getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          out.push({
+            title: el.querySelector(".vt-popover-title")?.textContent ?? null,
+            left: r.left,
+            top: r.top,
+            opacity: Number(style.opacity),
+            shown: style.display !== "none" && style.visibility !== "hidden",
+          });
+        }
+        if (run) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      await new Function("w", `return (${body})(w)`)(window);
+      await new Promise((resolve) => setTimeout(resolve, settleMs));
+      run = false;
+      return out;
+    },
+    { body: act.toString(), settleMs },
+  );
+}
+
+const visible = (all: Frame[], title: string): Frame[] => all.filter((f) => f.title === title && f.shown && f.opacity > 0.02);
+
+for (const dim of [false, true]) {
+  test(`${dim ? "with" : "without"} a dimmed overlay the first visible frame of the next popover is where the previous one was`, async ({ page }) => {
+    await open(page, `?duration=400${dim ? "&dim=1" : ""}`);
+    await page.waitForTimeout(600);
+    const from = await rect(page);
+    const all = await frames(page, (w) => w.vtTour.forward());
+    const last = await rect(page);
+    const seen = visible(all, "Two");
+    expect(seen.length).toBeGreaterThan(5);
+    const first = seen[0]!;
+    expect(first.opacity).toBe(1);
+    expect(Math.abs(first.left - from.left)).toBeLessThan(Math.abs(first.left - last.left));
+    expect(Math.abs(first.top - from.top)).toBeLessThan(Math.abs(first.top - last.top));
+    for (let i = 1; i < seen.length; i += 1) {
+      expect(seen[i]!.left).toBeGreaterThanOrEqual(seen[i - 1]!.left - 1);
+      expect(seen[i]!.top).toBeGreaterThanOrEqual(seen[i - 1]!.top - 1);
+    }
+    expect(Math.abs(seen[seen.length - 1]!.left - last.left)).toBeLessThanOrEqual(1);
+  });
+
+  test(`${dim ? "with" : "without"} a dimmed overlay under reduced motion the next popover first shows at its final position`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await open(page, `?duration=400${dim ? "&dim=1" : ""}`);
+    await page.waitForTimeout(300);
+    const all = await frames(page, (w) => w.vtTour.forward(), 600);
+    const last = await rect(page);
+    const seen = visible(all, "Two");
+    expect(seen.length).toBeGreaterThan(0);
+    for (const f of seen) {
+      expect(Math.abs(f.left - last.left)).toBeLessThanOrEqual(1);
+      expect(Math.abs(f.top - last.top)).toBeLessThanOrEqual(1);
+    }
+  });
+}
+
+for (const dim of [false, true]) {
+  test(`${dim ? "with" : "without"} a dimmed overlay the first popover is never visible away from its final position`, async ({ page }) => {
+    await page.goto(`/fixtures/motion.html${dim ? "?dim=1" : ""}`);
+    await expect(page.locator("html")).toHaveAttribute("data-ready", "true");
+    const all = await frames(page, (w) => w.vtTour.start(), 700);
+    const last = await rect(page);
+    const seen = visible(all, "One");
+    expect(seen.length).toBeGreaterThan(0);
+    for (const f of seen) {
+      expect(Math.abs(f.left - last.left)).toBeLessThanOrEqual(1);
+      expect(Math.abs(f.top - last.top)).toBeLessThanOrEqual(5);
+    }
+  });
+}
