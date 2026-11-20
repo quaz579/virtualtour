@@ -34,6 +34,70 @@ describe("glide", () => {
     expect(animations[0]!.options).toMatchObject({ duration: 400, easing: "linear" });
   });
 
+  it("starts the glide when the popover is rendered, before step-shown is emitted", async () => {
+    const tour = await start({ steps });
+    const seen: number[] = [];
+    tour.on("step-shown", () => seen.push(animations.length));
+    glide(tour);
+    await tour.forward();
+    expect(animations).toHaveLength(1);
+    expect(seen).toEqual([1]);
+  });
+
+  it("still glides from step-shown when MutationObserver never reports", async () => {
+    vi.stubGlobal("MutationObserver", class { observe(): void {} disconnect(): void {} takeRecords(): [] { return []; } });
+    const tour = await start({ steps });
+    const seen: number[] = [];
+    tour.on("step-shown", () => seen.push(animations.length));
+    glide(tour);
+    await tour.forward();
+    expect(animations).toHaveLength(1);
+    expect(seen).toEqual([0]);
+  });
+
+  it("leaves no observer connected after a glide or when the tour ends mid-transition", async () => {
+    const live = new Set<object>();
+    const Real = MutationObserver;
+    vi.stubGlobal(
+      "MutationObserver",
+      class extends Real {
+        override observe(target: Node, init?: MutationObserverInit): void {
+          if (target === document.body && init?.childList && init.subtree && !init.attributes) live.add(this);
+          super.observe(target, init);
+        }
+        override disconnect(): void {
+          live.delete(this);
+          super.disconnect();
+        }
+      },
+    );
+    const tour = await start({ steps });
+    glide(tour);
+    const before = new Set(live);
+    const added = (): number => [...live].filter((observer) => !before.has(observer)).length;
+    await tour.forward();
+    expect(animations).toHaveLength(1);
+    expect(added()).toBe(0);
+    tour.finish();
+    expect(added()).toBe(0);
+  });
+
+  it.each([["has no step attribute", null], ["names a step that does not exist", "99"]])(
+    "ignores a popover element that %s and still glides the real one",
+    async (_name, attribute) => {
+      const tour = await start({ steps });
+      glide(tour);
+      tour.steps[0]!.on("will-hide", () => {
+        const stray = document.createElement("div");
+        stray.className = "vt-popover";
+        if (attribute !== null) stray.setAttribute("data-vt-step", attribute);
+        document.body.append(stray);
+      });
+      await tour.forward();
+      expect(animations).toHaveLength(1);
+    },
+  );
+
   it("uses 250 ms and the default easing when no options are given", async () => {
     const tour = await start({ steps });
     glide(tour);

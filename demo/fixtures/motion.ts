@@ -15,6 +15,7 @@ async function main(): Promise<void> {
   const tour = createTour({
     id: "motion-demo",
     animate: params.get("animate") !== "0",
+    dim: params.has("dim"),
     counter: (index, total) => `Step ${index} of ${total}`,
     steps: [
       { id: "one", title: "One", body: "First.", target: "#m1", placement: { side: "right" } },

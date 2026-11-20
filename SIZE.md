@@ -7,7 +7,7 @@ Gzip sizes of the built entries, measured after whitespace minification (what `d
 | core | dist/index.js | 35920 | 35 |
 | engine | src/engine/driver.ts | 19737 | 20 |
 | avatar | dist/avatar.js | 12314 | 12 |
-| motion | dist/motion.js | 1149 | 2 |
+| motion | dist/motion.js | 1400 | 2 |
 | base.css | dist/base.css | 2083 | none |
 | theme.css | dist/theme.css | 1104 | none |
 
