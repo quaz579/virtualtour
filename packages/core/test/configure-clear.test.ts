@@ -46,6 +46,11 @@ describe("patchStepConfig", () => {
     expect(out.extensions).toEqual({ b: 2 });
   });
 
+  it("never stores a null inside a group whose base is not an object", () => {
+    const out = patchStepConfig({ closeButton: true }, { closeButton: { label: null }, extensions: { x: null }, position: { flip: null } }, {});
+    expect(out).toEqual({ closeButton: {}, extensions: {}, position: {} });
+  });
+
   it("clears whole groups", () => {
     const out = patchStepConfig(
       { position: { flip: false }, spotlight: { padding: 4 }, closeButton: false, extensions: { a: 1 } },
@@ -201,6 +206,13 @@ describe("TourStep.configure with null", () => {
     expect(step.config.advanceDelay).toBeUndefined();
     expect(step.config.waitFor).toBeUndefined();
     expect(step.config.hookTimeout).toBeUndefined();
+  });
+
+  it("a nested null on a default closeButton leaves no null in the step config", () => {
+    const tour = make({ steps: [{ id: "a" }] });
+    const step = tour.stepById("a")!;
+    step.configure({ closeButton: { label: null }, extensions: { x: null } });
+    expect(JSON.stringify(step.config)).not.toContain("null");
   });
 
   it("null on id is ignored", () => {

@@ -161,8 +161,8 @@ function applyClearingPatch(
     }
     const current = out[key];
     out[key] =
-      nested(key) && isPlainObject(current) && isPlainObject(value)
-        ? applyClearingPatch(current, value, plainOrUndefined(defaults?.[key]), () => true)
+      nested(key) && isPlainObject(value)
+        ? applyClearingPatch(isPlainObject(current) ? current : {}, value, plainOrUndefined(defaults?.[key]), () => true)
         : cloneValue(value);
   }
   return out;
