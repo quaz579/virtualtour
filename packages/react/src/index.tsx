@@ -130,6 +130,11 @@ function createStore(config: TourConfig): TourStore {
   };
   tour.on("step-shown", ({ step }) => {
     offShownDisposed();
+    offShownDisposed = () => {};
+    if (!step.isShown()) {
+      store.shown = null;
+      return;
+    }
     store.shown = step;
     offShownDisposed = step.on("disposed", () => {
       if (store.shown === step) store.shown = null;

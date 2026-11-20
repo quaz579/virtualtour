@@ -322,6 +322,31 @@ describe("currentStep during a move", () => {
   });
 });
 
+describe("a step dropped by its own shown listener", () => {
+  it("never becomes currentStep", async () => {
+    const probe = probeOf();
+    await mount(
+      <TourProvider
+        config={config({
+          steps: [
+            { id: "a", title: "A", body: "a" },
+            { id: "b", title: "B", body: "b", target: "#never-there", waitFor: 400 },
+          ],
+        })}
+      >
+        <Capture probe={probe} />
+      </TourProvider>,
+    );
+    probe.latest.tour.steps[0]!.on("shown", () => probe.latest.tour.dropStep("a"));
+    await act(async () => {
+      void probe.latest.start();
+    });
+    await flush();
+    expect(probe.latest.tour.isRunning()).toBe(true);
+    expect(text()).toBe("true:none");
+  });
+});
+
 describe("unmount", () => {
   it("exits a running tour without asking the exit prompt", async () => {
     const confirm = vi.fn(() => false);
