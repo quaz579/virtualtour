@@ -24,7 +24,7 @@
 | `presenter` | `(tour, context) => Presenter` | built-in dialog presenter | Replaces the presenter that draws the parts of a step the engine does not. Code only. See [Presenters](../guide/presenters). |
 | `sanitize` | `(html: string) => string` | none | Cleans title, body, instruction, nudge message, counter and button text before it reaches the page. Code only. See [Sanitizing HTML](../cookbook/sanitizing-html). |
 | `animate` | `boolean` | `true` | `false` turns off the popover and overlay animations. Reduced-motion users get no animation either way. |
-| `waitBudget` | `number` (ms) | `10000` | Total time one navigation may spend waiting for targets across consecutive steps that set `waitFor`. The first step that waits always gets its full `waitFor`. After the budget is spent, later steps are judged on what is on the page and follow their `whenMissing`, with a logged warning. `0` or `Infinity` removes the cap. |
+| `waitBudget` | `number` (ms) | `10000` | Total time one navigation may spend waiting for targets across consecutive steps that set `waitFor`. The first step that waits always gets its full `waitFor`. After the budget is spent, later steps are judged on what is on the page and follow their `whenMissing`, with a logged warning. `0` or `Infinity` removes the cap; `NaN` or a negative value uses the default. |
 
 ## DimConfig
 

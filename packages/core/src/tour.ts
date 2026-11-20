@@ -107,7 +107,7 @@ export class Tour {
       warnedUnnamed: false,
       warnedStyles: false,
       completing: null,
-      progress: normalized.progress ? new ProgressTracker(normalized.id, normalized.progress) : null,
+      progress: normalized.progress ? new ProgressTracker(normalized.id, normalized.progress, normalized.waitBudget) : null,
       starting: false,
       clearSanitized,
       spotlit: new Map(),
