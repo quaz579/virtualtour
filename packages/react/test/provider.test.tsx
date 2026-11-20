@@ -347,6 +347,40 @@ describe("a step dropped by its own shown listener", () => {
   });
 });
 
+describe("a step dropped after a step was already shown", () => {
+  it("reports null rather than the previous step", async () => {
+    const probe = probeOf();
+    await mount(
+      <TourProvider
+        config={config({
+          steps: [
+            { id: "a", title: "A", body: "a" },
+            { id: "b", title: "B", body: "b" },
+            { id: "c", title: "C", body: "c", target: "#never-there", waitFor: 400 },
+          ],
+        })}
+      >
+        <Capture probe={probe} />
+      </TourProvider>,
+    );
+    await act(async () => probe.latest.start());
+    expect(text()).toBe("true:a");
+    probe.latest.tour.steps[1]!.on("shown", () => probe.latest.tour.dropStep("b"));
+    let reported: boolean | undefined;
+    probe.latest.tour.on("step-shown", ({ step }) => {
+      if (step.id === "b") reported = step.isShown();
+    });
+    await act(async () => {
+      void probe.latest.forward();
+    });
+    await until(() => reported !== undefined);
+    await flush();
+    expect(reported).toBe(false);
+    expect(probe.latest.tour.isRunning()).toBe(true);
+    expect(text()).toBe("true:none");
+  });
+});
+
 describe("unmount", () => {
   it("exits a running tour without asking the exit prompt", async () => {
     const confirm = vi.fn(() => false);

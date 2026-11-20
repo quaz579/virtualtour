@@ -389,6 +389,50 @@ describe("a step dropped by an earlier step-shown listener", () => {
   });
 });
 
+describe("a step dropped after a step was already shown", () => {
+  it("reports null rather than the previous step", async () => {
+    const probe = probeOf();
+    const Dropper = defineComponent({
+      setup() {
+        const { tour } = useTour();
+        tour.on("step-shown", ({ step }) => {
+          if (step.id === "b") tour.dropStep("b");
+        });
+        return () => null;
+      },
+    });
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const Child = capture(probe);
+    const cfg = config({
+      steps: [
+        { id: "a", title: "A", body: "a" },
+        { id: "b", title: "B", body: "b" },
+        { id: "c", title: "C", body: "c", target: "#never-there", waitFor: 400 },
+      ],
+    });
+    const app = createApp({
+      render: () => h(TourProvider, { config: cfg }, { default: () => [h(Dropper), h(Child)] }),
+    });
+    apps.push(app);
+    app.mount(container);
+    await nextTick();
+    await probe.latest.start();
+    await nextTick();
+    expect(probe.latest.currentStep.value?.id).toBe("a");
+    let seen: unknown = "unset";
+    probe.latest.tour.on("step-shown", ({ step }) => {
+      if (step.id === "b") seen = probe.latest.currentStep.value;
+    });
+    void probe.latest.forward();
+    await until(() => seen !== "unset");
+    expect(seen).toBeNull();
+    await nextTick();
+    expect(probe.latest.tour.isRunning()).toBe(true);
+    expect(probe.latest.currentStep.value).toBeNull();
+  });
+});
+
 describe("unmount", () => {
   it("mid-tour: exits without a prompt and detaches every listener it added", async () => {
     const confirm = vi.fn(() => false);
