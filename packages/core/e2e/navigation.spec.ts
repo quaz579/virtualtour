@@ -106,3 +106,49 @@ test("hideCurrent keeps the tour running and the next forward shows the followin
   await page.evaluate(() => (window as unknown as { vtTour: { forward(): Promise<void> } }).vtTour.forward());
   await expect(popover(page)).toHaveAttribute("data-vt-step", "1");
 });
+
+type Handle = { vtTour: { forward(): Promise<void>; backward(): Promise<void>; dropStep(id: string): void; stepById(id: string): { on(e: string, f: () => void): void }; isRunning(): boolean } };
+
+test("dropping the last step once a forward move began showing it exits with reason api, not finished", async ({ page }) => {
+  await open(page);
+  await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => shownCount(page)).toBe(2);
+  await page.evaluate(async () => {
+    const tour = (window as unknown as Handle).vtTour;
+    tour.stepById("three").on("will-show", () => tour.dropStep("three"));
+    await tour.forward();
+  });
+
+  await expect(popover(page)).toHaveCount(0);
+  expect(await log(page)).toEqual(["shown:one", "shown:two", "exited:api", "deactivated"]);
+  expect(await page.evaluate(() => (window as unknown as Handle).vtTour.isRunning())).toBe(false);
+});
+
+test("dropping a backward move's target shows the step after it without showing an earlier step first", async ({ page }) => {
+  await open(page);
+  await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => shownCount(page)).toBe(2);
+  await page.locator(".vt-popover-next-btn").click();
+  await expect.poll(() => shownCount(page)).toBe(3);
+  await page.evaluate(async () => {
+    const tour = (window as unknown as Handle).vtTour;
+    tour.stepById("two").on("will-show", () => tour.dropStep("two"));
+    await tour.backward();
+  });
+
+  await expect.poll(() => shownCount(page)).toBe(4);
+  await expect(title(page)).toHaveText("Three");
+  expect(await log(page)).toEqual(["shown:one", "shown:two", "shown:three", "shown:three"]);
+});
+
+test("exit() while a move is showing its target ends the tour with exited api", async ({ page }) => {
+  await open(page);
+  await page.evaluate(async () => {
+    const tour = (window as unknown as Handle & { vtTour: { exit(): Promise<boolean> } }).vtTour;
+    tour.stepById("two").on("will-show", () => void tour.exit());
+    await tour.forward();
+  });
+
+  await expect(popover(page)).toHaveCount(0);
+  expect(await log(page)).toEqual(["shown:one", "exited:api", "deactivated"]);
+});

@@ -635,12 +635,11 @@ Rules:
   replaces an older queued one). `exit()`/`finish()` abort any pending wait through an
   `AbortController`.
 - Dropping the target of a move once the engine has started moving to it (its `will-show` fired): the step gets
-  `disposed` with no `shown`. A forward move then shows the next eligible step after it. If none is left, the tour
-  finishes: `finished` fires on the step the move left (already hidden), or on no step when the move had none to leave.
-  A visible drop exits with reason `api` instead.
-  A backward move shows the nearest earlier eligible step first, and the queued resume then moves forward to the first
-  step after the dropped one. If no earlier step is eligible, the move exits with reason `api`. If the dropped step was
-  the first step, the move stays and the queued resume shows the first remaining eligible step.
+  `disposed` with no `shown`. The move, in either direction, then shows the first eligible step after the dropped one,
+  and no earlier step is shown first. If none is left, the tour exits with reason `api`: a drop never counts as
+  completion, so no `finished` fires and no `completedAt` is saved. `exited` fires on the step the move left (already
+  hidden), or on no step when the move had none to leave. If the dropped step was the first step, the first remaining
+  eligible step shows.
 - Dropping the target before the engine has started moving to it (its `prepare`, `revealWith` or wait is still
   pending): the step gets `disposed` only, and the move skips it as it continues.
 - `onDestroyStarted` receives reason `done` too (Done button, `driver.ts:197-199`); the layer

@@ -58,6 +58,7 @@ interface TourInternals {
   clearSanitized: () => void;
   spotlit: Map<Element, { wanted: string[]; added: string[] }>;
   spotlitStep: TourStep | null;
+  abandoned: WeakSet<TourStep>;
 }
 
 const internals = new WeakMap<object, TourInternals>();
@@ -111,6 +112,7 @@ export class Tour {
       clearSanitized,
       spotlit: new Map(),
       spotlitStep: null,
+      abandoned: new WeakSet(),
     };
     internals.set(this, state);
     if (normalized.progress && config.id === undefined && (typeof __DEV__ === "undefined" || __DEV__)) {
@@ -193,6 +195,7 @@ export class Tour {
     }
     const wasVisible = state.steps[state.currentIndex] === step;
     const wasTarget = state.anchorIndex === index && !wasVisible && state.waiter !== null;
+    if (wasTarget) state.abandoned.add(step);
     state.waits.get(step)?.abort();
     leaveStep(this, step);
     state.steps.splice(index, 1);
@@ -922,6 +925,10 @@ function advanceFrom(
     return chain(presentStep(tour, step, found.get(step) ?? null), (): NavigationOutcome | Promise<NavigationOutcome> => {
       if (!isLive(state, runId)) return { kind: "stay" };
       if (state.steps.includes(step)) return { kind: "show", index: state.steps.indexOf(step) };
+      if (state.abandoned.has(step)) {
+        const resumed = advanceFrom(tour, resumePoint(state, snapshot, outcome.index, "forward"), "forward", null, budget);
+        return chain(resumed, (o): NavigationOutcome => (o.kind === "finish" ? { kind: "exit" } : o));
+      }
       return advanceFrom(tour, resumePoint(state, snapshot, outcome.index, direction), direction, null, budget);
     });
   });
