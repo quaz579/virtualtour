@@ -16,7 +16,7 @@
 | `progressInfo()` | `{ index, total }`. `index` is 1-based and `0` when no step is on screen. `total` counts skipped steps. |
 | `stepById(id)` | The step or `undefined`. |
 | `appendStep(def, at?)` | Adds a step at the end, at a zero-based index, or before the step with the given id. Returns the `TourStep`. Throws `TourNavigationError` for a bad index, an unknown id or a duplicate id. |
-| `dropStep(ref)` | Removes a step by id or instance. An unknown reference does nothing. While running, a shown step is disposed at once and the tour moves to the step that now follows it, or exits without a prompt when none does. |
+| `dropStep(ref)` | Removes a step by id or instance. An unknown reference does nothing. While running, a shown step is disposed at once and the tour moves to the step that now follows it, or exits with reason `api` without a prompt when none does. The same holds when a move had begun showing the dropped step. A drop never finishes the tour. |
 | `start()` | Starts at the first step and resolves once it is shown. Does nothing when a run is active. Any other running tour exits with reason `replaced`. With `progress` it first loads the record; a finished tour emits `bypassed` instead of starting, and `resume` starts at the saved step. |
 | `forward()` | Next step, or finish after the last. On an unmet action step it nudges instead of moving, whoever calls it. No effect when no run is active. |
 | `backward()` | Previous step. Does nothing on the first step; exits when no earlier step is eligible. |
