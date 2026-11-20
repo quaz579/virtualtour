@@ -103,6 +103,7 @@ test.describe("react wrapper", () => {
   test("react: a move whose target is dropped with nothing after it exits with reason api", async ({ page }) => {
     await openReact(page, "?dropOnShow=three");
     await page.locator("#start").click();
+    await expect(stepState(page)).toHaveText("one");
     await page.locator("#hook-next").click();
     await expect(stepState(page)).toHaveText("two");
     await page.locator("#hook-next").click();
@@ -212,6 +213,7 @@ test.describe("vue wrapper", () => {
   test("vue: a move whose target is dropped with nothing after it exits with reason api", async ({ page }) => {
     await openVue(page, "?dropOnShow=three");
     await page.locator("#start").click();
+    await expect(stepState(page)).toHaveText("one");
     await page.locator("#hook-next").click();
     await expect(stepState(page)).toHaveText("two");
     await page.locator("#hook-next").click();

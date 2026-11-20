@@ -12,7 +12,7 @@ export interface TourProviderProps {
   children?: ReactNode;
 }
 
-/** What {@link useTour} returns. `isRunning` and `currentStep` update on the tour events started, step-shown, finished, exited and deactivated, and when the step on screen is dropped. `currentStep` is the last step the tour reported with `step-shown` (use `tour.currentStep` for the live value during a move): it keeps the previous step while a move is under way and changes only when the new step is shown, or to `null` when the run ends or that step is dropped. The methods are stable across renders. */
+/** What {@link useTour} returns. `isRunning` and `currentStep` update on the tour events started, step-shown, finished, exited and deactivated, and when the step on screen is dropped. `currentStep` is the last step the tour reported with `step-shown` (use `tour.currentStep` for the live value during a move): it keeps the previous step while a move is under way and changes only when the new step is shown, or to `null` when the run ends or that step is dropped. `hideCurrent()` leaves it unchanged. The methods are stable across renders. */
 export interface UseTourResult {
   tour: Tour;
   isRunning: boolean;

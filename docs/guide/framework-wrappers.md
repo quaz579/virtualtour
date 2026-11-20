@@ -27,7 +27,7 @@ Wrap the part of the tree that needs the tour in `TourProvider` and call `useTou
 | `currentStep` | The step last reported by `step-shown`, or `null`. |
 | `start()`, `forward()`, `backward()`, `exit()`, `finish()` | The tour's methods. `exit()` resolves to whether the tour exited. |
 
-`isRunning` and `currentStep` update on the tour events `started`, `step-shown`, `finished`, `exited` and `deactivated`, and when the step on screen is dropped with `dropStep()`. `currentStep` keeps the previous step while a move is under way and changes only when the next step is shown; it becomes `null` when the run ends or its step is dropped. Read `tour.currentStep` for the live value during a move.
+`isRunning` and `currentStep` update on the tour events `started`, `step-shown`, `finished`, `exited` and `deactivated`, and when the step on screen is dropped with `dropStep()`. `currentStep` keeps the previous step while a move is under way and changes only when the next step is shown; it becomes `null` when the run ends or its step is dropped. `hideCurrent()` leaves it unchanged. Read `tour.currentStep` for the live value during a move.
 
 ### Rebuild with a new key
 

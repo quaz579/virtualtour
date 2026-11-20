@@ -354,26 +354,38 @@ describe("currentStep during a move", () => {
   });
 });
 
-describe("tour started by a child before the provider mounts", () => {
-  it("reports the shown step", async () => {
+describe("a step dropped by an earlier step-shown listener", () => {
+  it("never becomes currentStep", async () => {
     const probe = probeOf();
-    const Starter = defineComponent({
+    const Dropper = defineComponent({
       setup() {
         const { tour } = useTour();
-        onMounted(() => void tour.start());
+        tour.on("step-shown", ({ step }) => tour.dropStep(step.id));
         return () => null;
       },
     });
     const container = document.createElement("div");
     document.body.appendChild(container);
     const Child = capture(probe);
+    const cfg = config({
+      steps: [
+        { id: "a", title: "A", body: "a" },
+        { id: "b", title: "B", body: "b", target: "#never-there", waitFor: 400 },
+      ],
+    });
     const app = createApp({
-      render: () => h(TourProvider, { config: config() }, { default: () => [h(Starter), h(Child)] }),
+      render: () => h(TourProvider, { config: cfg }, { default: () => [h(Dropper), h(Child)] }),
     });
     apps.push(app);
     app.mount(container);
-    await until(() => text() === "true:a");
-    expect(probe.latest.currentStep.value).toBe(probe.latest.tour.steps[0]);
+    await nextTick();
+    let seen: unknown = "unset";
+    probe.latest.tour.on("step-shown", () => {
+      seen = probe.latest.currentStep.value;
+    });
+    void probe.latest.start();
+    await until(() => seen !== "unset");
+    expect(seen).toBeNull();
   });
 });
 
