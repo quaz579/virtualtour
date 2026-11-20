@@ -112,7 +112,7 @@ Custom `buttons` take `text`, an optional `label`, `action`, and optional `disab
 | Method | What it does |
 |---|---|
 | `tour.appendStep(config, at?)` | Adds a step at the end, at a zero-based index, or before the step with the given id. Returns the step. Throws `TourNavigationError` for a bad index, an unknown id or a duplicate id. |
-| `tour.dropStep(idOrStep)` | Removes a step. If it was on screen, the tour moves to the step that followed it, or exits without a prompt when none did. An unknown reference does nothing. |
+| `tour.dropStep(idOrStep)` | Removes a step. If it was on screen, or a move had begun showing it, the tour shows the step that followed it, or exits with reason `api` without a prompt when none did. A drop never finishes the tour. An unknown reference does nothing. |
 | `step.configure(patch)` | Merges new options into a step. Title, body, label, buttons, classes and the close button update in place, with no events. Everything else, `target` and `position` included, applies the next time the step shows. |
 | `tour.stepById(id)` | Finds a step. |
 | `tour.goTo(ref?)` | Shows a step by index, id or instance. Starts the tour if it is not running. |

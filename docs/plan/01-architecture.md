@@ -641,7 +641,8 @@ Rules:
   hidden), or on no step when the move had none to leave. If the dropped step was the first step, the first remaining
   eligible step shows.
 - Dropping the target before the engine has started moving to it (its `prepare`, `revealWith` or wait is still
-  pending): the step gets `disposed` only, and the move skips it as it continues.
+  pending): the step gets `disposed` only, and the move skips it as it continues. If that leaves no step to show moving
+  forward, the tour exits with reason `api` instead of finishing.
 - `onDestroyStarted` receives reason `done` too (Done button, `driver.ts:197-199`); the layer
   never prompts for `done` or `replaced`.
 

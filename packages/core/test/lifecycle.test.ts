@@ -1187,6 +1187,51 @@ describe("lifecycle edge cases", () => {
     expect(wrapper()).toBeNull();
   });
 
+  it("dropStep of the last step while its prepare is pending exits with reason api", async () => {
+    let release: () => void = () => {};
+    const tour = make({
+      steps: [
+        { id: "a", title: "A" },
+        { id: "b", title: "B", prepare: () => new Promise<void>((resolve) => (release = resolve)) },
+      ],
+    });
+    await tour.start();
+    const exits: string[] = [];
+    const finished = vi.fn();
+    tour.on("exited", (p) => exits.push(p.reason));
+    tour.on("finished", finished);
+    const moving = tour.forward();
+    tour.dropStep("b");
+    release();
+    await moving;
+    await tick(30);
+
+    expect(exits).toEqual(["api"]);
+    expect(finished).not.toHaveBeenCalled();
+  });
+
+  it("dropStep of the last step while it waits for its target exits with reason api", async () => {
+    const tour = make({
+      steps: [
+        { id: "a", title: "A" },
+        { id: "b", title: "B", target: "#never", waitFor: 5000 },
+      ],
+    });
+    await tour.start();
+    const exits: string[] = [];
+    const finished = vi.fn();
+    tour.on("exited", (p) => exits.push(p.reason));
+    tour.on("finished", finished);
+    const moving = tour.forward();
+    await tick(20);
+    tour.dropStep("b");
+    await moving;
+    await tick(30);
+
+    expect(exits).toEqual(["api"]);
+    expect(finished).not.toHaveBeenCalled();
+  });
+
   it("goTo resolves its reference when it runs, not when it is called", async () => {
     const tour = make();
     await tour.start();

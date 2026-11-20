@@ -179,7 +179,8 @@ export class Tour {
 
   /**
    * Removes a step by id or instance; an unknown reference does nothing. While a run is active the step is disposed
-   * at once; if it was on screen the tour moves to the step that now follows it, or exits without a prompt when none does.
+   * at once; if it was on screen, or a move had begun showing it, the tour shows the step that now follows it, or exits
+   * with reason `api` without a prompt when none does. A drop never finishes the tour.
    */
   dropStep(ref: string | TourStep): void {
     const state = internalsOf(this);
@@ -920,7 +921,7 @@ function advanceFrom(
   );
   return chain(picked, (outcome) => {
     if (!isLive(state, runId)) return { kind: "stay" } as NavigationOutcome;
-    if (outcome.kind !== "show") return outcome;
+    if (outcome.kind !== "show") return outcome.kind === "finish" && snapshot.some((s) => !state.steps.includes(s)) ? { kind: "exit" } : outcome;
     const step = snapshot[outcome.index] as TourStep;
     return chain(presentStep(tour, step, found.get(step) ?? null), (): NavigationOutcome | Promise<NavigationOutcome> => {
       if (!isLive(state, runId)) return { kind: "stay" };
@@ -929,7 +930,8 @@ function advanceFrom(
         const resumed = advanceFrom(tour, resumePoint(state, snapshot, outcome.index, "forward"), "forward", null, budget);
         return chain(resumed, (o): NavigationOutcome => (o.kind === "finish" ? { kind: "exit" } : o));
       }
-      return advanceFrom(tour, resumePoint(state, snapshot, outcome.index, direction), direction, null, budget);
+      const next = advanceFrom(tour, resumePoint(state, snapshot, outcome.index, direction), direction, null, budget);
+      return chain(next, (o): NavigationOutcome => (o.kind === "finish" ? { kind: "exit" } : o));
     });
   });
 }
