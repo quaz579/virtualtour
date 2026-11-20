@@ -1,7 +1,6 @@
 {
   "name": "virtualtour",
-  "version": "0.0.0",
-  "private": true,
+  "version": "1.0.0",
   "description": "Guided tours and onboarding for the web, forked from driver.js.",
   "license": "MIT",
   "type": "module",

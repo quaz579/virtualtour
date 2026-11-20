@@ -1,7 +1,6 @@
 {
   "name": "virtualtour-vue",
-  "version": "0.0.0",
-  "private": true,
+  "version": "1.0.0",
   "description": "Vue provider and composable for virtualtour.",
   "license": "MIT",
   "type": "module",
@@ -23,7 +22,7 @@
     "test": "vitest run"
   },
   "peerDependencies": {
-    "virtualtour": "*",
+    "virtualtour": "^1.0.0",
     "vue": ">=3.3"
   },
   "devDependencies": {
