@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createTour, tours, TourEnvironmentError, TourNavigationError } from "../src/index";
+import { createTour, memoryStore, tours, TourEnvironmentError, TourNavigationError } from "../src/index";
 import type { Tour, TourStep } from "../src/index";
 import type { PopoverDOM } from "../src/engine/popover/popover";
 import { setCurrentTour } from "../src/registry";
@@ -1076,6 +1076,160 @@ describe("lifecycle edge cases", () => {
     expect(tour.currentStep?.id).toBe("c");
     expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
     expect(stepAttr()).toBe("1");
+  });
+
+  it("dropStep of the last step once a forward move began showing it exits with reason api and saves no completion", async () => {
+    const store = memoryStore();
+    const tour = make({ progress: { store }, id: "drop-last" });
+    await tour.start();
+    await tour.forward();
+    const log = record(tour);
+    tour.stepById("c")!.on("will-show", () => tour.dropStep("c"));
+    await tour.forward();
+    await tick(30);
+
+    expect(log).toEqual([
+      "b:will-hide",
+      "b:hidden",
+      "c:will-show",
+      "c:disposed",
+      "b:exited",
+      "tour:exited api",
+      "a:disposed",
+      "b:disposed",
+      "tour:deactivated",
+    ]);
+    expect(tour.isRunning()).toBe(false);
+    const saved = store.load("drop-last") as { completedAt?: string; exitedAt?: string };
+    expect(saved.completedAt).toBeUndefined();
+    expect(saved.exitedAt).toBeDefined();
+  });
+
+  it("dropStep of a forward move's target shows the step after it", async () => {
+    const tour = make({}, ["a", "b", "c", "d"]);
+    await tour.start();
+    const log = record(tour);
+    tour.stepById("b")!.on("will-show", () => tour.dropStep("b"));
+    await tour.forward();
+    await tick(30);
+
+    expect(log).toEqual(["a:will-hide", "a:hidden", "b:will-show", "b:disposed", "c:will-show", "c:shown", "tour:step-shown c a"]);
+    expect(tour.currentStep?.id).toBe("c");
+  });
+
+  it("dropStep of a backward move's target shows the step after it without showing an earlier step first", async () => {
+    const tour = make({}, ["a", "b", "c", "d"]);
+    await tour.start();
+    await tour.goTo("c");
+    const shown: string[] = [];
+    tour.on("step-shown", (p) => shown.push(p.step.id));
+    tour.stepById("b")!.on("will-show", () => tour.dropStep("b"));
+    await tour.backward();
+    await tick(30);
+
+    expect(shown).toEqual(["c"]);
+    expect(tour.steps.map((s) => s.id)).toEqual(["a", "c", "d"]);
+    expect(tour.currentStep?.id).toBe("c");
+    expect(document.querySelectorAll(".vt-popover")).toHaveLength(1);
+  });
+
+  it("dropStep of the first step as a backward move's target shows the first remaining step", async () => {
+    const tour = make({}, ["a", "b", "c"]);
+    await tour.start();
+    await tour.forward();
+    const shown: string[] = [];
+    tour.on("step-shown", (p) => shown.push(p.step.id));
+    tour.stepById("a")!.on("will-show", () => tour.dropStep("a"));
+    await tour.backward();
+    await tick(30);
+
+    expect(shown).toEqual(["b"]);
+    expect(tour.currentStep?.id).toBe("b");
+  });
+
+  it("dropStep of a backward move's target exits with reason api when no step follows it", async () => {
+    const tour = make({}, ["a", "b"]);
+    await tour.start();
+    await tour.forward();
+    const exits: string[] = [];
+    tour.on("exited", (p) => exits.push(p.reason));
+    tour.stepById("a")!.on("will-show", () => {
+      tour.dropStep("a");
+      tour.dropStep("b");
+    });
+    await tour.backward();
+    await tick(30);
+
+    expect(exits).toEqual(["api"]);
+    expect(tour.isRunning()).toBe(false);
+  });
+
+  it("exit() during a move fires exited on the step the move left, then disposes every step", async () => {
+    const tour = make();
+    await tour.start();
+    const log = record(tour);
+    tour.stepById("b")!.on("will-show", () => void tour.exit());
+    await tour.forward();
+    await tick(30);
+
+    expect(log).toEqual([
+      "a:will-hide",
+      "a:hidden",
+      "b:will-show",
+      "a:exited",
+      "tour:exited api",
+      "a:disposed",
+      "b:disposed",
+      "c:disposed",
+      "tour:deactivated",
+    ]);
+    expect(tour.isRunning()).toBe(false);
+    expect(wrapper()).toBeNull();
+  });
+
+  it("dropStep of the last step while its prepare is pending exits with reason api", async () => {
+    let release: () => void = () => {};
+    const tour = make({
+      steps: [
+        { id: "a", title: "A" },
+        { id: "b", title: "B", prepare: () => new Promise<void>((resolve) => (release = resolve)) },
+      ],
+    });
+    await tour.start();
+    const exits: string[] = [];
+    const finished = vi.fn();
+    tour.on("exited", (p) => exits.push(p.reason));
+    tour.on("finished", finished);
+    const moving = tour.forward();
+    tour.dropStep("b");
+    release();
+    await moving;
+    await tick(30);
+
+    expect(exits).toEqual(["api"]);
+    expect(finished).not.toHaveBeenCalled();
+  });
+
+  it("dropStep of the last step while it waits for its target exits with reason api", async () => {
+    const tour = make({
+      steps: [
+        { id: "a", title: "A" },
+        { id: "b", title: "B", target: "#never", waitFor: 5000 },
+      ],
+    });
+    await tour.start();
+    const exits: string[] = [];
+    const finished = vi.fn();
+    tour.on("exited", (p) => exits.push(p.reason));
+    tour.on("finished", finished);
+    const moving = tour.forward();
+    await tick(20);
+    tour.dropStep("b");
+    await moving;
+    await tick(30);
+
+    expect(exits).toEqual(["api"]);
+    expect(finished).not.toHaveBeenCalled();
   });
 
   it("goTo resolves its reference when it runs, not when it is called", async () => {
