@@ -1,20 +1,20 @@
 import { prefersReducedMotion } from "../engine/core/env";
-import { resolveRole } from "./pack";
 import type { NormalizedPack } from "./pack";
 import type { SpritePlayer } from "./player";
 
 /** Options for {@link IdleScheduler}. */
 export interface IdleSchedulerOptions {
-  /** Milliseconds of quiet before an idle animation plays. Default 6000; values below 50 count as 50, and zero or negative values use the default. */
+  /** Milliseconds of quiet before an idle animation plays. Default 6000; values below 50 count as 50, values above 2147483647 are capped there, and zero or negative values use the default. */
   quietMs?: number;
   /** Read each time the scheduler arms and fires; defaults to the library-wide `prefers-reduced-motion` check. */
   reducedMotion?: () => boolean;
-  /** Random source for picking an idle animation; defaults to `Math.random`. */
-  random?: () => number;
 }
+
+declare const __DEV__: boolean | undefined;
 
 const DEFAULT_QUIET_MS = 6000;
 const MIN_QUIET_MS = 50;
+const MAX_QUIET_MS = 2147483647;
 
 /**
  * Plays a random `idle` animation after a quiet period, then returns the avatar to `rest` and waits again. It never
@@ -26,26 +26,23 @@ export class IdleScheduler {
   private readonly pack: NormalizedPack;
   private readonly quietMs: number;
   private readonly reducedMotion: () => boolean;
-  private readonly random: () => number;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private token = 0;
   private playing = false;
-  private last: string | undefined;
 
   constructor(player: SpritePlayer, pack: NormalizedPack, opts: IdleSchedulerOptions = {}) {
     this.player = player;
     this.pack = pack;
     const quiet = opts.quietMs;
-    this.quietMs = typeof quiet === "number" && Number.isFinite(quiet) && quiet > 0 ? Math.max(quiet, MIN_QUIET_MS) : DEFAULT_QUIET_MS;
+    this.quietMs = typeof quiet === "number" && Number.isFinite(quiet) && quiet > 0 ? Math.min(Math.max(quiet, MIN_QUIET_MS), MAX_QUIET_MS) : DEFAULT_QUIET_MS;
     this.reducedMotion = opts.reducedMotion ?? prefersReducedMotion;
-    this.random = opts.random ?? Math.random;
   }
 
   /** Starts the quiet period, replacing one that is already running. Does nothing under reduced motion. */
   arm(): void {
     this.disarm();
     const idle = this.pack.roles.idle;
-    if (idle === undefined || (Array.isArray(idle) && idle.length === 0) || this.reducedMotion()) return;
+    if (idle === undefined || (Array.isArray(idle) && idle.length === 0) || this.reducedMotion() || this.player.isDisposed) return;
     const token = this.token;
     this.timer = setTimeout(() => {
       this.timer = null;
@@ -65,21 +62,19 @@ export class IdleScheduler {
   }
 
   private fire(token: number): void {
-    if (token !== this.token || this.reducedMotion()) return;
-    const name = resolveRole(this.pack, "idle", undefined, this.last, this.random);
-    this.last = name;
+    if (token !== this.token || this.reducedMotion() || this.player.isDisposed) return;
     this.playing = true;
-    this.player.play(name, { loop: false }).then(
+    this.player.playRole("idle", undefined, { loop: false }).then(
       () => {
         if (token !== this.token) return;
         this.playing = false;
         this.player.stop();
         this.arm();
       },
-      () => {
+      (error: unknown) => {
         if (token !== this.token) return;
         this.playing = false;
-        this.arm();
+        if (typeof __DEV__ === "undefined" || __DEV__) console.warn("[virtualtour] Avatar idle animation failed; idle is paused until the avatar next comes to rest.", error);
       },
     );
   }

@@ -77,9 +77,9 @@ function scheduler(options: { quietMs?: number; random?: () => number; avatarPac
   const avatarPack = options.avatarPack ?? pack();
   const el = document.createElement("div");
   document.body.append(el);
-  const player = new SpritePlayer(avatarPack, el, { reducedMotion: () => reduced });
+  const player = new SpritePlayer(avatarPack, el, { reducedMotion: () => reduced, ...(options.random ? { random: options.random } : {}) });
   players.push(player);
-  const idle = new IdleScheduler(player, avatarPack, { quietMs: options.quietMs ?? 300, reducedMotion: () => reduced, ...(options.random ? { random: options.random } : {}) });
+  const idle = new IdleScheduler(player, avatarPack, { quietMs: options.quietMs ?? 300, reducedMotion: () => reduced });
   schedulers.push(idle);
   return { idle, player, name: () => el.getAttribute("data-vt-anim") };
 }
@@ -251,6 +251,102 @@ function make(steps: StepConfig[], options: AvatarOptions = {}, avatarPack = pac
   return tour;
 }
 
+describe("IdleScheduler edge cases", () => {
+  it("shares the last-idle memory with SpritePlayer.playRole", async () => {
+    const { idle, player, name } = scheduler({ quietMs: 50, random: () => 0 });
+    void player.playRole("idle");
+    expect(name()).toBe("blink");
+    player.stop();
+    idle.arm();
+    await run(50);
+    expect(name()).toBe("wobble");
+  });
+
+  it("warns once and stays disarmed when the idle play is rejected", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const stub = {
+      isDisposed: false,
+      playRole: vi.fn(() => Promise.reject(new Error("nope"))),
+      play: vi.fn(() => Promise.reject(new Error("nope"))),
+      stop: vi.fn(),
+    };
+    const idle = new IdleScheduler(stub as unknown as SpritePlayer, pack(), { quietMs: 50, reducedMotion: () => false });
+    schedulers.push(idle);
+    idle.arm();
+    await run(50);
+    await run(500);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain("[virtualtour]");
+    expect(vi.getTimerCount()).toBe(0);
+    expect(stub.playRole.mock.calls.length + stub.play.mock.calls.length).toBe(1);
+  });
+
+  it("does not arm for a disposed player", async () => {
+    const { idle, player } = scheduler({ quietMs: 50 });
+    player.dispose();
+    idle.arm();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("stops the timer loop when the player is disposed during the quiet period", async () => {
+    const { idle, player } = scheduler({ quietMs: 50 });
+    idle.arm();
+    player.dispose();
+    await run(50);
+    await run(500);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("stops the timer loop when the player is disposed during an idle animation", async () => {
+    const { idle, player } = scheduler({ quietMs: 50 });
+    idle.arm();
+    await run(50);
+    player.dispose();
+    await run(500);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([[0], [-1], [Number.NaN], [Number.POSITIVE_INFINITY]])("uses the default quiet period for %s", async (quietMs) => {
+    const { idle, name } = scheduler({ quietMs });
+    idle.arm();
+    await run(5999);
+    expect(name()).toBe("rest");
+    await run(1);
+    expect(name()).not.toBe("rest");
+  });
+
+  it.each([[49], [50]])("treats %s ms as 50", async (quietMs) => {
+    const { idle, name } = scheduler({ quietMs });
+    idle.arm();
+    await run(49);
+    expect(name()).toBe("rest");
+    await run(1);
+    expect(name()).not.toBe("rest");
+  });
+
+  it("does not fire immediately for a quiet period beyond the timer limit", async () => {
+    const { idle, name } = scheduler({ quietMs: 1e12 });
+    idle.arm();
+    await run(1000);
+    expect(name()).toBe("rest");
+  });
+
+  it("rejects an empty idle array at validation, so the scheduler never sees one", () => {
+    expect(() => pack({ roles: { rest: "rest", idle: [] } })).toThrow(/roles\.idle/);
+  });
+
+  it("goes quiet when reduced motion turns on during an idle animation", async () => {
+    const { idle, name } = scheduler({ quietMs: 50, avatarPack: pack({ roles: { rest: "rest", idle: "look" } }) });
+    idle.arm();
+    await run(50);
+    reduced = true;
+    await run(100);
+    expect(name()).toBe("rest");
+    await run(500);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
 describe("idle loop in the avatar presenter", () => {
   it("does not interrupt the step animation, and arms only after it ends", async () => {
     const tour = make([plain], { idleQuietMs: 50 });
@@ -298,6 +394,25 @@ describe("idle loop in the avatar presenter", () => {
     const play = vi.spyOn(SpritePlayer.prototype, "play");
     await run(2000);
     expect(play).not.toHaveBeenCalled();
+  });
+
+  it("returns to rest and stays quiet when the tour ends during an idle animation", async () => {
+    const tour = make([restStep("q")], { idleQuietMs: 50 });
+    await tour.start();
+    await run(50);
+    expect(IDLE).toContain(anim());
+    tour.finish();
+    await run(2000);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("returns to rest when the step is left during an idle animation", async () => {
+    const tour = make([restStep("r"), second], { idleQuietMs: 50 });
+    await tour.start();
+    await run(50);
+    expect(IDLE).toContain(anim());
+    await tour.forward();
+    expect(IDLE).not.toContain(anim());
   });
 
   it("is off when idle is false", async () => {
