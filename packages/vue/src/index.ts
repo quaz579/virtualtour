@@ -3,7 +3,7 @@ import type { InjectionKey, PropType, Ref, VNode } from "vue";
 import { createTour } from "virtualtour";
 import type { Tour, TourConfig, TourStep } from "virtualtour";
 
-/** What {@link useTour} returns. `isRunning` and `currentStep` are readonly refs; the methods are stable. `currentStep` is the last step the tour reported with `step-shown`: it keeps the previous step while a move is under way and changes only when the new step is shown, or to `null` when the run ends or that step is dropped. */
+/** What {@link useTour} returns. `isRunning` and `currentStep` are readonly refs; the methods are stable. `currentStep` is the last step the tour reported with `step-shown` (use `tour.currentStep` for the live value during a move): it keeps the previous step while a move is under way and changes only when the new step is shown, or to `null` when the run ends or that step is dropped. */
 export interface UseTourResult {
   tour: Tour;
   isRunning: Readonly<Ref<boolean>>;
@@ -117,6 +117,8 @@ export const TourProvider = defineComponent({
         ),
       ];
       sync();
+      const current = tour.currentStep;
+      if (current?.isShown()) setShown(current);
       if (props.autoStart && !tour.isRunning()) {
         value.start().catch((error: unknown) => {
           console.error("[virtualtour-vue] autoStart failed:", error);

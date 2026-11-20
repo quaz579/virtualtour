@@ -241,7 +241,7 @@ describe("steps dropped mid-tour", () => {
     }) as never);
     await act(async () => probe.latest.forward());
     await act(async () => probe.latest.backward());
-    act(() => root.unmount());
+    await act(async () => root.unmount());
     roots.splice(roots.indexOf(root), 1);
     expect(on).toHaveBeenCalled();
     expect(added.length).toBeGreaterThan(0);
@@ -309,13 +309,16 @@ describe("currentStep during a move", () => {
     expect(reasons).toEqual(["api"]);
   });
 
-  it("reports null once the visible step is dropped with nothing after it", async () => {
+  it("reports null and exits with reason api once the visible step is dropped with nothing after it", async () => {
     const probe = probeOf();
     await mount(<Host probe={probe} extra={{ steps: steps("a") }} />);
     await act(async () => probe.latest.start());
     expect(text()).toBe("true:a");
+    const reasons: string[] = [];
+    probe.latest.tour.on("exited", (e) => reasons.push(e.reason));
     await act(async () => probe.latest.tour.dropStep("a"));
     await until(() => text() === "false:none");
+    expect(reasons).toEqual(["api"]);
   });
 });
 

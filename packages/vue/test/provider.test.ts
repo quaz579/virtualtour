@@ -341,13 +341,39 @@ describe("currentStep during a move", () => {
     expect(reasons).toEqual(["api"]);
   });
 
-  it("reports null once the visible step is dropped with nothing after it", async () => {
+  it("reports null and exits with reason api once the visible step is dropped with nothing after it", async () => {
     const probe = probeOf();
     await mount(probe, config({ steps: steps("a") }));
     await probe.latest.start();
     await nextTick();
+    const reasons: string[] = [];
+    probe.latest.tour.on("exited", (e) => reasons.push(e.reason));
     probe.latest.tour.dropStep("a");
     await until(() => text() === "false:none");
+    expect(reasons).toEqual(["api"]);
+  });
+});
+
+describe("tour started by a child before the provider mounts", () => {
+  it("reports the shown step", async () => {
+    const probe = probeOf();
+    const Starter = defineComponent({
+      setup() {
+        const { tour } = useTour();
+        onMounted(() => void tour.start());
+        return () => null;
+      },
+    });
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const Child = capture(probe);
+    const app = createApp({
+      render: () => h(TourProvider, { config: config() }, { default: () => [h(Starter), h(Child)] }),
+    });
+    apps.push(app);
+    app.mount(container);
+    await until(() => text() === "true:a");
+    expect(probe.latest.currentStep.value).toBe(probe.latest.tour.steps[0]);
   });
 });
 

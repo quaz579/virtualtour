@@ -12,7 +12,7 @@ export interface TourProviderProps {
   children?: ReactNode;
 }
 
-/** What {@link useTour} returns. `isRunning` and `currentStep` update on the tour events started, step-shown, finished, exited and deactivated, and when the step on screen is dropped. `currentStep` is the last step the tour reported with `step-shown`: it keeps the previous step while a move is under way and changes only when the new step is shown, or to `null` when the run ends or that step is dropped. The methods are stable across renders. */
+/** What {@link useTour} returns. `isRunning` and `currentStep` update on the tour events started, step-shown, finished, exited and deactivated, and when the step on screen is dropped. `currentStep` is the last step the tour reported with `step-shown` (use `tour.currentStep` for the live value during a move): it keeps the previous step while a move is under way and changes only when the new step is shown, or to `null` when the run ends or that step is dropped. The methods are stable across renders. */
 export interface UseTourResult {
   tour: Tour;
   isRunning: boolean;
@@ -34,6 +34,7 @@ interface TourStore {
   disposed: boolean;
   disposePending: boolean;
   shown: TourStep | null;
+  releaseShown(): void;
   released: Promise<boolean>;
   releasePrompts(): void;
   arm(): void;
@@ -72,6 +73,7 @@ function createStore(config: TourConfig): TourStore {
     disposed: false,
     disposePending: false,
     shown: null,
+    releaseShown: () => {},
     snapshot: { isRunning: false, currentStep: null },
     getSnapshot() {
       const isRunning = tour.isRunning();
@@ -109,6 +111,7 @@ function createStore(config: TourConfig): TourStore {
     },
     dispose() {
       store.disposed = true;
+      store.releaseShown();
       exitWithoutPrompt(store);
     },
     actions: {
@@ -120,11 +123,22 @@ function createStore(config: TourConfig): TourStore {
     },
   };
   store.arm();
+  let offShownDisposed = (): void => {};
+  store.releaseShown = () => {
+    offShownDisposed();
+    offShownDisposed = () => {};
+  };
   tour.on("step-shown", ({ step }) => {
+    offShownDisposed();
     store.shown = step;
+    offShownDisposed = step.on("disposed", () => {
+      if (store.shown === step) store.shown = null;
+    });
   });
   for (const event of ["started", "finished", "exited", "deactivated"] as const) {
     tour.on(event, () => {
+      offShownDisposed();
+      offShownDisposed = () => {};
       store.shown = null;
     });
   }
