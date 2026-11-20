@@ -1,4 +1,4 @@
-import { createApp, defineComponent, h, ref } from "vue";
+import { createApp, defineComponent, h, onBeforeUnmount, ref } from "vue";
 import { TourProvider, useTour } from "../../packages/vue/src/index";
 
 const config = {
@@ -14,6 +14,11 @@ const config = {
 const Controls = defineComponent({
   setup() {
     const { tour, isRunning, currentStep, start, forward, backward, exit } = useTour();
+    const dropOnShow = new URLSearchParams(location.search).get("dropOnShow");
+    const offs = [tour.on("exited", (e) => (document.documentElement.dataset["exitReason"] = e.reason))];
+    const target = dropOnShow ? tour.stepById(dropOnShow) : undefined;
+    if (dropOnShow && target) offs.push(target.on("will-show", () => tour.dropStep(dropOnShow)));
+    onBeforeUnmount(() => offs.forEach((off) => off()));
     return () =>
       h("div", { class: "demo-container" }, [
         h("h1", "VirtualTour Vue fixture"),

@@ -3,7 +3,7 @@ import type { InjectionKey, PropType, Ref, VNode } from "vue";
 import { createTour } from "virtualtour";
 import type { Tour, TourConfig, TourStep } from "virtualtour";
 
-/** What {@link useTour} returns. `isRunning` and `currentStep` are readonly refs; the methods are stable. */
+/** What {@link useTour} returns. `isRunning` and `currentStep` are readonly refs; the methods are stable. `currentStep` is the last step the tour reported with `step-shown` (use `tour.currentStep` for the live value during a move): it keeps the previous step while a move is under way and changes only when the new step is shown, or to `null` when the run ends or that step is dropped. `hideCurrent()` leaves it unchanged. */
 export interface UseTourResult {
   tour: Tour;
   isRunning: Readonly<Ref<boolean>>;
@@ -15,7 +15,6 @@ export interface UseTourResult {
   finish(): void;
 }
 
-const watched = ["started", "step-shown", "finished", "exited", "deactivated"] as const;
 const key: InjectionKey<UseTourResult> = Symbol("virtualtour-vue");
 
 interface Gate {
@@ -61,17 +60,21 @@ export const TourProvider = defineComponent({
     const running = shallowRef(false);
     const step = shallowRef<TourStep | null>(null);
     let offs: Array<() => void> = [];
-    let tracked: TourStep | null = null;
     let offStep = (): void => {};
+
+    const setShown = (next: TourStep | null): void => {
+      if (step.value === next) return;
+      offStep();
+      step.value = next;
+      offStep = next
+        ? next.on("disposed", () => {
+            if (step.value === next) setShown(null);
+          })
+        : () => {};
+    };
 
     const sync = (): void => {
       running.value = tour.isRunning();
-      const current = tour.currentStep;
-      step.value = current;
-      if (current === tracked) return;
-      offStep();
-      tracked = current;
-      offStep = current ? current.on("disposed", sync) : () => {};
     };
 
     const exitWithoutPrompt = (): void => {
@@ -101,7 +104,18 @@ export const TourProvider = defineComponent({
     provide(key, value);
 
     onMounted(() => {
-      offs = watched.map((event) => tour.on(event, sync));
+      offs = [
+        tour.on("step-shown", ({ step: shown }) => {
+          if (shown.isShown()) setShown(shown);
+          sync();
+        }),
+        ...(["started", "finished", "exited", "deactivated"] as const).map((event) =>
+          tour.on(event, () => {
+            setShown(null);
+            sync();
+          }),
+        ),
+      ];
       sync();
       if (props.autoStart && !tour.isRunning()) {
         value.start().catch((error: unknown) => {
@@ -116,7 +130,6 @@ export const TourProvider = defineComponent({
       offs = [];
       offStep();
       offStep = () => {};
-      tracked = null;
       exitWithoutPrompt();
     });
 

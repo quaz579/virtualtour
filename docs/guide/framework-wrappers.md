@@ -24,10 +24,10 @@ Wrap the part of the tree that needs the tour in `TourProvider` and call `useTou
 |---|---|
 | `tour` | The `Tour` object. |
 | `isRunning` | Whether a run is active. |
-| `currentStep` | The `TourStep` on screen, or `null`. |
+| `currentStep` | The step last reported by `step-shown`, or `null`. |
 | `start()`, `forward()`, `backward()`, `exit()`, `finish()` | The tour's methods. `exit()` resolves to whether the tour exited. |
 
-`isRunning` and `currentStep` update on the tour events `started`, `step-shown`, `finished`, `exited` and `deactivated`, and when the step on screen is dropped with `dropStep()`.
+`isRunning` and `currentStep` update on the tour events `started`, `step-shown`, `finished`, `exited` and `deactivated`, and when the step on screen is dropped with `dropStep()`. `currentStep` keeps the previous step while a move is under way and changes only when the next step is shown; it becomes `null` when the run ends or its step is dropped. `hideCurrent()` leaves it unchanged. Read `tour.currentStep` for the live value during a move.
 
 ### Rebuild with a new key
 
@@ -59,7 +59,7 @@ If the config has a string `exitPrompt`, the provider replaces it with an async 
 |---|---|
 | `tour` | The `Tour` object. |
 | `isRunning` | A readonly ref of whether a run is active. |
-| `currentStep` | A readonly ref of the `TourStep` on screen, or `null`. |
+| `currentStep` | A readonly ref of the step last reported by `step-shown`, or `null`. |
 | `start()`, `forward()`, `backward()`, `exit()`, `finish()` | The tour's methods. |
 
 The refs update on the same events as in React, including when the step on screen is dropped. The provider subscribes after mount, so on the server they hold their initial values.

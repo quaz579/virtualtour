@@ -285,7 +285,145 @@ describe("steps dropped mid-tour", () => {
   });
 });
 
+describe("currentStep during a move", () => {
+  function movable(...ids: string[]): TourConfig {
+    const target = document.createElement("div");
+    target.id = "move-target";
+    document.body.appendChild(target);
+    return config({
+      steps: ids.map((id) => ({ id, title: id.toUpperCase(), body: id, ...(id === "b" ? { target: "#move-target" } : {}) })),
+    });
+  }
+
+  it("keeps the previous step until the next one is shown", async () => {
+    const probe = probeOf();
+    await mount(probe, movable("a", "b", "c"));
+    await probe.latest.start();
+    await nextTick();
+    const seen: Array<string | undefined> = [];
+    const tour = probe.latest.tour;
+    tour.steps[1]!.on("will-show", () => {
+      seen.push(tour.currentStep?.id);
+      seen.push(probe.latest.currentStep.value?.id);
+    });
+    tour.steps[1]!.on("hidden", () => seen.push(probe.latest.currentStep.value?.id));
+    await probe.latest.forward();
+    await nextTick();
+    expect(seen).toEqual([undefined, "a"]);
+    expect(text()).toBe("true:b");
+  });
+
+  it("keeps the previous step through steps-changed, then moves on when the target is dropped", async () => {
+    const probe = probeOf();
+    await mount(probe, movable("a", "b", "c"));
+    await probe.latest.start();
+    const tour = probe.latest.tour;
+    let during: string | undefined;
+    tour.steps[1]!.on("will-show", () => {
+      tour.appendStep({ id: "d", title: "D", body: "d" });
+      during = probe.latest.currentStep.value?.id;
+      tour.dropStep("b");
+    });
+    void probe.latest.forward();
+    await until(() => text() === "true:c");
+    expect(during).toBe("a");
+  });
+
+  it("ends the run when the move target is dropped and nothing follows it", async () => {
+    const probe = probeOf();
+    await mount(probe, movable("a", "b"));
+    await probe.latest.start();
+    const reasons: string[] = [];
+    probe.latest.tour.on("exited", (p) => reasons.push(p.reason));
+    probe.latest.tour.steps[1]!.on("will-show", () => probe.latest.tour.dropStep("b"));
+    void probe.latest.forward();
+    await until(() => text() === "false:none");
+    expect(reasons).toEqual(["api"]);
+  });
+
+  it("reports null and exits with reason api once the visible step is dropped with nothing after it", async () => {
+    const probe = probeOf();
+    await mount(probe, config({ steps: steps("a") }));
+    await probe.latest.start();
+    await nextTick();
+    const reasons: string[] = [];
+    probe.latest.tour.on("exited", (e) => reasons.push(e.reason));
+    probe.latest.tour.dropStep("a");
+    await until(() => text() === "false:none");
+    expect(reasons).toEqual(["api"]);
+  });
+});
+
+describe("a step dropped by an earlier step-shown listener", () => {
+  it("never becomes currentStep", async () => {
+    const probe = probeOf();
+    const Dropper = defineComponent({
+      setup() {
+        const { tour } = useTour();
+        tour.on("step-shown", ({ step }) => tour.dropStep(step.id));
+        return () => null;
+      },
+    });
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const Child = capture(probe);
+    const cfg = config({
+      steps: [
+        { id: "a", title: "A", body: "a" },
+        { id: "b", title: "B", body: "b", target: "#never-there", waitFor: 400 },
+      ],
+    });
+    const app = createApp({
+      render: () => h(TourProvider, { config: cfg }, { default: () => [h(Dropper), h(Child)] }),
+    });
+    apps.push(app);
+    app.mount(container);
+    await nextTick();
+    let seen: unknown = "unset";
+    probe.latest.tour.on("step-shown", () => {
+      seen = probe.latest.currentStep.value;
+    });
+    void probe.latest.start();
+    await until(() => seen !== "unset");
+    expect(seen).toBeNull();
+  });
+});
+
 describe("unmount", () => {
+  it("mid-tour: exits without a prompt and detaches every listener it added", async () => {
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    const probe = probeOf();
+    const mounted = await mount(probe, config({ exitPrompt: "Leave?" }));
+    await probe.latest.start();
+    const tour = probe.latest.tour;
+    const target = tour.steps[1]!;
+    const offs: Array<ReturnType<typeof vi.fn>> = [];
+    const original = target.on.bind(target) as (event: string, fn: never) => () => void;
+    vi.spyOn(target, "on").mockImplementation(((event: string, fn: never) => {
+      const off = vi.fn(original(event, fn));
+      offs.push(off);
+      return off;
+    }) as never);
+    await probe.latest.forward();
+    await nextTick();
+    expect(text()).toBe("true:b");
+    const step = probe.latest.currentStep.value!;
+    const reasons: string[] = [];
+    tour.on("exited", (p) => reasons.push(p.reason));
+
+    mounted.unmount();
+    await flush();
+
+    expect(tour.isRunning()).toBe(false);
+    expect(reasons).toEqual(["api"]);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(live.get(tour)).toBe(2);
+    expect(offs.length).toBeGreaterThan(0);
+    for (const off of offs) expect(off).toHaveBeenCalled();
+    expect(probe.latest.currentStep.value).toBe(step);
+  });
+
   it("exits a running tour without asking the exit prompt", async () => {
     const confirm = vi.fn(() => false);
     vi.stubGlobal("confirm", confirm);
