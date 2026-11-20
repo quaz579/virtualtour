@@ -137,6 +137,10 @@ export function mergeStepConfig(base: Partial<StepConfig>, patch: Partial<StepCo
   return out as StepConfig;
 }
 
+function ownValue(source: Record<string, unknown> | undefined, key: string): unknown {
+  return source && Object.prototype.hasOwnProperty.call(source, key) ? source[key] : undefined;
+}
+
 function plainOrUndefined(value: unknown): Record<string, unknown> | undefined {
   return isPlainObject(value) ? value : undefined;
 }
@@ -154,7 +158,7 @@ function applyClearingPatch(
   for (const [key, value] of Object.entries(patch)) {
     if (value === undefined || UNSAFE_KEYS.has(key)) continue;
     if (value === null) {
-      const fallback = defaults?.[key];
+      const fallback = ownValue(defaults, key);
       if (fallback === undefined) delete out[key];
       else out[key] = cloneValue(fallback);
       continue;
@@ -162,17 +166,12 @@ function applyClearingPatch(
     const current = out[key];
     out[key] =
       nested(key) && isPlainObject(value)
-        ? applyClearingPatch(isPlainObject(current) ? current : {}, value, plainOrUndefined(defaults?.[key]), () => true)
+        ? applyClearingPatch(isPlainObject(current) ? current : {}, value, plainOrUndefined(ownValue(defaults, key)), () => true)
         : cloneValue(value);
   }
   return out;
 }
 
-/**
- * Merges a patch over a step configuration the way {@link mergeStepConfig} does, except that `null` clears: the key
- * returns to its value in `defaults`, or is removed when `defaults` has none. Inside `position`, `spotlight`,
- * `closeButton` and `extensions` a `null` clears just that key. `id` is never changed.
- */
 export function patchStepConfig(
   base: Partial<StepConfig>,
   patch: StepConfigPatch,

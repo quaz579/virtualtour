@@ -25,7 +25,6 @@ export function setConfiguredHook(hook: (step: TourStep) => void): void {
   onConfigured = hook;
 }
 
-/** Records the tour's step defaults, which a `null` in {@link TourStep.configure} restores. Internal. */
 export function setStepDefaults(step: TourStep, defaults: StepConfig): void {
   stateOf(step).defaults = defaults;
 }

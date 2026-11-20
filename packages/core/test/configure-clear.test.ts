@@ -97,6 +97,12 @@ describe("patchStepConfig", () => {
     expect(base).toEqual({ id: "a", title: "T", position: { flip: false } });
   });
 
+  it("never takes a fallback from the prototype of defaults", () => {
+    const out = patchStepConfig({}, { toString: null, valueOf: null } as never, {});
+    expect(Object.keys(out)).toEqual([]);
+    expect(Object.prototype.hasOwnProperty.call(out, "toString")).toBe(false);
+  });
+
   it("drops unsafe keys", () => {
     const patch = JSON.parse('{"position":{"__proto__":{"polluted":true}}}');
     patchStepConfig({ position: { flip: true } }, patch, {});
@@ -171,6 +177,25 @@ describe("TourStep.configure with null", () => {
     tour.stepById("a")!.configure({ instruction: null });
     expect(row().style.display).toBe("none");
     expect(tour.stepById("a")!.config.instruction).toBeUndefined();
+  });
+
+  it("clearing an instruction on a shown action step un-gates it, so Next moves on", async () => {
+    const tour = make({ steps: [{ id: "a", title: "A", instruction: "Do it" }, { id: "b", title: "B" }, { id: "c", title: "C" }] });
+    await tour.start();
+    const next = () => wrapper().querySelector<HTMLElement>(".vt-popover-next-btn")!;
+    expect(next().getAttribute("aria-disabled")).toBe("true");
+    tour.stepById("a")!.configure({ instruction: null });
+    expect(next().getAttribute("aria-disabled")).toBeNull();
+    next().click();
+    await vi.waitFor(() => expect(tour.currentStep?.id).toBe("b"));
+  });
+
+  it("clearing an instruction lets forward() leave the step", async () => {
+    const tour = make({ steps: [{ id: "a", title: "A", instruction: "Do it" }, { id: "b", title: "B" }] });
+    await tour.start();
+    tour.stepById("a")!.configure({ instruction: null });
+    await tour.forward();
+    expect(tour.currentStep?.id).toBe("b");
   });
 
   it("clears hooks so the next navigation no longer calls them", async () => {

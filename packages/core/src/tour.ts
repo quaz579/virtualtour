@@ -598,10 +598,10 @@ function refreshShownStep(step: TourStep): void {
     closeBtnLabel: popover.closeBtnLabel ?? state.normalized.labels.close,
   };
   if (popover.showButtons !== undefined) patch.showButtons = popover.showButtons;
-  if (popover.instruction !== undefined) patch.instruction = popover.instruction;
-  else {
-    const active = shown.engine.getState("__activation");
-    if (active?.step?.popover?.instruction || active?.popoverPatch?.instruction) patch.instruction = "";
+  patch.instruction = popover.instruction ?? "";
+  if (popover.instruction === undefined) {
+    const active = shown.engine.getState("__activation")?.step;
+    if (active?.popover?.instruction) delete active.popover.instruction;
   }
   const text = typeof state.normalized.counter === "function" ? popover.progressText : counterText(tour);
   if (text !== undefined) patch.progressText = text;
