@@ -21,6 +21,8 @@ const attached = new WeakMap<Tour, { count: number; detach: () => void; rearm: (
 
 const GLIDE_CLASS = "vt-glide";
 const DIALOG_CLASS = "vt-dialog";
+const POPOVER_CLASS = "vt-popover";
+const STEP_ATTR = "data-vt-step";
 const FADE_ATTR = "data-vt-fade";
 const DUMMY_ID = "vt-dummy-element";
 
@@ -62,8 +64,9 @@ function attach(tour: Tour, options: GlideOptions): { detach: () => void; rearm:
   const durationMs = options.durationMs ?? 250;
   const easing = options.easing ?? "cubic-bezier(.2,.8,.2,1)";
   let departure: Departure | null = null;
-  let running: { animation: Animation } | null = null;
+  let running: { animation: Animation; element: Element } | null = null;
   let stopHide: (() => void) | null = null;
+  let observer: MutationObserver | null = null;
 
   const settle = (): void => {
     if (!running) return;
@@ -72,33 +75,17 @@ function attach(tour: Tour, options: GlideOptions): { detach: () => void; rearm:
     animation.cancel();
   };
 
-  const watch = (step: TourStep): void => {
-    stopHide?.();
-    stopHide = step.once("will-hide", () => {
-      stopHide = null;
-      const element = step.element;
-      if (!element?.isConnected) {
-        departure = null;
-        return;
-      }
-      const rect = element.getBoundingClientRect();
-      departure = {
-        step,
-        left: rect.left,
-        top: rect.top,
-        centered: isCentered(step),
-        dialog: element.classList.contains(DIALOG_CLASS),
-      };
-    });
+  const disarm = (): void => {
+    observer?.disconnect();
+    observer = null;
   };
 
-  const onShown = ({ step, previous }: { step: TourStep; previous: TourStep | null }): void => {
-    settle();
+  const begin = (step: TourStep, element: HTMLElement): void => {
     const from = departure;
     departure = null;
-    watch(step);
-    const element = step.element;
-    if (!from || !previous || from.step !== previous || !element) return;
+    disarm();
+    if (!from || from.step === step) return;
+    settle();
     if (typeof element.animate !== "function") return;
     if (prefersReducedMotion() || !document.body.hasAttribute(FADE_ATTR)) return;
     if (from.centered !== isCentered(step) || from.dialog !== element.classList.contains(DIALOG_CLASS)) return;
@@ -124,10 +111,62 @@ function attach(tour: Tour, options: GlideOptions): { detach: () => void; rearm:
       [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0px, 0px)" }],
       { duration: durationMs, easing },
     );
-    running = { animation };
+    running = { animation, element };
     animation.addEventListener("finish", () => {
       if (running?.animation === animation) running = null;
     });
+  };
+
+  const arm = (): void => {
+    disarm();
+    if (typeof MutationObserver !== "function") return;
+    observer = new MutationObserver((records) => {
+      for (const { addedNodes } of records) {
+        for (const node of addedNodes) {
+          if (!(node instanceof HTMLElement)) continue;
+          const element = node.classList.contains(POPOVER_CLASS) ? node : node.querySelector<HTMLElement>(`.${POPOVER_CLASS}`);
+          const index = element?.getAttribute(STEP_ATTR);
+          const step = index ? tour.steps[Number(index)] : undefined;
+          if (!element || !step) continue;
+          return begin(step, element);
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  };
+
+  const watch = (step: TourStep): void => {
+    stopHide?.();
+    stopHide = step.once("will-hide", () => {
+      stopHide = null;
+      const element = step.element;
+      if (!element?.isConnected) {
+        departure = null;
+        return;
+      }
+      const rect = element.getBoundingClientRect();
+      departure = {
+        step,
+        left: rect.left,
+        top: rect.top,
+        centered: isCentered(step),
+        dialog: element.classList.contains(DIALOG_CLASS),
+      };
+      arm();
+    });
+  };
+
+  const forget = (): void => {
+    departure = null;
+    disarm();
+  };
+
+  const onShown = ({ step, previous }: { step: TourStep; previous: TourStep | null }): void => {
+    const element = step.element;
+    if (running && running.element !== element) settle();
+    if (element && departure && departure.step === previous) begin(step, element);
+    forget();
+    watch(step);
   };
 
   let stops: (() => void)[] = [];
@@ -135,8 +174,8 @@ function attach(tour: Tour, options: GlideOptions): { detach: () => void; rearm:
     for (const stop of stops) stop();
     stops = [
       tour.on("step-shown", onShown),
-      tour.on("finished", () => (departure = null)),
-      tour.on("exited", () => (departure = null)),
+      tour.on("finished", forget),
+      tour.on("exited", forget),
     ];
   };
   rearm();
@@ -148,7 +187,7 @@ function attach(tour: Tour, options: GlideOptions): { detach: () => void; rearm:
     for (const stop of stops) stop();
     stopHide?.();
     stopHide = null;
-    departure = null;
+    forget();
     settle();
   };
   return { detach, rearm };
