@@ -106,7 +106,7 @@ export const TourProvider = defineComponent({
     onMounted(() => {
       offs = [
         tour.on("step-shown", ({ step: shown }) => {
-          if (shown.isShown()) setShown(shown);
+          setShown(shown.isShown() ? shown : null);
           sync();
         }),
         ...(["started", "finished", "exited", "deactivated"] as const).map((event) =>
