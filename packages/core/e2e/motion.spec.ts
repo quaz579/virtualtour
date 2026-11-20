@@ -238,7 +238,7 @@ for (const dim of [false, true]) {
   test(`${dim ? "with" : "without"} a dimmed overlay the first popover is never visible away from its final position`, async ({ page }) => {
     await page.goto(`/fixtures/motion.html${dim ? "?dim=1" : ""}`);
     await expect(page.locator("html")).toHaveAttribute("data-ready", "true");
-    const all = await frames(page, (w) => (w.vtTour as unknown as { start(): Promise<void> }).start(), 700);
+    const all = await frames(page, (w) => w.vtTour.start(), 700);
     const last = await rect(page);
     const seen = visible(all, "One");
     expect(seen.length).toBeGreaterThan(0);
