@@ -89,6 +89,29 @@ test.describe("react wrapper", () => {
     await expect(stepState(page)).toHaveText("none");
   });
 
+  test("react: a move whose target is dropped shows the step after it", async ({ page }) => {
+    await openReact(page, "?dropOnShow=two");
+    await page.locator("#start").click();
+    await expect(stepState(page)).toHaveText("one");
+    await page.locator("#hook-next").click();
+    await expect(stepState(page)).toHaveText("three");
+    await expect(title(page)).toHaveText("Three");
+    await expect(runningState(page)).toHaveText("true");
+    await expect(popover(page)).toHaveCount(1);
+  });
+
+  test("react: a move whose target is dropped with nothing after it exits with reason api", async ({ page }) => {
+    await openReact(page, "?dropOnShow=three");
+    await page.locator("#start").click();
+    await page.locator("#hook-next").click();
+    await expect(stepState(page)).toHaveText("two");
+    await page.locator("#hook-next").click();
+    await expect(popover(page)).toHaveCount(0);
+    await expect(runningState(page)).toHaveText("false");
+    await expect(stepState(page)).toHaveText("none");
+    await expect(page.locator("html")).toHaveAttribute("data-exit-reason", "api");
+  });
+
   test("react: unmounting the provider removes a running tour", async ({ page }) => {
     await openReact(page);
     await page.locator("#start").click();
@@ -173,6 +196,29 @@ test.describe("vue wrapper", () => {
     await page.waitForTimeout(300);
     await expect(popover(page)).toHaveCount(1);
     await expect(stepState(page)).toHaveText("one");
+  });
+
+  test("vue: a move whose target is dropped shows the step after it", async ({ page }) => {
+    await openVue(page, "?dropOnShow=two");
+    await page.locator("#start").click();
+    await expect(stepState(page)).toHaveText("one");
+    await page.locator("#hook-next").click();
+    await expect(stepState(page)).toHaveText("three");
+    await expect(title(page)).toHaveText("Three");
+    await expect(runningState(page)).toHaveText("true");
+    await expect(popover(page)).toHaveCount(1);
+  });
+
+  test("vue: a move whose target is dropped with nothing after it exits with reason api", async ({ page }) => {
+    await openVue(page, "?dropOnShow=three");
+    await page.locator("#start").click();
+    await page.locator("#hook-next").click();
+    await expect(stepState(page)).toHaveText("two");
+    await page.locator("#hook-next").click();
+    await expect(popover(page)).toHaveCount(0);
+    await expect(runningState(page)).toHaveText("false");
+    await expect(stepState(page)).toHaveText("none");
+    await expect(page.locator("html")).toHaveAttribute("data-exit-reason", "api");
   });
 
   test("vue: unmounting the provider removes a running tour", async ({ page }) => {

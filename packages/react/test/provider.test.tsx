@@ -1,5 +1,6 @@
-import { Activity, Component, StrictMode, act, useEffect } from "react";
+import { Activity, Component, StrictMode, act, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
@@ -245,6 +246,76 @@ describe("steps dropped mid-tour", () => {
     expect(on).toHaveBeenCalled();
     expect(added.length).toBeGreaterThan(0);
     for (const off of added) expect(off).toHaveBeenCalled();
+  });
+});
+
+describe("currentStep during a move", () => {
+  function movable(...ids: string[]): Partial<TourConfig> {
+    const target = document.createElement("div");
+    target.id = "move-target";
+    document.body.appendChild(target);
+    return { steps: ids.map((id) => ({ id, title: id.toUpperCase(), body: id, ...(id === "b" ? { target: "#move-target" } : {}) })) };
+  }
+
+  function Host({ probe, extra, bump }: { probe: Probe; extra: Partial<TourConfig>; bump?: { fn: () => void } }): ReactNode {
+    const [, setN] = useState(0);
+    if (bump) bump.fn = () => setN((n) => n + 1);
+    return (
+      <TourProvider config={config(extra)}>
+        <Capture probe={probe} />
+      </TourProvider>
+    );
+  }
+
+  it("keeps the previous step until the next one is shown, even when the tree rerenders mid-move", async () => {
+    const probe = probeOf();
+    const bump = { fn: () => {} };
+    const extra = movable("a", "b", "c");
+    await mount(<Host probe={probe} extra={extra} bump={bump} />);
+    await act(async () => probe.latest.start());
+    const seen: Array<string | undefined> = [];
+    probe.latest.tour.steps[1]!.on("will-show", () => {
+      seen.push(probe.latest.tour.currentStep?.id);
+      flushSync(() => bump.fn());
+      seen.push(probe.latest.currentStep?.id);
+    });
+    await act(async () => probe.latest.forward());
+    expect(seen).toEqual([undefined, "a"]);
+    expect(text()).toBe("true:b");
+  });
+
+  it("moves on to the next step when the move target is dropped before it is shown", async () => {
+    const probe = probeOf();
+    await mount(<Host probe={probe} extra={movable("a", "b", "c")} />);
+    await act(async () => probe.latest.start());
+    probe.latest.tour.steps[1]!.on("will-show", () => probe.latest.tour.dropStep("b"));
+    await act(async () => {
+      void probe.latest.forward();
+    });
+    await until(() => text() === "true:c");
+  });
+
+  it("ends the run when the move target is dropped and nothing follows it", async () => {
+    const probe = probeOf();
+    await mount(<Host probe={probe} extra={movable("a", "b")} />);
+    await act(async () => probe.latest.start());
+    const reasons: string[] = [];
+    probe.latest.tour.on("exited", (p) => reasons.push(p.reason));
+    probe.latest.tour.steps[1]!.on("will-show", () => probe.latest.tour.dropStep("b"));
+    await act(async () => {
+      void probe.latest.forward();
+    });
+    await until(() => text() === "false:none");
+    expect(reasons).toEqual(["api"]);
+  });
+
+  it("reports null once the visible step is dropped with nothing after it", async () => {
+    const probe = probeOf();
+    await mount(<Host probe={probe} extra={{ steps: steps("a") }} />);
+    await act(async () => probe.latest.start());
+    expect(text()).toBe("true:a");
+    await act(async () => probe.latest.tour.dropStep("a"));
+    await until(() => text() === "false:none");
   });
 });
 

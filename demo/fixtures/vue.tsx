@@ -14,6 +14,10 @@ const config = {
 const Controls = defineComponent({
   setup() {
     const { tour, isRunning, currentStep, start, forward, backward, exit } = useTour();
+    const dropOnShow = new URLSearchParams(location.search).get("dropOnShow");
+    tour.on("exited", (e) => (document.documentElement.dataset["exitReason"] = e.reason));
+    const target = dropOnShow ? tour.stepById(dropOnShow) : undefined;
+    if (dropOnShow && target) target.on("will-show", () => tour.dropStep(dropOnShow));
     return () =>
       h("div", { class: "demo-container" }, [
         h("h1", "VirtualTour Vue fixture"),

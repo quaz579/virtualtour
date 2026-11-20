@@ -21,6 +21,13 @@ function Controls() {
       w.vtStarts = (w.vtStarts ?? 0) + 1;
     });
   }, [tour]);
+  useEffect(() => {
+    const dropOnShow = new URLSearchParams(location.search).get("dropOnShow");
+    const offs = [tour.on("exited", (e) => (document.documentElement.dataset["exitReason"] = e.reason))];
+    const target = dropOnShow ? tour.stepById(dropOnShow) : undefined;
+    if (dropOnShow && target) offs.push(target.on("will-show", () => tour.dropStep(dropOnShow)));
+    return () => offs.forEach((off) => off());
+  }, [tour]);
   return (
     <div className="demo-container">
       <h1>VirtualTour React fixture</h1>
