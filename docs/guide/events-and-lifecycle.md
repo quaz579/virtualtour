@@ -106,6 +106,7 @@ A move can wait on your page in three places. Each has a bound so a stuck page c
 | Wait | Bound | Default | On timeout |
 |---|---|---|---|
 | Target to appear (`waitFor`) | the step's `waitFor`, capped by the tour's `waitBudget` across the move | `waitBudget` 10000 ms | The step follows `whenMissing`. |
+| Progress store `load` | the tour's `waitBudget` | 10000 ms | A warning is logged and the tour starts without saved progress. |
 | `prepare` and `revealWith` | the step's `hookTimeout`, per hook | 10000 ms | A warning is logged and the step shows anyway. |
 | `presenter.ready()` | fixed, not configurable | 10000 ms | A warning is logged and the step shows with what the presenter has. |
 
