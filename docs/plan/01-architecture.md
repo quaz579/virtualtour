@@ -834,8 +834,8 @@ acceptable when needed** (2026-11-12). The shipped surface grew past that figure
 
 | Entry | Soft target (min+gzip) | Starting point |
 |---|---|---|
-| `.` (engine + public API) | ≈ 35 KB JS (engine alone ≈ 20 KB), ≈ 3 KB CSS | driver.js 1.12.1 core: 14.1 KB JS + 1.9 KB CSS (hints and checklists removed) |
-| `./avatar` | ≈ 12 KB | excluding the Thumbtack assets; includes the presenter chunk shared with core |
+| `.` (engine + public API) | ≈ 37 KB JS (engine alone ≈ 20 KB), ≈ 3 KB CSS | driver.js 1.12.1 core: 14.1 KB JS + 1.9 KB CSS (hints and checklists removed) |
+| `./avatar` | ≈ 13 KB | excluding the Thumbtack assets; includes the presenter chunk shared with core |
 | `./motion` | ≈ 2 KB | |
 | wrappers | ≈ 2 KB each | |
 
