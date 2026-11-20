@@ -192,7 +192,7 @@ function normalizeDim(dim: TourConfig["dim"]): { dim: boolean; dimOptions: Norma
 
 function normalizeWaitBudget(value: number | undefined): number {
   if (value === undefined) return DEFAULT_WAIT_BUDGET_MS;
-  if (Number.isNaN(value) || value < 0) {
+  if (typeof value !== "number" || Number.isNaN(value) || value < 0) {
     if (typeof __DEV__ === "undefined" || __DEV__) {
       console.warn(`[virtualtour] waitBudget must be 0, Infinity or a positive number of milliseconds, not ${value}; using ${DEFAULT_WAIT_BUDGET_MS}.`);
     }

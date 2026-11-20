@@ -122,14 +122,14 @@ export class ProgressTracker {
     this.write(next);
   }
 
-  private turn(previous: Promise<void>): Promise<void> {
-    if (!isBounded(this.budgetMs)) return previous;
+  private bounded(running: void | Promise<void>): void | Promise<void> {
+    if (!running || !isBounded(this.budgetMs)) return running;
     return new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
         warn(`A progress store save for tour "${this.tourId}" did not settle within ${this.budgetMs} ms; later saves continue without waiting for it.`);
         resolve();
       }, Math.min(this.budgetMs, MAX_TIMER_MS));
-      previous.then(() => {
+      running.then(() => {
         clearTimeout(timer);
         resolve();
       });
@@ -147,7 +147,7 @@ export class ProgressTracker {
         fail(error);
       }
     };
-    const started = this.pending ? this.turn(this.pending).then(run) : run();
+    const started = this.pending ? this.pending.then(() => this.bounded(run())) : this.bounded(run());
     if (!started) return;
     const settled: Promise<void> = started.then(() => {
       if (this.pending === settled) this.pending = null;

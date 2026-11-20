@@ -430,6 +430,22 @@ describe("tour progress", () => {
       expect(log).toEqual(["bypassed:completed"]);
     });
 
+    it("a hung save does not block the tour's later saves", async () => {
+      const begun: string[] = [];
+      const store: ProgressStore = {
+        load: () => null,
+        save: (r) => (begun.push(r.lastStepId ?? "done"), r.lastStepId === "a" ? new Promise<void>(() => {}) : undefined),
+        clear: () => {},
+      };
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const tour = make({ progress: { store }, waitBudget: 30 });
+      await tour.start();
+      await tour.forward();
+      expect(begun).toEqual(["a"]);
+      await ms(30);
+      expect(begun).toEqual(["a", "b"]);
+    });
+
     it.each([Number.NaN, -1, -Infinity])("waitBudget %s uses the default bound and warns", async (waitBudget) => {
       const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
       const store: ProgressStore = { load: () => new Promise(() => {}), save: () => {}, clear: () => {} };
@@ -494,6 +510,46 @@ describe("tour progress", () => {
       await ms(100);
       expect(events).toEqual(["begin:a", "end:a", "begin:b", "end:b"]);
       expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("healthy saves slower than half the budget stay strictly sequential with no warning", async () => {
+      const events: string[] = [];
+      const store: ProgressStore = {
+        load: () => null,
+        save: (r) => {
+          events.push(`begin:${r.lastStepId}`);
+          return new Promise<void>((resolve) => setTimeout(() => (events.push(`end:${r.lastStepId}`), resolve()), 60));
+        },
+        clear: () => {},
+      };
+      const tracker = new ProgressTracker("intro", { store }, 100);
+      tracker.stepShown("a");
+      tracker.stepShown("b");
+      tracker.stepShown("c");
+      await ms(60);
+      expect(vi.getTimerCount()).toBe(2);
+      await ms(200);
+      expect(events).toEqual(["begin:a", "end:a", "begin:b", "end:b", "begin:c", "end:c"]);
+      expect(console.warn).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("warns that later saves continue when a save passes the budget", async () => {
+      const store: ProgressStore = { load: () => null, save: () => new Promise<void>(() => {}), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store }, 20);
+      tracker.stepShown("a");
+      await ms(20);
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("later saves continue"));
+    });
+
+    it("a budget beyond the timer limit does not fire at once", async () => {
+      const begun: string[] = [];
+      const store: ProgressStore = { load: () => null, save: (r) => (begun.push(r.lastStepId ?? ""), new Promise<void>(() => {})), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store }, 3e9);
+      tracker.stepShown("a");
+      tracker.stepShown("b");
+      await ms(1000);
+      expect(begun).toEqual(["a"]);
     });
 
     it("a zero budget keeps saves strictly chained", async () => {
