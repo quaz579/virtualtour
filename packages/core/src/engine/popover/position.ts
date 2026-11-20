@@ -159,6 +159,9 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   const popoverPadding = options.padding;
   const { style, classList } = popover.wrapper;
   const rtl = isRtl(anchor);
+  if (isRtl(popover.wrapper) !== rtl) {
+    popover.wrapper.setAttribute("dir", rtl ? "rtl" : "ltr");
+  }
   const showArrow = options.arrow !== false;
   const crossOffset = Number.isFinite(options.crossOffset) ? (options.crossOffset as number) : 0;
   if (popover.wrapper.hasAttribute(fixedNames.attr.strategy)) {

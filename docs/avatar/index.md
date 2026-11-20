@@ -60,7 +60,7 @@ When a step's animation ends, the avatar holds that animation's still frame and 
 
 ## Dock
 
-The avatar sits on one edge of the bubble: `start` or `end`. Both are inline directions, so they mirror on a right-to-left page. The effective dock comes from, in order, the step's `extensions.avatar.dock`, the tour's `dock`, the pack's own hint, and `end`.
+The avatar sits on one edge of the bubble: `start` or `end`. Both are inline directions, so they mirror on a right-to-left page. With `dock: 'auto'` the presenter reads `rtl` and `pinned` from the reposition info, and a pinned popover is treated as centered. The effective dock comes from, in order, the step's `extensions.avatar.dock`, the tour's `dock`, the pack's own hint, and `end`.
 
 `auto` picks an edge from the room around the target:
 

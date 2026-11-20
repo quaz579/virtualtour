@@ -226,3 +226,133 @@ test("side auto breaks a left and right free space tie by direction", async ({ p
   expect(sides.ltr).toBe("right");
   expect(sides.rtl).toBe("left");
 });
+
+type Landed = { physicalAlign: string; align: string; side: string; rtl: boolean; pinned: boolean };
+
+async function landed(page: Page, setup: { side: string; align: string; anchorDir?: Dir }): Promise<Landed> {
+  return page.evaluate(({ side, align, anchorDir }) => {
+    const infos: Landed[] = [];
+    window.tour?.destroy();
+    window.tour = window.__engine.createEngine({
+      animate: false,
+      stagePadding: 0,
+      popoverOffset: 0,
+      onReposition: info =>
+        infos.push({
+          physicalAlign: info.physicalAlign,
+          align: info.align,
+          side: info.side,
+          rtl: info.rtl,
+          pinned: info.pinned,
+        }),
+    });
+    const target = document.querySelector<HTMLElement>("#one")!;
+    target.style.cssText = "position:fixed;top:300px;left:400px;width:100px;height:40px";
+    if (anchorDir) target.style.direction = anchorDir;
+    window.tour.highlight({
+      element: "#one",
+      popover: {
+        title: "Landed",
+        description: "Placed",
+        side: side as "bottom",
+        align: align as "start",
+        flip: false,
+        shift: false,
+      },
+    });
+    return infos.at(-1)!;
+  }, setup);
+}
+
+async function geometryEdge(page: Page): Promise<string> {
+  const target = await box(page.locator("#one"));
+  const pop = await box(popover(page));
+  const eq = (a: number, b: number) => Math.abs(a - b) < 2;
+  const matches: string[] = [];
+  if (eq(pop.x, target.x)) matches.push("left");
+  if (eq(pop.x + pop.width, target.x + target.width)) matches.push("right");
+  if (eq(pop.y, target.y)) matches.push("top");
+  if (eq(pop.y + pop.height, target.y + target.height)) matches.push("bottom");
+  if (eq(pop.x + pop.width / 2, target.x + target.width / 2) || eq(pop.y + pop.height / 2, target.y + target.height / 2)) {
+    matches.push("center");
+  }
+
+  return matches.join(",");
+}
+
+for (const dir of DIRS) {
+  test.describe(`${dir} physicalAlign matches the rendered geometry`, () => {
+    test.beforeEach(async ({ page }) => {
+      await openFixture(page, FIXTURES[dir]);
+    });
+
+    for (const side of ["top", "bottom", "left", "right"]) {
+      for (const align of ["start", "center", "end"]) {
+        test(`${side} ${align}`, async ({ page }) => {
+          const info = await landed(page, { side, align });
+          await expect(title(page)).toHaveText("Landed");
+          await settle(page);
+
+          expect(info.rtl).toBe(dir === "rtl");
+          expect(info.pinned).toBe(false);
+          expect(info.side).toBe(side);
+          expect(info.align).toBe(align);
+          const horizontal = side === "top" || side === "bottom";
+          const expected =
+            align === "center"
+              ? "center"
+              : horizontal
+                ? (align === "start") === (dir === "ltr")
+                  ? "left"
+                  : "right"
+                : align === "start"
+                  ? "top"
+                  : "bottom";
+          expect(info.physicalAlign).toBe(expected);
+          expect((await geometryEdge(page)).split(",")).toContain(expected);
+        });
+      }
+    }
+
+    test("pinned fallback reports center at the bottom of the viewport", async ({ page }) => {
+      const info = await page.evaluate(() => {
+        const infos: Landed[] = [];
+        window.tour?.destroy();
+        window.tour = window.__engine.createEngine({
+          animate: false,
+          stagePadding: 0,
+          onReposition: i =>
+            infos.push({ physicalAlign: i.physicalAlign, align: i.align, side: i.side, rtl: i.rtl, pinned: i.pinned }),
+        });
+        const target = document.querySelector<HTMLElement>("#one")!;
+        target.style.cssText = "position:fixed;top:4px;left:4px;right:4px;bottom:4px;width:auto;height:auto";
+        window.tour.highlight({ element: "#one", popover: { title: "Pinned", side: "top", align: "start" } });
+        return infos.at(-1)!;
+      });
+      await expect(title(page)).toHaveText("Pinned");
+      await settle(page);
+      const pop = await box(popover(page));
+      const viewport = page.viewportSize()!;
+
+      expect(info).toMatchObject({ pinned: true, physicalAlign: "center", side: "top", rtl: dir === "rtl" });
+      near(pop.x + pop.width / 2, viewport.width / 2);
+      expect(pop.y + pop.height).toBeGreaterThan(viewport.height - 30);
+    });
+  });
+}
+
+test("a right-to-left target in a left-to-right page gets a right-to-left popover aligned by its own direction", async ({
+  page,
+}) => {
+  await openFixture(page, FIXTURES.ltr);
+  const info = await landed(page, { side: "bottom", align: "start", anchorDir: "rtl" });
+  await expect(title(page)).toHaveText("Landed");
+  await settle(page);
+  const target = await box(page.locator("#one"));
+  const pop = await box(popover(page));
+
+  expect(info).toMatchObject({ rtl: true, physicalAlign: "right" });
+  near(pop.x + pop.width, target.x + target.width);
+  await expect(popover(page)).toHaveClass(/vt-popover-rtl/);
+  expect(await popover(page).evaluate(el => getComputedStyle(el).direction)).toBe("rtl");
+});
