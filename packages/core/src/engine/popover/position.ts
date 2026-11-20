@@ -151,21 +151,25 @@ function toAbsolute(wrapper: HTMLElement, width: number, height: number) {
   style.top = `${top - origin.top}px`;
 }
 
-const adoptedDirections = new WeakMap<HTMLElement, "ltr" | "rtl">();
+const adoptedDirections = new WeakMap<HTMLElement, { dir: "ltr" | "rtl"; original: string | null }>();
 
 function adoptDirection(wrapper: HTMLElement, hasTarget: boolean, rtl: boolean) {
   const wanted = rtl ? "rtl" : "ltr";
   const adopted = adoptedDirections.get(wrapper);
-  if (hasTarget && adopted === wanted) {
+  if (hasTarget && adopted?.dir === wanted) {
     return;
   }
   if (adopted !== undefined) {
-    wrapper.removeAttribute("dir");
+    if (adopted.original === null) {
+      wrapper.removeAttribute("dir");
+    } else {
+      wrapper.setAttribute("dir", adopted.original);
+    }
     adoptedDirections.delete(wrapper);
   }
   if (hasTarget && isRtl(wrapper) !== rtl) {
+    adoptedDirections.set(wrapper, { dir: wanted, original: wrapper.getAttribute("dir") });
     wrapper.setAttribute("dir", wanted);
-    adoptedDirections.set(wrapper, wanted);
   }
 }
 

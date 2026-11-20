@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DriveStep, RepositionInfo } from "../../src/engine/driver";
+import { repositionPopover, type PositionOptions } from "../../src/engine/popover/position";
+import type { PopoverDOM } from "../../src/engine/popover/popover";
 import { createDriver, popoverEl, tick, useDriverHarness } from "./utils";
 
 useDriverHarness();
@@ -268,6 +270,46 @@ describe("direction source", () => {
     driver.refresh();
     await tick(50);
     expect(wrapper.getAttribute("dir")).toBe("ltr");
+  });
+
+  it("a targetless pass drops an adopted dir even when it equals the page direction", () => {
+    document.documentElement.style.direction = "ltr";
+    const mount = document.createElement("div");
+    mount.style.direction = "rtl";
+    const wrapper = document.createElement("div");
+    wrapper.className = "vt-popover";
+    mount.appendChild(wrapper);
+    document.body.appendChild(mount);
+    const popover = { wrapper, arrow: document.createElement("div") } as PopoverDOM;
+    const options: PositionOptions = { side: "bottom", align: "start", offset: 0, padding: 0, hasTarget: true };
+    const target = document.getElementById("target")!;
+
+    repositionPopover(popover, target, options);
+    expect(wrapper.getAttribute("dir")).toBe("ltr");
+
+    repositionPopover(popover, target, { ...options, hasTarget: false });
+    expect(wrapper.hasAttribute("dir")).toBe(false);
+    expect(getComputedStyle(wrapper).direction).toBe("rtl");
+  });
+
+  it("restores a foreign dir it overwrote once the adoption ends", async () => {
+    const driver = twoStepRun([{ element: "#rtl-target", popover: { title: "A", side: "bottom" } }]);
+    const wrapper = popoverEl()!;
+    const host = document.getElementById("rtl-host")!;
+    host.style.direction = "ltr";
+    driver.refresh();
+    await tick(50);
+    wrapper.setAttribute("dir", "ltr");
+    host.style.direction = "rtl";
+    driver.refresh();
+    await tick(50);
+    expect(wrapper.getAttribute("dir")).toBe("rtl");
+    host.style.direction = "ltr";
+    driver.refresh();
+    await tick(50);
+    expect(popoverEl()).toBe(wrapper);
+    expect(wrapper.getAttribute("dir")).toBe("ltr");
+    driver.destroy();
   });
 
   it("a centered step in a right-to-left mount on a left-to-right page keeps the inherited direction", () => {
