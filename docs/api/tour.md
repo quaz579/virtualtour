@@ -41,6 +41,7 @@ Handlers run in registration order. A throwing handler is logged and the rest st
 | `activated` | `{ tour }` | Right after `started`. |
 | `step-shown` | `{ tour, step, previous }` | A step is on screen. `previous` is the step shown before it in this run, or `null`. |
 | `step-completed` | `{ tour, step }` | An action step's instruction was met. |
+| `steps-changed` | `{ tour }` | `appendStep` or `dropStep` changed the step list. Fires once the list, the position and the progress text are updated, whether or not a run is active. |
 | `finished` | `{ tour }` | The tour completed. |
 | `exited` | `{ tour, reason }` | The tour was cancelled. `reason` is `close`, `escape`, `overlay`, `api` or `replaced`. |
 | `bypassed` | `{ tour, reason: "completed" }` | `start()` skipped the tour because saved progress says it was finished. No `started` follows. |

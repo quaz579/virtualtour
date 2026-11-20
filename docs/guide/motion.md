@@ -28,12 +28,12 @@
 
 ### Caveats
 
-- **One glide per tour.** Two `glide()` calls on the same tour each start their own animation on the same popover. The animations do not combine into one smoother move. Call `glide` once and keep the function.
+- **Calls on one tour share a glide.** `glide` is reference counted per tour. A second call on the same tour does not start a second animation: it joins the first, and the options of the first call win. Each call returns its own function, which counts only once. The glide stops when every function it handed out has been called, so one component turning its glide off does not cut another's.
 - **It finishes the entrance animation.** To avoid a fade and a slide at once, `glide` finishes the engine's entrance animations on the new popover when it slides. When it skips the slide, it leaves them alone.
 
 ## progressVars
 
-`progressVars(tour)` sets two CSS custom properties on the popover each time a step is shown, and right away when a step is already on screen:
+`progressVars(tour)` sets two CSS custom properties on the popover each time a step is shown, when `appendStep` or `dropStep` changes the step list under a step on screen, and right away when a step is already on screen:
 
 | Property | Value |
 |---|---|
@@ -52,7 +52,7 @@ Set it on every `step-shown`, so it is present whether or not the engine reuses 
 
 ### Caveats
 
-- **Stale after a mid-step change.** The variables are written when a step is shown. If you add or remove steps while a step is on screen (`appendStep`, `dropStep`), the total on screen does not change until the next step is shown.
+- **Follows step list changes.** The tour's `steps-changed` event rewrites both variables when you add or remove steps while a step is on screen, so the index and total stay current.
 - **The total counts all steps.** Steps skipped by `shouldShow` or `whenMissing: 'skip'` still count, so the bar can jump over a slice.
 - **Load the stylesheet.** Without `virtualtour/theme.css` the attribute does nothing. The variables themselves work without it.
 

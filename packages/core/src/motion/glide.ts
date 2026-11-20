@@ -17,6 +17,8 @@ interface Departure {
   dialog: boolean;
 }
 
+const attached = new WeakMap<Tour, { count: number; detach: () => void }>();
+
 const GLIDE_CLASS = "vt-glide";
 const DIALOG_CLASS = "vt-dialog";
 const FADE_ATTR = "data-vt-fade";
@@ -31,9 +33,32 @@ function isCentered(step: TourStep): boolean {
  * Slides the popover from where the previous step left it to where the next step puts it, instead of fading the new
  * popover in: the engine's entrance animations on the new popover are finished at once. Does nothing under reduced
  * motion, when the tour's `animate` is off, when one step is centered and the other is not, or when the two steps use
- * different popover layouts. Returns a function that stops listening and cancels a glide in progress.
+ * different popover layouts.
+ *
+ * Calls on the same tour share one glide and are reference counted: the options of the first call win and later
+ * options are ignored. Each call returns its own function, which works once; the glide stops listening and cancels
+ * a glide in progress when every returned function has been called.
  */
 export function glide(tour: Tour, options: GlideOptions = {}): () => void {
+  let shared = attached.get(tour);
+  if (!shared) {
+    shared = { count: 0, detach: attach(tour, options) };
+    attached.set(tour, shared);
+  }
+  const entry = shared;
+  entry.count += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    entry.count -= 1;
+    if (entry.count > 0) return;
+    attached.delete(tour);
+    entry.detach();
+  };
+}
+
+function attach(tour: Tour, options: GlideOptions): () => void {
   const durationMs = options.durationMs ?? 250;
   const easing = options.easing ?? "cubic-bezier(.2,.8,.2,1)";
   let departure: Departure | null = null;
