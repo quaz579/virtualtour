@@ -1,6 +1,8 @@
 import type { Config } from "./engine/types";
 import type { CornerRadius, DimConfig, PresenterFactory, ProgressConfig, StepConfig, TourConfig } from "./types";
 
+declare const __DEV__: boolean | undefined;
+
 const NAMESPACE_PATTERN = /^[a-zA-Z][\w-]*$/;
 
 /** Dim options with every default applied. */
@@ -188,6 +190,17 @@ function normalizeDim(dim: TourConfig["dim"]): { dim: boolean; dimOptions: Norma
   return { dim: dim === true || (typeof dim === "object" && dim !== null), dimOptions };
 }
 
+function normalizeWaitBudget(value: number | undefined): number {
+  if (value === undefined) return DEFAULT_WAIT_BUDGET_MS;
+  if (Number.isNaN(value) || value < 0) {
+    if (typeof __DEV__ === "undefined" || __DEV__) {
+      console.warn(`[virtualtour] waitBudget must be 0, Infinity or a positive number of milliseconds, not ${value}; using ${DEFAULT_WAIT_BUDGET_MS}.`);
+    }
+    return DEFAULT_WAIT_BUDGET_MS;
+  }
+  return value;
+}
+
 /** Applies every default to a {@link TourConfig}; throws when `namespace` is invalid. */
 export function normalizeTourConfig(config: TourConfig): NormalizedTourConfig {
   const namespace = config.namespace ?? DEFAULT_NAMESPACE;
@@ -206,7 +219,7 @@ export function normalizeTourConfig(config: TourConfig): NormalizedTourConfig {
     counter: config.counter ?? false,
     labels: mergeObjects(DEFAULT_LABELS, config.labels ?? {}) as NormalizedTourConfig["labels"],
     animate: config.animate ?? true,
-    waitBudget: config.waitBudget ?? DEFAULT_WAIT_BUDGET_MS,
+    waitBudget: normalizeWaitBudget(config.waitBudget),
   };
   if (config.name !== undefined) out.name = config.name;
   if (config.mountIn !== undefined) out.mountIn = config.mountIn;

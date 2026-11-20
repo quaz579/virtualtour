@@ -58,7 +58,7 @@ Beware of colons. The key is a plain join, so prefix `app` with tour id `a:b` an
 
 Exiting is not completing. A user who closes the tour sees it again on the next page load, from the first step, unless `resume` is on. An exit from code (reason `api`), such as a framework wrapper unmounting, is saved like any other exit.
 
-Saves are fire and forget. The tour does not wait for a save before it moves on, and it never rejects because of one. A store that throws or rejects is caught. Development builds log a warning, and production builds say nothing, so check your store separately if losing a save matters. Saves for one tour run one after another in the order they were made, and `start()` waits for pending saves before it loads, within the load bound below.
+Saves are fire and forget. The tour does not wait for a save before it moves on, and it never rejects because of one. A store that throws or rejects is caught. Development builds log a warning, and production builds say nothing, so check your store separately if losing a save matters. Saves for one tour run one after another in the order they were made. A save that has not settled within `waitBudget` stops holding up the saves behind it: a development build logs a warning and the next save starts anyway, so a hung store can no longer stall the rest. `start()` also waits for pending saves before it loads, within the load bound below.
 
 ## Starting with saved progress
 
@@ -68,7 +68,7 @@ Saves are fire and forget. The tour does not wait for a save before it moves on,
 2. If `resume` is `true` and the record has a `lastStepId` that is not the first step, the tour starts there. The earlier steps are not shown, so `step-shown` fires first for the resumed step with `previous` set to `null`.
 3. Otherwise the tour starts at the first step.
 
-Load is bounded by the tour's `waitBudget` (default 10000 ms). If `load` has not settled by then, development builds log a warning and the tour starts as if there were no record. The wait for pending saves counts toward the bound. A late answer is ignored, except that its `completedAt` is kept so later saves do not erase it, and a late rejection is swallowed. `waitBudget: 0` or `Infinity` waits forever, and a `load` that never settles then leaves `start()` pending. A `load` that throws or rejects is treated as "no record" with a development warning. While a load is pending, a second `start()` returns at once without starting a second run.
+Load is bounded by the tour's `waitBudget` (default 10000 ms). If `load` has not settled by then, development builds log a warning that names the cause, a pending save or the load itself, and the tour starts as if there were no record. The wait for pending saves counts toward the bound. A late answer is ignored, except that its `completedAt` is kept and saved so later saves do not erase it. It is dropped if another `start()` has loaded since, and a late rejection is swallowed. `waitBudget: 0` or `Infinity` waits forever, so a `load` that never settles then leaves `start()` pending and one hung save holds up every save after it. A `waitBudget` that is `NaN` or negative is treated as the default 10000 ms, with a development warning. A `load` that throws or rejects is treated as "no record" with a development warning. While a load is pending, a second `start()` returns at once without starting a second run.
 
 `goTo()` does not read the store. It starts the tour where you tell it and still saves progress.
 

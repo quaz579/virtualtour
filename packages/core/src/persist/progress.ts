@@ -20,14 +20,22 @@ function cleanRecord(value: unknown, tourId: string): ProgressRecord | null {
   return record;
 }
 
+const MAX_TIMER_MS = 2 ** 31 - 1;
+
+function isBounded(ms: number): boolean {
+  return ms > 0 && ms !== Infinity;
+}
+
 /** Reads and writes one tour's progress through its store. Internal. */
 export class ProgressTracker {
   private record: ProgressRecord | null = null;
   private pending: Promise<void> | null = null;
+  private loadSeq = 0;
 
   constructor(
     private readonly tourId: string,
-    private readonly config: ProgressConfig
+    private readonly config: ProgressConfig,
+    private readonly budgetMs = 0
   ) {}
 
   get skipCompleted(): boolean {
@@ -40,27 +48,35 @@ export class ProgressTracker {
 
   /**
    * The stored record, or `null` when there is none, the store failed or `timeoutMs` passed, counting any wait for
-   * pending saves. A late answer is ignored except that its `completedAt` is kept so later saves do not erase it.
-   * Never rejects.
+   * pending saves. A late answer is ignored except that its `completedAt` is kept and saved so later saves do not
+   * erase it, and only when no newer `load()` has started. Never rejects.
    */
   async load(timeoutMs = 0): Promise<ProgressRecord | null> {
+    const seq = ++this.loadSeq;
     let loaded: unknown = null;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let timedOut = false;
+    let savingFirst = false;
     const reading = (async (): Promise<unknown> => {
-      if (this.pending) await this.pending;
+      if (this.pending) {
+        savingFirst = true;
+        await this.pending;
+        savingFirst = false;
+      }
       return this.config.store.load(this.tourId);
     })();
     try {
-      if (timeoutMs > 0 && timeoutMs !== Infinity) {
+      if (isBounded(timeoutMs)) {
         loaded = await Promise.race([
           reading,
           new Promise<null>((resolve) => {
             timer = setTimeout(() => {
               timedOut = true;
-              warn(`Progress store load for tour "${this.tourId}" did not settle within ${timeoutMs} ms; starting without saved progress.`);
+              warn(
+                `Progress store ${savingFirst ? "save" : "load"} for tour "${this.tourId}" did not settle within ${timeoutMs} ms; starting without saved progress.`
+              );
               resolve(null);
-            }, Math.min(timeoutMs, 2 ** 31 - 1));
+            }, Math.min(timeoutMs, MAX_TIMER_MS));
           }),
         ]);
       } else loaded = await reading;
@@ -72,10 +88,10 @@ export class ProgressTracker {
     if (timedOut) {
       reading.then(
         (late) => {
+          if (seq !== this.loadSeq) return;
           const completedAt = cleanRecord(late, this.tourId)?.completedAt;
           if (completedAt === undefined || this.record?.completedAt !== undefined) return;
-          if (this.record) this.write({ ...this.record, completedAt });
-          else this.record = { tourId: this.tourId, updatedAt: new Date().toISOString(), completedAt };
+          this.write({ ...(this.record ?? { tourId: this.tourId, updatedAt: new Date().toISOString() }), completedAt });
         },
         () => undefined
       );
@@ -106,6 +122,20 @@ export class ProgressTracker {
     this.write(next);
   }
 
+  private turn(previous: Promise<void>): Promise<void> {
+    if (!isBounded(this.budgetMs)) return previous;
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        warn(`A progress store save for tour "${this.tourId}" did not settle within ${this.budgetMs} ms; later saves continue without waiting for it.`);
+        resolve();
+      }, Math.min(this.budgetMs, MAX_TIMER_MS));
+      previous.then(() => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+  }
+
   private write(record: ProgressRecord): void {
     this.record = record;
     const fail = (error: unknown): void => warn(`Progress store save failed for tour "${this.tourId}".`, error);
@@ -117,7 +147,7 @@ export class ProgressTracker {
         fail(error);
       }
     };
-    const started = this.pending ? this.pending.then(run) : run();
+    const started = this.pending ? this.turn(this.pending).then(run) : run();
     if (!started) return;
     const settled: Promise<void> = started.then(() => {
       if (this.pending === settled) this.pending = null;
