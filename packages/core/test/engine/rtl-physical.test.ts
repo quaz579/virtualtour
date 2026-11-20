@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { RepositionInfo } from "../../src/engine/driver";
-import { createDriver, popoverEl, useDriverHarness } from "./utils";
+import type { DriveStep, RepositionInfo } from "../../src/engine/driver";
+import { createDriver, popoverEl, tick, useDriverHarness } from "./utils";
 
 useDriverHarness();
 
@@ -18,12 +18,15 @@ type Setup = { side?: Side; align?: Align; flip?: boolean; shift?: boolean; anch
 
 const TARGET = rect(400, 300, 100, 40);
 
+const originalScrollIntoView = Element.prototype.scrollIntoView;
+
 beforeEach(() => {
   Element.prototype.scrollIntoView = () => {};
   document.body.innerHTML = `<div id="host"><button id="target" type="button">T</button></div>`;
 });
 
 afterEach(() => {
+  Element.prototype.scrollIntoView = originalScrollIntoView;
   vi.restoreAllMocks();
   document.documentElement.style.direction = "";
 });
@@ -209,5 +212,69 @@ describe("direction source", () => {
 
   it("leaves dir alone when anchor and wrapper agree", () => {
     expect(show("rtl", TARGET).wrapper.hasAttribute("dir")).toBe(false);
+  });
+  function twoStepRun(steps: DriveStep[], mountDir?: Dir) {
+    document.documentElement.style.direction = "ltr";
+    document.body.insertAdjacentHTML("beforeend", `<div id="rtl-host" style="direction:rtl"><button id="rtl-target" type="button">R</button></div>`);
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      if (this.id === "target" || this.id === "rtl-target") return TARGET;
+      if (this.classList.contains("vt-popover")) return rect(0, 0, POPOVER.width, POPOVER.height);
+      return rect(0, 0, 10, 10);
+    });
+    let mountIn: HTMLElement | undefined;
+    if (mountDir) {
+      mountIn = document.createElement("div");
+      mountIn.style.direction = mountDir;
+      document.body.appendChild(mountIn);
+    }
+    const driver = createDriver({
+      animate: false,
+      stagePadding: 0,
+      popoverOffset: 0,
+      ...(mountIn ? { mountIn: () => mountIn! } : {}),
+      steps,
+    });
+    driver.drive();
+    return driver;
+  }
+
+  it("removes the adopted dir once the anchor direction matches the inherited one again", async () => {
+    const driver = twoStepRun([{ element: "#rtl-target", popover: { title: "A", side: "bottom" } }]);
+    const host = document.getElementById("rtl-host")!;
+    const wrapper = popoverEl()!;
+    expect(wrapper.getAttribute("dir")).toBe("rtl");
+
+    host.style.direction = "ltr";
+    driver.refresh();
+    await tick(50);
+    expect(popoverEl()).toBe(wrapper);
+    expect(wrapper.hasAttribute("dir")).toBe(false);
+
+    host.style.direction = "rtl";
+    driver.refresh();
+    await tick(50);
+    expect(wrapper.getAttribute("dir")).toBe("rtl");
+
+    host.style.direction = "ltr";
+    driver.refresh();
+    await tick(50);
+    expect(wrapper.hasAttribute("dir")).toBe(false);
+  });
+
+  it("does not remove a dir it did not set", async () => {
+    const driver = twoStepRun([{ element: "#target", popover: { title: "A", side: "bottom" } }]);
+    const wrapper = popoverEl()!;
+    wrapper.setAttribute("dir", "ltr");
+    driver.refresh();
+    await tick(50);
+    expect(wrapper.getAttribute("dir")).toBe("ltr");
+  });
+
+  it("a centered step in a right-to-left mount on a left-to-right page keeps the inherited direction", () => {
+    const driver = twoStepRun([{ popover: { title: "Centered" } }], "rtl");
+    const wrapper = popoverEl()!;
+    expect(wrapper.hasAttribute("dir")).toBe(false);
+    expect(getComputedStyle(wrapper).direction).toBe("rtl");
+    driver.destroy();
   });
 });

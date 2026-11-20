@@ -151,6 +151,24 @@ function toAbsolute(wrapper: HTMLElement, width: number, height: number) {
   style.top = `${top - origin.top}px`;
 }
 
+const adoptedDirections = new WeakMap<HTMLElement, "ltr" | "rtl">();
+
+function adoptDirection(wrapper: HTMLElement, hasTarget: boolean, rtl: boolean) {
+  const wanted = rtl ? "rtl" : "ltr";
+  const adopted = adoptedDirections.get(wrapper);
+  if (hasTarget && adopted === wanted) {
+    return;
+  }
+  if (adopted !== undefined) {
+    wrapper.removeAttribute("dir");
+    adoptedDirections.delete(wrapper);
+  }
+  if (hasTarget && isRtl(wrapper) !== rtl) {
+    wrapper.setAttribute("dir", wanted);
+    adoptedDirections.set(wrapper, wanted);
+  }
+}
+
 export function repositionPopover(popover: PopoverDOM, anchor: Element, options: PositionOptions): RepositionInfo {
   const { align: requiredAlignment } = options;
   const flip = options.flip !== false;
@@ -159,9 +177,7 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   const popoverPadding = options.padding;
   const { style, classList } = popover.wrapper;
   const rtl = isRtl(anchor);
-  if (isRtl(popover.wrapper) !== rtl) {
-    popover.wrapper.setAttribute("dir", rtl ? "rtl" : "ltr");
-  }
+  adoptDirection(popover.wrapper, options.hasTarget, rtl);
   const showArrow = options.arrow !== false;
   const crossOffset = Number.isFinite(options.crossOffset) ? (options.crossOffset as number) : 0;
   if (popover.wrapper.hasAttribute(fixedNames.attr.strategy)) {

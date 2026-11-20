@@ -98,7 +98,7 @@ Direction is read from the computed `direction` of the target element. In right-
 - A positive `offset.cross` moves left.
 - The fallback order for an explicit side and the `auto` tie-break try the right side before the left, as listed above.
 - The popover gets the `vt-popover-rtl` class.
-- If the popover's own inherited direction differs from the target's (for example a `mountIn` container with the opposite `dir`), the popover wrapper gets a matching `dir` attribute, so its content, close button and speaker dock follow the same direction that `align` is resolved in.
+- If the popover's own inherited direction differs from the target's (for example a `mountIn` container with the opposite `dir`), the popover wrapper gets a matching `dir` attribute while the step has a real target (centered steps keep the inherited direction), so its content, close button and speaker dock follow the same direction that `align` is resolved in.
 - Alignment flips (`flip`) swap `start` and `end`, not `left` and `right`, so `align` and `physicalAlign` stay consistent after a flip.
 
 ## Read back where the popover landed

@@ -264,20 +264,30 @@ async function landed(page: Page, setup: { side: string; align: string; anchorDi
   }, setup);
 }
 
-async function geometryEdge(page: Page): Promise<string> {
+async function geometryEdge(page: Page, physicalAlign: string): Promise<{ actual: number; expected: number }> {
   const target = await box(page.locator("#one"));
   const pop = await box(popover(page));
-  const eq = (a: number, b: number) => Math.abs(a - b) < 2;
-  const matches: string[] = [];
-  if (eq(pop.x, target.x)) matches.push("left");
-  if (eq(pop.x + pop.width, target.x + target.width)) matches.push("right");
-  if (eq(pop.y, target.y)) matches.push("top");
-  if (eq(pop.y + pop.height, target.y + target.height)) matches.push("bottom");
-  if (eq(pop.x + pop.width / 2, target.x + target.width / 2) || eq(pop.y + pop.height / 2, target.y + target.height / 2)) {
-    matches.push("center");
+  switch (physicalAlign) {
+    case "left":
+      return { actual: pop.x, expected: target.x };
+    case "right":
+      return { actual: pop.x + pop.width, expected: target.x + target.width };
+    case "top":
+      return { actual: pop.y, expected: target.y };
+    case "bottom":
+      return { actual: pop.y + pop.height, expected: target.y + target.height };
+    default:
+      throw new Error(`unexpected physicalAlign ${physicalAlign}`);
   }
+}
 
-  return matches.join(",");
+async function geometryCenter(page: Page, horizontal: boolean): Promise<{ actual: number; expected: number }> {
+  const target = await box(page.locator("#one"));
+  const pop = await box(popover(page));
+
+  return horizontal
+    ? { actual: pop.x + pop.width / 2, expected: target.x + target.width / 2 }
+    : { actual: pop.y + pop.height / 2, expected: target.y + target.height / 2 };
 }
 
 for (const dir of DIRS) {
@@ -309,7 +319,8 @@ for (const dir of DIRS) {
                   ? "top"
                   : "bottom";
           expect(info.physicalAlign).toBe(expected);
-          expect((await geometryEdge(page)).split(",")).toContain(expected);
+          const measured = expected === "center" ? await geometryCenter(page, horizontal) : await geometryEdge(page, expected);
+          expect(Math.abs(measured.actual - measured.expected)).toBeLessThan(2);
         });
       }
     }
@@ -354,5 +365,23 @@ test("a right-to-left target in a left-to-right page gets a right-to-left popove
   expect(info).toMatchObject({ rtl: true, physicalAlign: "right" });
   near(pop.x + pop.width, target.x + target.width);
   await expect(popover(page)).toHaveClass(/vt-popover-rtl/);
+  expect(await popover(page).evaluate(el => getComputedStyle(el).direction)).toBe("rtl");
+});
+
+test("a centered step in a right-to-left mount on a left-to-right page keeps the inherited direction", async ({ page }) => {
+  await openFixture(page, FIXTURES.ltr);
+  await page.evaluate(() => {
+    const host = document.createElement("div");
+    host.id = "rtl-mount";
+    host.dir = "rtl";
+    document.body.appendChild(host);
+    window.tour?.destroy();
+    window.tour = window.__engine.createEngine({ animate: false, mountIn: () => host });
+    window.tour.highlight({ popover: { title: "Centered", description: "Placed", showButtons: ["next", "close"] } });
+  });
+  await expect(title(page)).toHaveText("Centered");
+  await settle(page);
+
+  await expect(popover(page)).not.toHaveAttribute("dir", /.*/);
   expect(await popover(page).evaluate(el => getComputedStyle(el).direction)).toBe("rtl");
 });

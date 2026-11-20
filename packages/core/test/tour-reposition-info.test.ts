@@ -13,7 +13,10 @@ const rect = (x: number, y: number, width: number, height: number): DOMRect =>
 
 let active: Tour | undefined;
 
+const originalScrollIntoView = Element.prototype.scrollIntoView;
+
 afterEach(() => {
+  Element.prototype.scrollIntoView = originalScrollIntoView;
   if (active?.isRunning()) active.finish();
   active = undefined;
   tours.off();
