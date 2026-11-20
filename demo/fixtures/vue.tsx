@@ -13,7 +13,7 @@ const config = {
 
 const Controls = defineComponent({
   setup() {
-    const { isRunning, currentStep, start, forward, backward, exit } = useTour();
+    const { tour, isRunning, currentStep, start, forward, backward, exit } = useTour();
     return () =>
       h("div", { class: "demo-container" }, [
         h("h1", "VirtualTour Vue fixture"),
@@ -27,6 +27,11 @@ const Controls = defineComponent({
         h("button", { id: "hook-next", type: "button", onClick: () => void forward() }, "Hook next"),
         h("button", { id: "hook-back", type: "button", onClick: () => void backward() }, "Hook back"),
         h("button", { id: "hook-exit", type: "button", onClick: () => void exit() }, "Hook exit"),
+        h(
+          "button",
+          { id: "hook-drop", type: "button", onClick: () => currentStep.value && tour.dropStep(currentStep.value) },
+          "Hook drop",
+        ),
         h("p", [
           h("button", { id: "first", type: "button" }, "First"),
           h("button", { id: "second", type: "button" }, "Second"),

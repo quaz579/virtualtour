@@ -54,7 +54,7 @@ Beware of colons. The key is a plain join, so prefix `app` with tour id `a:b` an
 |---|---|
 | A step is shown | `lastStepId` is that step. An earlier `completedAt` is kept. An earlier `exitedAt` is dropped. |
 | The tour finishes | `completedAt` is set. `lastStepId` is dropped, so a replay starts at the first step. |
-| The tour exits | `exitedAt` is set and `lastStepId` is the step that was current. An earlier `completedAt` is kept. Every exit reason is saved except `replaced`. Exiting while a step transition is still in flight saves the previously shown step, not the one about to appear. |
+| The tour exits | `exitedAt` is set and `lastStepId` is the step that was current. An earlier `completedAt` is kept. Every exit reason is saved except `replaced`. Exiting while a step transition is still in flight saves the previously shown step, not the one about to appear. If the run ends before any step has begun to show, `lastStepId` is not updated. |
 
 Exiting is not completing. A user who closes the tour sees it again on the next page load, from the first step, unless `resume` is on. An exit from code (reason `api`), such as a framework wrapper unmounting, is saved like any other exit.
 

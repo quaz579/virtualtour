@@ -159,6 +159,95 @@ describe("useTour values", () => {
   });
 });
 
+describe("steps dropped mid-tour", () => {
+  async function started(probe: Probe, extra: Partial<TourConfig> = {}): Promise<void> {
+    await mount(
+      <TourProvider config={config(extra)}>
+        <Capture probe={probe} />
+      </TourProvider>,
+    );
+    await act(async () => probe.latest.start());
+    await act(async () => probe.latest.forward());
+    expect(text()).toBe("true:b");
+  }
+
+  it("moves currentStep to the step that follows the dropped one", async () => {
+    const probe = probeOf();
+    await started(probe);
+    await act(async () => probe.latest.tour.dropStep("b"));
+    await until(() => text() === "true:c");
+    expect(probe.latest.currentStep).toBe(probe.latest.tour.steps[1]);
+  });
+
+  it("stops reporting the dropped step while the next step waits for its target", async () => {
+    const probe = probeOf();
+    await started(probe, {
+      steps: [
+        { id: "a", title: "A", body: "a" },
+        { id: "b", title: "B", body: "b" },
+        { id: "c", title: "C", body: "c", target: "#never-there", waitFor: 400 },
+      ],
+    });
+    const dropped = probe.latest.currentStep;
+    await act(async () => {
+      probe.latest.tour.dropStep("b");
+    });
+    expect(probe.latest.currentStep).not.toBe(dropped);
+    await until(() => text() === "true:c");
+  });
+
+  it("reports the run ended when the last step on screen is dropped", async () => {
+    const probe = probeOf();
+    await started(probe, { steps: steps("a", "b") });
+    await act(async () => probe.latest.tour.dropStep("b"));
+    await until(() => text() === "false:none");
+  });
+
+  it("keeps currentStep when another step is dropped", async () => {
+    const probe = probeOf();
+    await started(probe);
+    const before = probe.latest.currentStep;
+    await act(async () => probe.latest.tour.dropStep("a"));
+    expect(probe.latest.currentStep).toBe(before);
+    expect(text()).toBe("true:b");
+  });
+
+  it("follows the step after a drop and a later forward", async () => {
+    const probe = probeOf();
+    await started(probe, { steps: steps("a", "b", "c", "d") });
+    await act(async () => probe.latest.tour.dropStep("b"));
+    await until(() => text() === "true:c");
+    await act(async () => probe.latest.tour.dropStep("c"));
+    await until(() => text() === "true:d");
+  });
+
+  it("removes its step listener when the provider unmounts", async () => {
+    const probe = probeOf();
+    const root = await mount(
+      <TourProvider config={config()}>
+        <Capture probe={probe} />
+      </TourProvider>,
+    );
+    await act(async () => probe.latest.start());
+    const step = probe.latest.currentStep!;
+    const added: Array<() => void> = [];
+    const original = step.on.bind(step) as (event: string, fn: never) => () => void;
+    const on = vi.spyOn(step, "on").mockImplementation(((event: string, fn: never) => {
+      const off = original(event, fn);
+      const wrapped = vi.fn(off);
+      added.push(wrapped);
+      return wrapped;
+    }) as never);
+    await act(async () => probe.latest.forward());
+    await act(async () => probe.latest.backward());
+    act(() => root.unmount());
+    roots.splice(roots.indexOf(root), 1);
+    expect(on).toHaveBeenCalled();
+    expect(added.length).toBeGreaterThan(0);
+    for (const off of added) expect(off).toHaveBeenCalled();
+  });
+});
+
 describe("unmount", () => {
   it("exits a running tour without asking the exit prompt", async () => {
     const confirm = vi.fn(() => false);
