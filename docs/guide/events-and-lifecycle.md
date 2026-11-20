@@ -61,6 +61,7 @@ This table is checked by the test suite. Each row lists the events in the order 
 | Move from `S` to `T` | S `will-hide`, S `hidden`, T `will-show`, T `shown`, tour `step-shown` |
 | `exit()` while a move from `S` to `T` has not shown `T` | If the move had started, S `will-hide`, S `hidden` and T `will-show` have already fired. `exit()` then fires S `will-hide` and S `hidden` only if S is still on screen, S `exited`, tour `exited` (with `reason`), every step `disposed`, `tours.current` cleared, tour `deactivated` |
 | `dropStep(T)` after the move to `T` began (T `will-show` fired) | T `disposed` with no `shown`, then the first remaining step after `T` shows, whichever way the move went, and no earlier step shows first. With none left, the tour exits with reason `api`: S `exited`, tour `exited`, never `finished` |
+| `dropStep(T)` while the move to `T` is still in `prepare`, `revealWith` or a wait | T `disposed` only, and the move skips it. If no step is left to show, the tour exits with reason `api`, never `finished` |
 | `S` shown again later | S `will-show`, S `shown`. No `disposed` in between |
 | Action step `S` completed | S `completed`, tour `step-completed`. After the step's `advanceDelay`, the move to the next step starts as above |
 | `hideCurrent()` | S `will-hide`, S `hidden`. No `exited`. The tour stays running |

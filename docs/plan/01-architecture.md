@@ -642,7 +642,8 @@ Rules:
   eligible step shows.
 - Dropping the target before the engine has started moving to it (its `prepare`, `revealWith` or wait is still
   pending): the step gets `disposed` only, and the move skips it as it continues. If that leaves no step to show moving
-  forward, the tour exits with reason `api` instead of finishing.
+  forward, the tour exits with reason `api` instead of finishing. Any step dropped while a move is preparing or
+  waiting counts, not only the target.
 - `onDestroyStarted` receives reason `done` too (Done button, `driver.ts:197-199`); the layer
   never prompts for `done` or `replaced`.
 
