@@ -47,18 +47,19 @@ Payloads are `{ step }`. Subscribe with `step.on(...)`.
 | `hidden` | The step left the screen. Always follows `will-hide` directly. |
 | `completed` | An action step's instruction was met. Only fires for steps with an `instruction`. |
 | `finished` | The run finished while this step was current. |
-| `exited` | The run ended with this step current. |
+| `exited` | The run ended with this step as the last one shown, or as the step being left by a move that had not finished. A move's target gets `exited` only when its show had begun and no earlier step was shown on the same engine, such as the first show of a run or a move after `hideCurrent()`. If no step had begun to show, no step gets `exited`. |
 | `disposed` | The run is over and the step released its element and target. Fires exactly once per step per run. |
 
 ## Order of events
 
-This table is checked by the test suite. Each row lists the events in the order they fire. The step names `S` and `T` are the old and new steps.
+The test suite checks every row except the `exit()`-during-move row. Each row lists the events in the order they fire. The step names `S` and `T` are the old and new steps.
 
 | Situation | Events, in order |
 |---|---|
 | `start()` | `tours.current` is set, tour `started`, tour `activated`, then "show a step" |
 | Show a step `S` | S `will-show`, presenter mounts, S `shown`, tour `step-shown` (with `previous`), then the navigation promise resolves |
 | Move from `S` to `T` | S `will-hide`, S `hidden`, T `will-show`, T `shown`, tour `step-shown` |
+| `exit()` while a move from `S` to `T` has not shown `T` | If the move had started, S `will-hide`, S `hidden` and T `will-show` have already fired. `exit()` then fires S `will-hide` and S `hidden` only if S is still on screen, S `exited`, tour `exited` (with `reason`), every step `disposed`, `tours.current` cleared, tour `deactivated` |
 | `S` shown again later | S `will-show`, S `shown`. No `disposed` in between |
 | Action step `S` completed | S `completed`, tour `step-completed`. After the step's `advanceDelay`, the move to the next step starts as above |
 | `hideCurrent()` | S `will-hide`, S `hidden`. No `exited`. The tour stays running |
