@@ -560,6 +560,14 @@ describe("compileTour sanitizer and counter failures", () => {
     expect(compileTour(n, steps).steps.map((step) => step.popover?.progressText)).toEqual(["1 of 2", "2 of 2"]);
     expect(error).toHaveBeenCalledWith(expect.stringContaining("[virtualtour] counter threw"), expect.any(Error));
   });
+
+  it("shows the default counter text when the counter returns something other than a string", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const n = normalizeTourConfig({ counter: (() => 7) as unknown as (index: number, total: number) => string });
+    const steps = [makeStep(resolveStepConfig(n, {})), makeStep(resolveStepConfig(n, {}))];
+    expect(compileTour(n, steps).steps.map((step) => step.popover?.progressText)).toEqual(["1 of 2", "2 of 2"]);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("counter did not return a string"));
+  });
 });
 
 describe("compileStepForShow", () => {

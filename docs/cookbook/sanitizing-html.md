@@ -14,7 +14,7 @@ Titles, bodies and several other strings are HTML. Set `sanitize` on the tour to
 
 For `title`, `body` and `instruction`, the hook runs on every string, including plain text. Button labels and strings the engine inserts itself skip the hook when they contain no `<`. Check the result of your hook for plain text too.
 
-If the hook throws, or returns something other than a string, the tour logs an error with `console.error` and shows that text as plain text, escaped, so the tour still starts. This covers `title`, `body`, `instruction`, the `nudge()` message, button labels and counter text. A counter function that throws is logged and the step shows the default `N of M` counter instead. Catch errors inside your hook if you would rather not log them.
+If the hook throws, or returns something other than a string, while a step's `title` or `body` is built, the tour logs an error with `console.error` and shows that text as plain text, escaped, so the tour still starts. The `instruction`, the `nudge()` message, button labels and counter text fall back to plain text without a log. A counter function that throws, or returns something other than a string, is logged and the step shows the default `N of M` counter instead.
 
 ## Without a hook
 

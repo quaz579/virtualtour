@@ -65,11 +65,13 @@ function toCorners(radius: number | CornerRadius, fallback: number | CornerRadiu
 
 function counterText(counter: (index: number, total: number) => string, index: number, total: number): string {
   try {
-    return counter(index, total);
+    const text: unknown = counter(index, total);
+    if (typeof text === "string") return text;
+    console.error("[virtualtour] counter did not return a string; the step shows the default counter.");
   } catch (error) {
     console.error("[virtualtour] counter threw; the step shows the default counter:", error);
-    return `${index} of ${total}`;
   }
+  return `${index} of ${total}`;
 }
 
 function compileStep(
