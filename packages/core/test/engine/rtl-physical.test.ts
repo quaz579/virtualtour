@@ -280,7 +280,7 @@ describe("direction source", () => {
     wrapper.className = "vt-popover";
     mount.appendChild(wrapper);
     document.body.appendChild(mount);
-    const popover = { wrapper, arrow: document.createElement("div") } as PopoverDOM;
+    const popover = { wrapper, arrow: document.createElement("div") } as unknown as PopoverDOM;
     const options: PositionOptions = { side: "bottom", align: "start", offset: 0, padding: 0, hasTarget: true };
     const target = document.getElementById("target")!;
 
