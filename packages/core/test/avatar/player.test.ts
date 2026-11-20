@@ -460,6 +460,29 @@ describe("SpritePlayer roles, stills and errors", () => {
     expect(player.current).toBe("blink");
   });
 
+  it("playRole forwards loop options to play", async () => {
+    const { player } = make();
+    let settled = false;
+    const run = player.playRole("greet", undefined, { loop: true }).then(() => {
+      settled = true;
+    });
+    advanceTo(5000);
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    player.stop();
+    await run;
+    void player.playRole("point", "left", { loop: false });
+    advanceTo(10000);
+    expect(player.current).toBeNull();
+  });
+
+  it("playRole idle does not record the pick after dispose", () => {
+    const { player } = make({ random: () => 0.99 });
+    player.dispose();
+    void player.playRole("idle");
+    expect((player as unknown as { lastIdle?: string }).lastIdle).toBeUndefined();
+  });
+
   it("shows the still frame and resolves instead of hanging where requestAnimationFrame does not exist", async () => {
     vi.stubGlobal("requestAnimationFrame", undefined);
     const { el, player } = make();
