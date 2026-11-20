@@ -428,6 +428,7 @@ describe("a step dropped after a step was already shown", () => {
     await until(() => seen !== "unset");
     expect(seen).toBeNull();
     await nextTick();
+    expect(probe.latest.tour.isRunning()).toBe(true);
     expect(probe.latest.currentStep.value).toBeNull();
   });
 });
