@@ -305,7 +305,7 @@ export interface TourConfig {
   animate?: boolean;
   /**
    * Total milliseconds one navigation may spend waiting for targets across consecutive steps with `waitFor`. The first
-   * step that waits always gets its full `waitFor`; once the budget is spent, later steps are judged on what is on the page and follow their `whenMissing`. `0` or `Infinity` removes the cap.
+   * step that waits always gets its full `waitFor`; once the budget is spent, later steps are judged on what is on the page and follow their `whenMissing`. Also the longest `start()` waits for a progress store's `load`. `0` or `Infinity` removes the cap.
    * Default 10000.
    */
   waitBudget?: number;

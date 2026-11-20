@@ -61,10 +61,17 @@ export const TourProvider = defineComponent({
     const running = shallowRef(false);
     const step = shallowRef<TourStep | null>(null);
     let offs: Array<() => void> = [];
+    let tracked: TourStep | null = null;
+    let offStep = (): void => {};
 
     const sync = (): void => {
       running.value = tour.isRunning();
-      step.value = tour.currentStep;
+      const current = tour.currentStep;
+      step.value = current;
+      if (current === tracked) return;
+      offStep();
+      tracked = current;
+      offStep = current ? current.on("disposed", sync) : () => {};
     };
 
     const exitWithoutPrompt = (): void => {
@@ -107,6 +114,9 @@ export const TourProvider = defineComponent({
       gate.disposed = true;
       offs.forEach((off) => off());
       offs = [];
+      offStep();
+      offStep = () => {};
+      tracked = null;
       exitWithoutPrompt();
     });
 
