@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createTour, localStorageStore, memoryStore, tours } from "../src/index";
 import type { ProgressRecord, ProgressStore, Tour, TourConfig } from "../src/index";
+import { ProgressTracker } from "../src/persist/progress";
 import { setCurrentTour } from "../src/registry";
 
 const created: Tour[] = [];
@@ -318,89 +319,340 @@ describe("tour progress", () => {
     expect(log).toEqual(["bypassed:completed"]);
   });
 
-  it("stops waiting for a load that never settles and starts fresh", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const store: ProgressStore = { load: () => new Promise(() => {}), save: () => {}, clear: () => {} };
-    const tour = make({ progress: { store }, waitBudget: 40 });
-    const log = watch(tour);
-    const pending = tour.start();
-    expect(log).toEqual([]);
-    await pending;
-    expect(log).toEqual(["started", "shown:a"]);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("did not settle within 40 ms"));
+  describe("bounded store waits", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const ms = (n: number): Promise<unknown> => vi.advanceTimersByTimeAsync(n);
+
+    it("stops waiting for a load that never settles and starts fresh", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const store: ProgressStore = { load: () => new Promise(() => {}), save: () => {}, clear: () => {} };
+      const tour = make({ progress: { store }, waitBudget: 40 });
+      const log = watch(tour);
+      const pending = tour.start();
+      await ms(39);
+      expect(log).toEqual([]);
+      await ms(1);
+      await pending;
+      expect(log).toEqual(["started", "shown:a"]);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('load for tour "intro" did not settle within 40 ms'));
+    });
+
+    it("ignores a load that resolves after the timeout", async () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      let late: (record: ProgressRecord) => void = () => {};
+      const store: ProgressStore = { load: () => new Promise((resolve) => (late = resolve)), save: () => {}, clear: () => {} };
+      const tour = make({ progress: { store, resume: true }, waitBudget: 30 });
+      const log = watch(tour);
+      const pending = tour.start();
+      await ms(30);
+      await pending;
+      late({ tourId: "intro", lastStepId: "c", completedAt: "x", updatedAt: "x" });
+      await ms(20);
+      expect(log).toEqual(["started", "shown:a"]);
+      expect(tour.progressInfo().index).toBe(1);
+    });
+
+    it("a rejecting load after the timeout is not an unhandled rejection", async () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const seen: unknown[] = [];
+      const onUnhandled = (reason: unknown): void => void seen.push(reason);
+      process.on("unhandledRejection", onUnhandled);
+      let fail: (error: Error) => void = () => {};
+      const store: ProgressStore = { load: () => new Promise((_resolve, reject) => (fail = reject)), save: () => {}, clear: () => {} };
+      const pending = make({ progress: { store }, waitBudget: 20 }).start();
+      await ms(20);
+      await pending;
+      fail(new Error("late"));
+      await ms(20);
+      process.off("unhandledRejection", onUnhandled);
+      expect(seen).toEqual([]);
+    });
+
+    it("a load that settles in time leaves no timer to warn later", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const tour = make({ progress: { store: memoryStore() }, waitBudget: 30 });
+      await tour.start();
+      await ms(60);
+      expect(warn).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("a late completedAt is kept in later saves", async () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      let late: (record: ProgressRecord) => void = () => {};
+      const saved: ProgressRecord[] = [];
+      const store: ProgressStore = { load: () => new Promise((resolve) => (late = resolve)), save: (r) => void saved.push(r), clear: () => {} };
+      const tour = make({ progress: { store }, waitBudget: 30 });
+      const pending = tour.start();
+      await ms(30);
+      await pending;
+      late({ tourId: "intro", completedAt: "done", updatedAt: "x" });
+      await ms(10);
+      expect(saved.at(-1)?.completedAt).toBe("done");
+      await tour.forward();
+      expect(saved.at(-1)).toMatchObject({ lastStepId: "b", completedAt: "done" });
+    });
+
+    it("a save that never settles does not block a later start past waitBudget", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const store: ProgressStore = { load: () => null, save: () => new Promise(() => {}), clear: () => {} };
+      const tour = make({ progress: { store }, waitBudget: 30 });
+      await tour.start();
+      tour.exit();
+      const log = watch(tour);
+      const pending = tour.start();
+      await ms(30);
+      await pending;
+      expect(log).toEqual(["started", "shown:a"]);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('save for tour "intro" did not settle within 30 ms'));
+    });
+
+    it("waitBudget 0 keeps waiting for a slow load", async () => {
+      const store: ProgressStore = {
+        load: () => new Promise((resolve) => setTimeout(() => resolve({ tourId: "intro", completedAt: "x", updatedAt: "x" }), 80)),
+        save: () => {},
+        clear: () => {},
+      };
+      const tour = make({ progress: { store }, waitBudget: 0 });
+      const log = watch(tour);
+      const pending = tour.start();
+      await ms(79);
+      expect(log).toEqual([]);
+      await ms(1);
+      await pending;
+      expect(log).toEqual(["bypassed:completed"]);
+    });
+
+    it("a hung save does not block the tour's later saves", async () => {
+      const begun: string[] = [];
+      const store: ProgressStore = {
+        load: () => null,
+        save: (r) => (begun.push(r.lastStepId ?? "done"), r.lastStepId === "a" ? new Promise<void>(() => {}) : undefined),
+        clear: () => {},
+      };
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const tour = make({ progress: { store }, waitBudget: 30 });
+      await tour.start();
+      await tour.forward();
+      expect(begun).toEqual(["a"]);
+      await ms(30);
+      expect(begun).toEqual(["a", "b"]);
+    });
+
+    it.each([Number.NaN, -1, -Infinity])("waitBudget %s uses the default bound and warns", async (waitBudget) => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const store: ProgressStore = { load: () => new Promise(() => {}), save: () => {}, clear: () => {} };
+      const tour = make({ progress: { store }, waitBudget });
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("waitBudget must be"));
+      const log = watch(tour);
+      const pending = tour.start();
+      await ms(9999);
+      expect(log).toEqual([]);
+      await ms(1);
+      await pending;
+      expect(log).toEqual(["started", "shown:a"]);
+    });
   });
 
-  it("ignores a load that resolves after the timeout", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    let late: (record: ProgressRecord) => void = () => {};
-    const store: ProgressStore = { load: () => new Promise((resolve) => (late = resolve)), save: () => {}, clear: () => {} };
-    const tour = make({ progress: { store, resume: true }, waitBudget: 30 });
-    const log = watch(tour);
-    await tour.start();
-    late({ tourId: "intro", lastStepId: "c", completedAt: "x", updatedAt: "x" });
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(log).toEqual(["started", "shown:a"]);
-    expect(tour.progressInfo().index).toBe(1);
-  });
+  describe("progress tracker saves and late loads", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+    });
 
-  it("a rejecting load after the timeout is not an unhandled rejection", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    const seen: unknown[] = [];
-    const onUnhandled = (reason: unknown): void => void seen.push(reason);
-    process.on("unhandledRejection", onUnhandled);
-    let fail: (error: Error) => void = () => {};
-    const store: ProgressStore = { load: () => new Promise((_resolve, reject) => (fail = reject)), save: () => {}, clear: () => {} };
-    await make({ progress: { store }, waitBudget: 20 }).start();
-    fail(new Error("late"));
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    process.off("unhandledRejection", onUnhandled);
-    expect(seen).toEqual([]);
-  });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
-  it("a load that settles in time leaves no timer to warn later", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const tour = make({ progress: { store: memoryStore() }, waitBudget: 30 });
-    await tour.start();
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(warn).not.toHaveBeenCalled();
-  });
+    const ms = (n: number): Promise<unknown> => vi.advanceTimersByTimeAsync(n);
+    const done = (completedAt: string): ProgressRecord => ({ tourId: "intro", completedAt, updatedAt: "x" });
 
-  it("a late completedAt is kept in later saves", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    let late: (record: ProgressRecord) => void = () => {};
-    const saved: ProgressRecord[] = [];
-    const store: ProgressStore = { load: () => new Promise((resolve) => (late = resolve)), save: (r) => void saved.push(r), clear: () => {} };
-    const tour = make({ progress: { store }, waitBudget: 30 });
-    await tour.start();
-    late({ tourId: "intro", completedAt: "done", updatedAt: "x" });
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(saved.at(-1)?.completedAt).toBe("done");
-    tour.forward();
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(saved.at(-1)).toMatchObject({ lastStepId: "b", completedAt: "done" });
-  });
+    it("one hung save does not block the saves after it", async () => {
+      const begun: string[] = [];
+      const store: ProgressStore = {
+        load: () => null,
+        save: (r) => {
+          begun.push(r.lastStepId ?? "done");
+          return r.lastStepId === "a" ? new Promise<void>(() => {}) : undefined;
+        },
+        clear: () => {},
+      };
+      const tracker = new ProgressTracker("intro", { store }, 50);
+      tracker.stepShown("a");
+      tracker.stepShown("b");
+      tracker.stepShown("c");
+      await ms(49);
+      expect(begun).toEqual(["a"]);
+      await ms(1);
+      expect(begun).toEqual(["a", "b", "c"]);
+    });
 
-  it("a save that never settles does not block a later start past waitBudget", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    const store: ProgressStore = { load: () => null, save: () => new Promise(() => {}), clear: () => {} };
-    const tour = make({ progress: { store }, waitBudget: 30 });
-    await tour.start();
-    tour.exit();
-    const log = watch(tour);
-    await tour.start();
-    expect(log).toEqual(["started", "shown:a"]);
-  });
+    it("saves still run in order while earlier ones settle within the bound", async () => {
+      const events: string[] = [];
+      const store: ProgressStore = {
+        load: () => null,
+        save: (r) => {
+          events.push(`begin:${r.lastStepId}`);
+          return new Promise<void>((resolve) => setTimeout(() => (events.push(`end:${r.lastStepId}`), resolve()), 20));
+        },
+        clear: () => {},
+      };
+      const tracker = new ProgressTracker("intro", { store }, 50);
+      tracker.stepShown("a");
+      tracker.stepShown("b");
+      await ms(100);
+      expect(events).toEqual(["begin:a", "end:a", "begin:b", "end:b"]);
+      expect(vi.getTimerCount()).toBe(0);
+    });
 
-  it("waitBudget 0 keeps waiting for a slow load", async () => {
-    const store: ProgressStore = {
-      load: () => new Promise((resolve) => setTimeout(() => resolve({ tourId: "intro", completedAt: "x", updatedAt: "x" }), 80)),
-      save: () => {},
-      clear: () => {},
-    };
-    const tour = make({ progress: { store }, waitBudget: 0 });
-    const log = watch(tour);
-    await tour.start();
-    expect(log).toEqual(["bypassed:completed"]);
+    it("healthy saves slower than half the budget stay strictly sequential with no warning", async () => {
+      const events: string[] = [];
+      const store: ProgressStore = {
+        load: () => null,
+        save: (r) => {
+          events.push(`begin:${r.lastStepId}`);
+          return new Promise<void>((resolve) => setTimeout(() => (events.push(`end:${r.lastStepId}`), resolve()), 60));
+        },
+        clear: () => {},
+      };
+      const tracker = new ProgressTracker("intro", { store }, 100);
+      tracker.stepShown("a");
+      tracker.stepShown("b");
+      tracker.stepShown("c");
+      await ms(60);
+      expect(vi.getTimerCount()).toBe(2);
+      await ms(200);
+      expect(events).toEqual(["begin:a", "end:a", "begin:b", "end:b", "begin:c", "end:c"]);
+      expect(console.warn).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("warns that later saves continue when a save passes the budget", async () => {
+      const store: ProgressStore = { load: () => null, save: () => new Promise<void>(() => {}), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store }, 20);
+      tracker.stepShown("a");
+      await ms(20);
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("later saves continue"));
+    });
+
+    it("a budget beyond the timer limit does not fire at once", async () => {
+      const begun: string[] = [];
+      const store: ProgressStore = { load: () => null, save: (r) => (begun.push(r.lastStepId ?? ""), new Promise<void>(() => {})), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store }, 3e9);
+      tracker.stepShown("a");
+      tracker.stepShown("b");
+      await ms(1000);
+      expect(begun).toEqual(["a"]);
+    });
+
+    it("a zero budget keeps saves strictly chained", async () => {
+      const begun: string[] = [];
+      const store: ProgressStore = { load: () => null, save: (r) => (begun.push(r.lastStepId ?? ""), new Promise<void>(() => {})), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store }, 0);
+      tracker.stepShown("a");
+      tracker.stepShown("b");
+      await ms(60000);
+      expect(begun).toEqual(["a"]);
+    });
+
+    it("names a pending save as the cause when it holds up a load", async () => {
+      const warn = vi.mocked(console.warn);
+      const store: ProgressStore = { load: () => null, save: () => new Promise<void>(() => {}), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store }, 0);
+      tracker.stepShown("a");
+      const loading = tracker.load(25);
+      await ms(25);
+      await loading;
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("save for tour"));
+      expect(warn).not.toHaveBeenCalledWith(expect.stringContaining("load for tour"));
+    });
+
+    it("names the load as the cause when no save is pending", async () => {
+      const warn = vi.mocked(console.warn);
+      const store: ProgressStore = { load: () => new Promise(() => {}), save: () => {}, clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store });
+      const loading = tracker.load(25);
+      await ms(25);
+      await loading;
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("load for tour"));
+      expect(warn).not.toHaveBeenCalledWith(expect.stringContaining("save for tour"));
+    });
+
+    it("a late completedAt with no record yet is saved and kept", async () => {
+      let late: (record: ProgressRecord) => void = () => {};
+      const saved: ProgressRecord[] = [];
+      const store: ProgressStore = { load: () => new Promise((resolve) => (late = resolve)), save: (r) => void saved.push(r), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store });
+      const loading = tracker.load(10);
+      await ms(10);
+      expect(await loading).toBeNull();
+      late(done("old"));
+      await ms(0);
+      expect(saved).toHaveLength(1);
+      expect(saved[0]).toMatchObject({ tourId: "intro", completedAt: "old" });
+      tracker.stepShown("a");
+      expect(saved.at(-1)).toMatchObject({ lastStepId: "a", completedAt: "old" });
+    });
+
+    it("a late completedAt with a record already present is saved and kept", async () => {
+      let late: (record: ProgressRecord) => void = () => {};
+      const saved: ProgressRecord[] = [];
+      const store: ProgressStore = { load: () => new Promise((resolve) => (late = resolve)), save: (r) => void saved.push(r), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store });
+      const loading = tracker.load(10);
+      await ms(10);
+      await loading;
+      tracker.stepShown("a");
+      late(done("old"));
+      await ms(0);
+      expect(saved.at(-1)).toMatchObject({ lastStepId: "a", completedAt: "old" });
+    });
+
+    it("a late completedAt does not replace one set since the timeout", async () => {
+      let late: (record: ProgressRecord) => void = () => {};
+      const saved: ProgressRecord[] = [];
+      const store: ProgressStore = { load: () => new Promise((resolve) => (late = resolve)), save: (r) => void saved.push(r), clear: () => {} };
+      const tracker = new ProgressTracker("intro", { store });
+      const loading = tracker.load(10);
+      await ms(10);
+      await loading;
+      tracker.finished();
+      const finished = saved.at(-1);
+      late(done("old"));
+      await ms(0);
+      expect(saved).toHaveLength(1);
+      tracker.stepShown("a");
+      expect(saved.at(-1)?.completedAt).toBe(finished?.completedAt);
+      expect(saved.at(-1)?.completedAt).not.toBe("old");
+    });
+
+    it("a late answer from an earlier load does not touch a newer load's record", async () => {
+      const lates: Array<(record: ProgressRecord) => void> = [];
+      const saved: ProgressRecord[] = [];
+      let calls = 0;
+      const store: ProgressStore = {
+        load: () => (calls++ === 0 ? new Promise((resolve) => lates.push(resolve)) : null),
+        save: (r) => void saved.push(r),
+        clear: () => {},
+      };
+      const tracker = new ProgressTracker("intro", { store });
+      const first = tracker.load(10);
+      await ms(10);
+      await first;
+      expect(await tracker.load(10)).toBeNull();
+      lates[0]?.(done("stale"));
+      await ms(0);
+      expect(saved).toEqual([]);
+      tracker.stepShown("a");
+      expect(saved.at(-1)?.completedAt).toBeUndefined();
+    });
   });
 
   it("ignores a second start() while the load is pending", async () => {
