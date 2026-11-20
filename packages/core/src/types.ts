@@ -186,6 +186,23 @@ export interface StepConfig {
   extensions?: Record<string, unknown>;
 }
 
+type ClearableFields<T> = T extends readonly unknown[] | ((...args: never[]) => unknown) | Element
+  ? T
+  : T extends object
+    ? { [K in keyof T]?: ClearableFields<T[K]> | null }
+    : T;
+
+/**
+ * What {@link TourStep.configure} accepts: a partial {@link StepConfig} in which `null` clears a field back to the
+ * tour's default for it, or removes it when the tour has none. Inside `position`, `spotlight`, `closeButton` and
+ * `extensions` a `null` clears just that key. `undefined` and `id` are ignored.
+ */
+export type StepConfigPatch = {
+  [K in Exclude<keyof StepConfig, "id">]?: K extends "position" | "spotlight" | "closeButton" | "extensions"
+    ? ClearableFields<StepConfig[K]> | null
+    : StepConfig[K] | null;
+} & { id?: string };
+
 /** One saved progress entry for a tour. */
 export interface ProgressRecord {
   tourId: string;

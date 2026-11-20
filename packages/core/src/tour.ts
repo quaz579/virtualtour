@@ -19,7 +19,7 @@ import { ProgressTracker } from "./persist/progress";
 import { DialogPresenter } from "./presenter";
 import { memoizeSanitizer } from "./render/content";
 import { relayTourEvent, setCurrentTour, tours } from "./registry";
-import { emitStep, lookupTarget, markHidden, markShown, resetStep, retireStep, setConfiguredHook, setResolvedTarget, TourStep } from "./step";
+import { emitStep, lookupTarget, markHidden, markShown, resetStep, retireStep, setConfiguredHook, setResolvedTarget, setStepDefaults, TourStep } from "./step";
 import type { Presenter, ProgressInfo, ProgressRecord, RepositionInfo, StepConfig, StepParts, TourConfig } from "./types";
 
 declare const __DEV__: boolean | undefined;
@@ -382,7 +382,9 @@ export class Tour {
     }
     const config = resolveStepConfig(state.normalized, def);
     config.id = id;
-    return new TourStep(this, id, config);
+    const created = new TourStep(this, id, config);
+    setStepDefaults(created, state.normalized.stepDefaults);
+    return created;
   }
 }
 
@@ -597,6 +599,10 @@ function refreshShownStep(step: TourStep): void {
   };
   if (popover.showButtons !== undefined) patch.showButtons = popover.showButtons;
   if (popover.instruction !== undefined) patch.instruction = popover.instruction;
+  else {
+    const active = shown.engine.getState("__activation");
+    if (active?.step?.popover?.instruction || active?.popoverPatch?.instruction) patch.instruction = "";
+  }
   const text = typeof state.normalized.counter === "function" ? popover.progressText : counterText(tour);
   if (text !== undefined) patch.progressText = text;
   const { engine, mounted } = shown;
