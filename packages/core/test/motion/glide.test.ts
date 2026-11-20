@@ -34,6 +34,16 @@ describe("glide", () => {
     expect(animations[0]!.options).toMatchObject({ duration: 400, easing: "linear" });
   });
 
+  it("starts the glide when the popover is rendered, before step-shown is emitted", async () => {
+    const tour = await start({ steps });
+    const seen: number[] = [];
+    tour.on("step-shown", () => seen.push(animations.length));
+    glide(tour);
+    await tour.forward();
+    expect(animations).toHaveLength(1);
+    expect(seen).toEqual([1]);
+  });
+
   it("uses 250 ms and the default easing when no options are given", async () => {
     const tour = await start({ steps });
     glide(tour);

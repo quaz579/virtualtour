@@ -19,6 +19,8 @@ interface Departure {
 
 const GLIDE_CLASS = "vt-glide";
 const DIALOG_CLASS = "vt-dialog";
+const POPOVER_CLASS = "vt-popover";
+const STEP_ATTR = "data-vt-step";
 const FADE_ATTR = "data-vt-fade";
 const DUMMY_ID = "vt-dummy-element";
 
@@ -37,8 +39,9 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
   const durationMs = options.durationMs ?? 250;
   const easing = options.easing ?? "cubic-bezier(.2,.8,.2,1)";
   let departure: Departure | null = null;
-  let running: { animation: Animation } | null = null;
+  let running: { animation: Animation; element: Element } | null = null;
   let stopHide: (() => void) | null = null;
+  let observer: MutationObserver | null = null;
 
   const settle = (): void => {
     if (!running) return;
@@ -47,33 +50,17 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
     animation.cancel();
   };
 
-  const watch = (step: TourStep): void => {
-    stopHide?.();
-    stopHide = step.once("will-hide", () => {
-      stopHide = null;
-      const element = step.element;
-      if (!element?.isConnected) {
-        departure = null;
-        return;
-      }
-      const rect = element.getBoundingClientRect();
-      departure = {
-        step,
-        left: rect.left,
-        top: rect.top,
-        centered: isCentered(step),
-        dialog: element.classList.contains(DIALOG_CLASS),
-      };
-    });
+  const disarm = (): void => {
+    observer?.disconnect();
+    observer = null;
   };
 
-  const stopShown = tour.on("step-shown", ({ step, previous }) => {
-    settle();
+  const begin = (step: TourStep, element: HTMLElement): void => {
     const from = departure;
     departure = null;
-    watch(step);
-    const element = step.element;
-    if (!from || !previous || from.step !== previous || !element) return;
+    disarm();
+    if (!from || from.step === step || running?.element === element) return;
+    settle();
     if (typeof element.animate !== "function") return;
     if (prefersReducedMotion() || !document.body.hasAttribute(FADE_ATTR)) return;
     if (from.centered !== isCentered(step) || from.dialog !== element.classList.contains(DIALOG_CLASS)) return;
@@ -99,23 +86,73 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
       [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0px, 0px)" }],
       { duration: durationMs, easing },
     );
-    running = { animation };
+    running = { animation, element };
     animation.addEventListener("finish", () => {
       if (running?.animation === animation) running = null;
     });
+  };
+
+  const arm = (): void => {
+    disarm();
+    if (typeof MutationObserver !== "function") return;
+    observer = new MutationObserver((records) => {
+      for (const { addedNodes } of records) {
+        for (const node of addedNodes) {
+          if (!(node instanceof HTMLElement)) continue;
+          const element = node.classList.contains(POPOVER_CLASS) ? node : node.querySelector<HTMLElement>(`.${POPOVER_CLASS}`);
+          const step = element && tour.steps[Number(element.getAttribute(STEP_ATTR))];
+          if (element && step) return begin(step, element);
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  };
+
+  const watch = (step: TourStep): void => {
+    stopHide?.();
+    stopHide = step.once("will-hide", () => {
+      stopHide = null;
+      const element = step.element;
+      if (!element?.isConnected) {
+        departure = null;
+        return;
+      }
+      const rect = element.getBoundingClientRect();
+      departure = {
+        step,
+        left: rect.left,
+        top: rect.top,
+        centered: isCentered(step),
+        dialog: element.classList.contains(DIALOG_CLASS),
+      };
+      arm();
+    });
+  };
+
+  const stopShown = tour.on("step-shown", ({ step }) => {
+    const element = step.element;
+    if (running && running.element !== element) settle();
+    if (element && departure) begin(step, element);
+    departure = null;
+    disarm();
+    watch(step);
   });
 
   const current = tour.currentStep;
   if (current?.isShown()) watch(current);
 
-  const stopEnd = [tour.on("finished", () => (departure = null)), tour.on("exited", () => (departure = null))];
+  const forget = (): void => {
+    departure = null;
+    disarm();
+  };
+  const stopEnd = [tour.on("finished", forget), tour.on("exited", forget)];
 
   return () => {
     stopShown();
     for (const stop of stopEnd) stop();
     stopHide?.();
     stopHide = null;
-    departure = null;
+    forget();
     settle();
   };
 }
