@@ -73,6 +73,22 @@ test.describe("react wrapper", () => {
     expect(await page.evaluate(() => (window as unknown as { vtStarts: number }).vtStarts)).toBe(1);
   });
 
+  test("react: dropping the step on screen moves the state to the next step, then ends the run", async ({ page }) => {
+    await openReact(page);
+    await page.locator("#start").click();
+    await page.locator("#hook-next").click();
+    await expect(stepState(page)).toHaveText("two");
+
+    await page.locator("#hook-drop").click();
+    await expect(stepState(page)).toHaveText("three");
+    await expect(title(page)).toHaveText("Three");
+
+    await page.locator("#hook-drop").click();
+    await expect(popover(page)).toHaveCount(0);
+    await expect(runningState(page)).toHaveText("false");
+    await expect(stepState(page)).toHaveText("none");
+  });
+
   test("react: unmounting the provider removes a running tour", async ({ page }) => {
     await openReact(page);
     await page.locator("#start").click();
@@ -89,6 +105,22 @@ async function openVue(page: Page, query = "") {
 }
 
 test.describe("vue wrapper", () => {
+  test("vue: dropping the step on screen moves the state to the next step, then ends the run", async ({ page }) => {
+    await openVue(page);
+    await page.locator("#start").click();
+    await page.locator("#hook-next").click();
+    await expect(stepState(page)).toHaveText("two");
+
+    await page.locator("#hook-drop").click();
+    await expect(stepState(page)).toHaveText("three");
+    await expect(title(page)).toHaveText("Three");
+
+    await page.locator("#hook-drop").click();
+    await expect(popover(page)).toHaveCount(0);
+    await expect(runningState(page)).toHaveText("false");
+    await expect(stepState(page)).toHaveText("none");
+  });
+
   test("vue: a button starts the tour and the step id comes from composable state", async ({ page }) => {
     await openVue(page);
     await expect(runningState(page)).toHaveText("false");
