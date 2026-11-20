@@ -74,7 +74,7 @@ The factory receives the tour and a `PresenterContext`.
 |---|---|
 | `side` | `'top'`, `'bottom'`, `'left'`, `'right'`, or `'over'` for a centered step. This is the side that was used, after any flip. |
 | `align` | `'start'`, `'center'` or `'end'`: the logical alignment. |
-| `physicalAlign` | The alignment as a physical edge: `left` or `right` for top and bottom sides, `top` or `bottom` for left and right sides, `center` otherwise. In right-to-left layouts the horizontal edges swap. |
+| `physicalAlign` | The alignment as a physical edge: `left` or `right` for top and bottom sides, `top` or `bottom` for left and right sides, `center` otherwise. In right-to-left layouts the horizontal edges swap. It is `center` for `over` and for a pinned popover. |
 | `rtl` | Whether the anchor is laid out right to left. |
 | `pinned` | No side fit, so the popover is pinned to the bottom center of the viewport and its arrow is hidden. `side` still names the requested side; treat a pinned popover as `over`. |
 | `wrapperRect` | The popover wrapper's rectangle. |
