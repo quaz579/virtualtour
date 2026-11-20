@@ -38,6 +38,14 @@ After a step's animation ends, the avatar holds that animation's still frame and
 
 Turn it off for the whole tour with `idle: false`, or per step with `extensions.avatar.idle`. The step's value wins. A looping step animation other than `rest` never arms the timer. Details are in [Idle](./#idle).
 
+Edge cases, all by design:
+
+- A looping step animation other than `rest` never arms the timer, because it never ends.
+- The same idle animation is not repeated back to back unless the pack lists only one.
+- If an idle animation fails to play, the avatar logs one warning in development builds and stays quiet until the next step or nudge brings it back to rest.
+- A quiet period above about 24 days is capped at 2147483647 ms, the longest delay a browser timer accepts.
+- `idle: false` on a step, a hidden step, reduced motion or an `idle` role with no animations all keep the timer off. The next step that turns idle on arms it again.
+
 ## Reduced motion
 
 With `prefers-reduced-motion: reduce` the avatar does not animate. Each step's animation shows its still frame, the idle loop never starts, and the wait for the entrance fade is skipped. The bubble, text and buttons behave as usual. The pack decides which frame is the still one; see [make a pack](./make-a-pack#reduced-motion-and-still-frames).

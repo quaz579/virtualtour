@@ -56,6 +56,7 @@ When a step's animation ends, the avatar holds that animation's still frame and 
 - `idleQuietMs` defaults to 6000. A value of zero or less, or one that is not a finite number, uses 6000. A smaller positive value is raised to 50.
 - Any step animation, a nudge reaction or leaving the step cancels the timer.
 - Idle never starts under reduced motion, or when the pack has no `idle` role.
+- If an idle animation fails to play, idle pauses (with one development warning) until the avatar next comes to rest.
 - Set `idle: false` on the tour or on a step to turn it off.
 
 ## Dock
