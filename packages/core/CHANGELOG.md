@@ -20,7 +20,7 @@ First release. The tour engine is derived from driver.js 1.12.1 (tag `1.12.1`, c
 - F-05: extra cut-outs for allowed elements anywhere on the page, deduplicated.
 - F-06: popover boundary, viewport padding, and `side: "over"` for targets.
 - F-07: flip, alignment flip and shift switches, and `side: "auto"`.
-- F-08: cross-axis offset, RTL mirroring, arrow off and minimum arrow inset. A popover whose direction differs from its target's takes the target's direction while the step has a real target (a `dir` it replaced is restored afterwards); for centered and targetless steps `info.rtl` follows the page direction.
+- F-08: cross-axis offset, RTL mirroring, arrow off and minimum arrow inset. A popover whose direction differs from its target's takes the target's direction while the step has a real target (a `dir` it replaced is restored afterwards); for targetless steps `info.rtl` follows the page direction.
 - F-09: the highlight follows nested scroll containers, with an optional scroll-parent lock.
 - F-10: `absolute` position strategy for transformed containers.
 - F-11: reveal options, native `scrollIntoView` options, and reduced-motion-safe scrolling.
