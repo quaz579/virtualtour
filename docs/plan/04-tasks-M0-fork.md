@@ -51,8 +51,8 @@ scaffold), NF-size (report), NF-ssr (gate), NF-tests (harness).
 - `packages/core/playwright.config.ts`: projects `chromium`, `edge` (`channel: 'msedge'`,
   skipped when missing), `firefox`, `webkit`; `webServer` runs `demo/`.
 - `packages/core/tools/size-report.mjs`: builds, gzips each entry, prints a table with the
-  delta against `SIZE.md`, prints `warning:` lines above the soft targets (35 KB core,
-  12 KB avatar, 2 KB motion; see `SIZE.md`), exits 0 always.
+  delta against `SIZE.md`, prints `warning:` lines above the soft targets (37 KB core,
+  13 KB avatar, 2 KB motion; see `SIZE.md`), exits 0 always.
 - `packages/core/test/ssr.node.test.ts`: imports `../src/index.ts`, `../src/engine/driver.ts`,
   `../src/avatar/index.ts`, `../src/motion/index.ts` with `globalThis.window` and
   `document` deleted; asserts no throw.
