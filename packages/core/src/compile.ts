@@ -63,7 +63,7 @@ function toCorners(radius: number | CornerRadius, fallback: number | CornerRadiu
   return out;
 }
 
-function counterText(counter: (index: number, total: number) => string, index: number, total: number): string {
+export function counterText(counter: (index: number, total: number) => string, index: number, total: number): string {
   try {
     const text: unknown = counter(index, total);
     if (typeof text === "string") return text;
