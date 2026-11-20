@@ -13,7 +13,7 @@
 | `durationMs` | `number` | `250` | How long the popover travels. |
 | `easing` | `string` | `cubic-bezier(.2,.8,.2,1)` | CSS easing for the travel. |
 
-`glide` returns a function. Call it to stop listening and cancel a glide in progress. A glide stays attached across runs of the tour until you call it, so wire it to `deactivated` only if you want to stop for good.
+`glide` returns a function. Call it to release your hold on the glide; when every caller has released it, it stops listening and cancels a glide in progress. A glide stays attached across runs of the tour until you call it, so wire it to `deactivated` only if you want to stop for good.
 
 ### When it does nothing
 

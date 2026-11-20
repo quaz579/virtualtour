@@ -267,6 +267,15 @@ describe("glide", () => {
       expect(animations[0]!.options).toMatchObject({ duration: 600 });
     });
 
+    it("a call after tour.off() brings the glide back without doubling it", async () => {
+      const tour = await start({ steps });
+      glide(tour);
+      tour.off();
+      glide(tour);
+      await tour.forward();
+      expect(animations).toHaveLength(1);
+    });
+
     it("glides on different tours are independent", async () => {
       const a = await start({ steps });
       const off = glide(a);

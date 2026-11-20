@@ -90,7 +90,10 @@ export interface TourEvents {
   "step-shown": { tour: Tour; step: TourStep; previous: TourStep | null };
   /** An action step's instruction was met. */
   "step-completed": { tour: Tour; step: TourStep };
-  /** `appendStep` or `dropStep` changed the step list. Fires after the list, the position and the progress text are updated. */
+  /**
+   * `appendStep` or `dropStep` changed the step list. Fires after the list and the progress text are updated. When the
+   * step on screen was dropped from a running tour it fires before the next step is chosen, so `currentStep` is null.
+   */
   "steps-changed": { tour: Tour };
   finished: { tour: Tour };
   exited: { tour: Tour; reason: ExitReason };

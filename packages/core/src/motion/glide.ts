@@ -17,7 +17,7 @@ interface Departure {
   dialog: boolean;
 }
 
-const attached = new WeakMap<Tour, { count: number; detach: () => void }>();
+const attached = new WeakMap<Tour, { count: number; detach: () => void; rearm: () => void }>();
 
 const GLIDE_CLASS = "vt-glide";
 const DIALOG_CLASS = "vt-dialog";
@@ -42,9 +42,9 @@ function isCentered(step: TourStep): boolean {
 export function glide(tour: Tour, options: GlideOptions = {}): () => void {
   let shared = attached.get(tour);
   if (!shared) {
-    shared = { count: 0, detach: attach(tour, options) };
+    shared = { count: 0, ...attach(tour, options) };
     attached.set(tour, shared);
-  }
+  } else shared.rearm();
   const entry = shared;
   entry.count += 1;
   let released = false;
@@ -58,7 +58,7 @@ export function glide(tour: Tour, options: GlideOptions = {}): () => void {
   };
 }
 
-function attach(tour: Tour, options: GlideOptions): () => void {
+function attach(tour: Tour, options: GlideOptions): { detach: () => void; rearm: () => void } {
   const durationMs = options.durationMs ?? 250;
   const easing = options.easing ?? "cubic-bezier(.2,.8,.2,1)";
   let departure: Departure | null = null;
@@ -92,7 +92,7 @@ function attach(tour: Tour, options: GlideOptions): () => void {
     });
   };
 
-  const stopShown = tour.on("step-shown", ({ step, previous }) => {
+  const onShown = ({ step, previous }: { step: TourStep; previous: TourStep | null }): void => {
     settle();
     const from = departure;
     departure = null;
@@ -128,19 +128,28 @@ function attach(tour: Tour, options: GlideOptions): () => void {
     animation.addEventListener("finish", () => {
       if (running?.animation === animation) running = null;
     });
-  });
+  };
+
+  let stops: (() => void)[] = [];
+  const rearm = (): void => {
+    for (const stop of stops) stop();
+    stops = [
+      tour.on("step-shown", onShown),
+      tour.on("finished", () => (departure = null)),
+      tour.on("exited", () => (departure = null)),
+    ];
+  };
+  rearm();
 
   const current = tour.currentStep;
   if (current?.isShown()) watch(current);
 
-  const stopEnd = [tour.on("finished", () => (departure = null)), tour.on("exited", () => (departure = null))];
-
-  return () => {
-    stopShown();
-    for (const stop of stopEnd) stop();
+  const detach = (): void => {
+    for (const stop of stops) stop();
     stopHide?.();
     stopHide = null;
     departure = null;
     settle();
   };
+  return { detach, rearm };
 }
