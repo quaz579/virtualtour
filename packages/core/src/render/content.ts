@@ -13,10 +13,7 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-/**
- * Runs `html` through the sanitizer when there is one. A hook that throws, or returns something other than a string,
- * logs an error and the text comes back escaped, so it shows as plain text.
- */
+/** Runs `html` through the sanitizer when there is one. */
 export function cleanHtml(html: string, sanitize: Sanitizer): string {
   if (!sanitize) return html;
   let clean: unknown;
