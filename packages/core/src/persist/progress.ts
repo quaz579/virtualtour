@@ -38,15 +38,29 @@ export class ProgressTracker {
     return this.config.resume === true;
   }
 
-  /** The stored record, or `null` when there is none or the store failed. Never rejects. */
-  async load(): Promise<ProgressRecord | null> {
+  /** The stored record, or `null` when there is none, the store failed or `timeoutMs` passed. A late answer is ignored. Never rejects. */
+  async load(timeoutMs = 0): Promise<ProgressRecord | null> {
     let loaded: unknown = null;
     if (this.pending) await this.pending;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      loaded = await this.config.store.load(this.tourId);
+      const reading = Promise.resolve(this.config.store.load(this.tourId));
+      if (timeoutMs > 0 && timeoutMs !== Infinity) {
+        reading.catch(() => undefined);
+        loaded = await Promise.race([
+          reading,
+          new Promise<null>((resolve) => {
+            timer = setTimeout(() => {
+              warn(`Progress store load for tour "${this.tourId}" did not settle within ${timeoutMs} ms; starting without saved progress.`);
+              resolve(null);
+            }, Math.min(timeoutMs, 2 ** 31 - 1));
+          }),
+        ]);
+      } else loaded = await reading;
     } catch (error) {
       warn(`Progress store load failed for tour "${this.tourId}"; starting without saved progress.`, error);
     }
+    clearTimeout(timer);
     this.record = cleanRecord(loaded, this.tourId);
     return this.record;
   }
