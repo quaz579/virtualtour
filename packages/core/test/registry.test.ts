@@ -43,6 +43,7 @@ describe("tours registry", () => {
       deactivated: { tour },
       "step-shown": { tour, step: second!, previous: first! },
       "step-completed": { tour, step: first! },
+      "steps-changed": { tour },
       finished: { tour },
       exited: { tour, reason: "replaced" as const },
       bypassed: { tour, reason: "completed" as const },

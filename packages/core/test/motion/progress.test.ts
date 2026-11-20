@@ -42,6 +42,39 @@ describe("progressVars", () => {
     expect(vars()).toEqual(["2", "4"]);
   });
 
+  it("updates the total on screen when a step is appended mid-step", async () => {
+    const tour = await start({ steps });
+    progressVars(tour);
+    tour.appendStep({ id: "four", title: "Four" });
+    expect(vars()).toEqual(["1", "4"]);
+  });
+
+  it("updates the index when a step is inserted before the one on screen", async () => {
+    const tour = await start({ steps });
+    await tour.forward();
+    progressVars(tour);
+    tour.appendStep({ id: "zero", title: "Zero" }, 0);
+    expect(vars()).toEqual(["3", "4"]);
+  });
+
+  it("updates the total and index when a step is dropped mid-step", async () => {
+    const tour = await start({ steps });
+    await tour.forward();
+    progressVars(tour);
+    tour.dropStep("three");
+    expect(vars()).toEqual(["2", "2"]);
+    tour.dropStep("one");
+    expect(vars()).toEqual(["1", "1"]);
+  });
+
+  it("stops reacting to step list changes after off()", async () => {
+    const tour = await start({ steps });
+    const off = progressVars(tour);
+    off();
+    tour.appendStep({ id: "four", title: "Four" });
+    expect(vars()).toEqual(["", ""]);
+  });
+
   it("off() removes the variables and stops updating", async () => {
     const tour = await start({ steps });
     const off = progressVars(tour);

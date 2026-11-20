@@ -174,6 +174,7 @@ export class Tour {
       syncEngineSteps(this);
       refreshProgress(this);
     }
+    emitTour(this, "steps-changed", { tour: this });
     return step;
   }
 
@@ -192,6 +193,7 @@ export class Tour {
       if (index < state.currentIndex) state.currentIndex -= 1;
       else if (index === state.currentIndex) state.currentIndex = -1;
       retireStep(step);
+      emitTour(this, "steps-changed", { tour: this });
       return;
     }
     const wasVisible = state.steps[state.currentIndex] === step;
@@ -209,6 +211,7 @@ export class Tour {
       syncEngineSteps(this);
       refreshProgress(this);
     }
+    emitTour(this, "steps-changed", { tour: this });
     if (wasTarget) settle(state);
     if (!wasVisible && !wasTarget) return;
     reportFailure(state.queue.enqueue(() => resumeAfterDrop(this, index - 1)));
