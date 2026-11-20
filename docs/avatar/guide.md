@@ -40,11 +40,10 @@ Turn it off for the whole tour with `idle: false`, or per step with `extensions.
 
 Edge cases, all by design:
 
-- A looping step animation other than `rest` never arms the timer, because it never ends.
 - The same idle animation is not repeated back to back unless the pack lists only one.
 - If an idle animation fails to play, the avatar logs one warning in development builds and stays quiet until the next step or nudge brings it back to rest.
 - A quiet period above about 24 days is capped at 2147483647 ms, the longest delay a browser timer accepts.
-- `idle: false` on a step, a hidden step, reduced motion or an `idle` role with no animations all keep the timer off. The next step that turns idle on arms it again.
+- `idle: false` on a step, a hidden step, or reduced motion all keep the timer off. The next step that turns idle on arms it again.
 
 ## Reduced motion
 

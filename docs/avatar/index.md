@@ -53,7 +53,7 @@ A step sets avatar behavior under `extensions.avatar`. A value of the wrong type
 
 When a step's animation ends, the avatar holds that animation's still frame and a timer starts. When it fires, the avatar plays a random animation from the pack's `idle` role, never the same one twice in a row, then returns to rest and waits again.
 
-- `idleQuietMs` defaults to 6000. A value of zero or less, or one that is not a finite number, uses 6000. A smaller positive value is raised to 50.
+- `idleQuietMs` defaults to 6000. A value of zero or less, or one that is not a finite number, uses 6000. A smaller positive value is raised to 50, and one above 2147483647 (about 24 days) is capped there.
 - Any step animation, a nudge reaction or leaving the step cancels the timer.
 - Idle never starts under reduced motion, or when the pack has no `idle` role.
 - If an idle animation fails to play, idle pauses (with one development warning) until the avatar next comes to rest.

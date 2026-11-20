@@ -4,7 +4,7 @@ import type { SpritePlayer } from "./player";
 
 /** Options for {@link IdleScheduler}. */
 export interface IdleSchedulerOptions {
-  /** Milliseconds of quiet before an idle animation plays. Default 6000; values below 50 count as 50, and zero or negative values use the default. */
+  /** Milliseconds of quiet before an idle animation plays. Default 6000; values below 50 count as 50, values above 2147483647 are capped there, and zero or negative values use the default. */
   quietMs?: number;
   /** Read each time the scheduler arms and fires; defaults to the library-wide `prefers-reduced-motion` check. */
   reducedMotion?: () => boolean;
