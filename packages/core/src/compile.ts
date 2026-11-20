@@ -63,6 +63,17 @@ function toCorners(radius: number | CornerRadius, fallback: number | CornerRadiu
   return out;
 }
 
+export function counterText(counter: (index: number, total: number) => string, index: number, total: number): string {
+  try {
+    const text: unknown = counter(index, total);
+    if (typeof text === "string") return text;
+    console.error("[virtualtour] counter did not return a string; the step shows the default counter.");
+  } catch (error) {
+    console.error("[virtualtour] counter threw; the step shows the default counter:", error);
+  }
+  return `${index} of ${total}`;
+}
+
 function compileStep(
   step: TourStepLike,
   base: Partial<StepConfig>,
@@ -190,7 +201,7 @@ export function compileTour(c: NormalizedTourConfig, steps: readonly TourStepLik
   const compiled = steps.map((step, index) => {
     const out = compileStep(step, c.stepDefaults, dim.radius, false, c.sanitize);
     if (typeof counter === "function") {
-      out.popover = { ...out.popover, progressText: counter(index + 1, total) };
+      out.popover = { ...out.popover, progressText: counterText(counter, index + 1, total) };
     }
     return out;
   });
