@@ -47,7 +47,7 @@ Payloads are `{ step }`. Subscribe with `step.on(...)`.
 | `hidden` | The step left the screen. Always follows `will-hide` directly. |
 | `completed` | An action step's instruction was met. Only fires for steps with an `instruction`. |
 | `finished` | The run finished while this step was current. |
-| `exited` | The run ended with this step as the last one shown, or as the step being left by a move that had not finished. The step a move was heading to gets no `exited`, except the first step of a run whose show had begun. If no step had begun to show, no step gets `exited`. |
+| `exited` | The run ended with this step as the last one shown, or as the step being left by a move that had not finished. A move's target gets `exited` only when its show had begun and no earlier step was shown on the same engine, such as the first show of a run or a move after `hideCurrent()`. If no step had begun to show, no step gets `exited`. |
 | `disposed` | The run is over and the step released its element and target. Fires exactly once per step per run. |
 
 ## Order of events

@@ -610,7 +610,7 @@ Step:  created ──show()──▶ shown ──hide()──▶ hidden ──sh
 | action step S completed | `onStepCompleted(S)` | S `completed` → tour `step-completed`; then, after `advanceDelay`, the engine calls `onNextClick` → navigator |
 | `hideCurrent()` | `destroy()` with the `hiding` flag set | S `will-hide` → S `hidden`; no `exited`; tour stays `running`; the next navigation creates a fresh engine at the chosen index |
 | `dropStep(S)` while S is visible | `leaveStep(S)`, splice, `S.dispose()`, engine steps re-synced; then a queued forward navigation from the dropped position | S `will-hide` → S `hidden` → S `disposed` (all synchronous inside the call, so `disposed` fires before any replacement step is shown) → on the navigation queue: first remaining step shown (`will-show` → `shown` → `step-shown`); if none remain → tour `exited` {reason: `api`} sequence, no prompt |
-| `dropStep(S)` while S is not on screen | splice, `S.dispose()`; if S is the target of a move in progress, the move continues as the rules below describe | S `disposed` only. For a move target the engine has started moving to (its `will-show` fired): S `disposed`, then the next show the rules below describe |
+| `dropStep(S)` while S is not on screen | splice, `S.dispose()`; if S is the target of a move in progress, the move continues as the rules below describe | S `disposed` only. For a move target whose `will-show` fired, S `disposed` is followed by the next show the rules below describe |
 | tour event while subscribers exist | `emitTour` | the tour's own listeners first, then the registry relay row: the same event and payload to `tours.on(...)` subscribers |
 | `finish()` / Done on last step | `destroy()` reason `done` → `onDeselected(S)` → `onDestroyed` | S `will-hide` → S `hidden` → S `finished` → tour `finished` → every step `disposed` (array order) → registry `current = null` → tour `deactivated` |
 | `exit()` accepted or no prompt | `destroy()` reason ≠ `done` | S `will-hide` → S `hidden` → S `exited` → tour `exited` {reason} → every step `disposed` → `current = null` → tour `deactivated` |
@@ -635,8 +635,9 @@ Rules:
   replaces an older queued one). `exit()`/`finish()` abort any pending wait through an
   `AbortController`.
 - Dropping the target of a move once the engine has started moving to it (its `will-show` fired): the step gets
-  `disposed` with no `shown`. A forward move then shows the next eligible step after it. If none is left, `finished`
-  fires on the step before it (already hidden) and the tour finishes; a visible drop exits with reason `api` instead.
+  `disposed` with no `shown`. A forward move then shows the next eligible step after it. If none is left, the tour
+  finishes: `finished` fires on the step the move left (already hidden), or on no step when the move had none to leave.
+  A visible drop exits with reason `api` instead.
   A backward move shows the nearest earlier eligible step first, and the queued resume then moves forward to the first
   step after the dropped one. If no earlier step is eligible, the move exits with reason `api`. If the dropped step was
   the first step, the move stays and the queued resume shows the first remaining eligible step.
