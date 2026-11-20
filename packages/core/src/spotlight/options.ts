@@ -1,8 +1,10 @@
+import { names } from "../engine/core/namespace";
+
 const guards = new WeakMap<Element, Map<object, MutationObserver>>();
 
 /** The class VirtualTour adds to the target and the extras of a shown step, for a namespace. */
 export function spotlitClass(namespace: string): string {
-  return `${namespace}-spotlit`;
+  return names(namespace).spotlit;
 }
 
 /** The selectors `querySelectorAll` accepts, in order; the rest are dropped so one bad entry cannot break a step. */

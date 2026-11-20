@@ -9,9 +9,26 @@ export interface ResolvedBody {
   element?: Element | DocumentFragment;
 }
 
-/** Runs `html` through the sanitizer when there is one. */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+/**
+ * Runs `html` through the sanitizer when there is one. A hook that throws, or returns something other than a string,
+ * logs an error and the text comes back escaped, so it shows as plain text.
+ */
 export function cleanHtml(html: string, sanitize: Sanitizer): string {
-  return sanitize ? sanitize(html) : html;
+  if (!sanitize) return html;
+  let clean: unknown;
+  try {
+    clean = sanitize(html);
+  } catch (error) {
+    console.error("[virtualtour] sanitize threw; the text is shown as plain text:", error);
+    return escapeHtml(html);
+  }
+  if (typeof clean === "string") return clean;
+  console.error("[virtualtour] sanitize did not return a string; the text is shown as plain text.");
+  return escapeHtml(html);
 }
 
 /** Resolves a text value; a function is called only when `evaluate` is true. */

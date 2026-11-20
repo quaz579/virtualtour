@@ -73,7 +73,7 @@ Only one tour is active at a time. Starting a second ends the first with `exited
 | `Tour`, `TourStep` | The classes. `TourStep` is never constructed by callers. |
 | `tours` | The registry above. |
 | `Emitter<Events>` | The typed emitter the tour is built on: `on`, `once`, `off`. Useful for your own event bus. |
-| `localStorageStore(prefix?)` | A `ProgressStore` in `window.localStorage` under `<prefix>:<tourId>`, default prefix `virtualtour`. Unavailable or full storage never throws: `load` returns `null`, `save` and `clear` do nothing. Storage is read only when a method runs. |
+| `localStorageStore(prefix?)` | A `ProgressStore` in `window.localStorage` under `<prefix>:<tourId>`, default prefix `virtualtour`. A `prefix` containing `:` throws. Unavailable or full storage never throws: `load` returns `null`, `save` and `clear` do nothing. Storage is read only when a method runs. |
 | `memoryStore()` | A `ProgressStore` that lives as long as the page. Records are copied in and out. |
 | `parseTourJson(json, options?)` | Turns a `virtualtour-tour/1` document, as text or a parsed value, into a `TourConfig`. `options.handlers` resolves `{ "handler": name }` references. Throws `TourJsonError` with a `path` for anything invalid. See [JSON tours](../guide/json-tours). |
 | `serializeTour(config, options?)` | Writes a config as a document. Every function needs a name in `options.handlerNames` and every element a selector in `options.elementSelectors`. Throws `TourJsonError` for `progress`, `presenter`, `sanitize` and element or function bodies. |

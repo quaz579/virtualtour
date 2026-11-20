@@ -141,6 +141,20 @@ describe("sanitize", () => {
     expect(sanitize.mock.calls.filter((c) => c[0] === "same").length).toBe(first * 2);
   });
 
+  it("shows the title and body as escaped text when the hook throws, and the tour still starts", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const tour = await show({
+      sanitize: () => {
+        throw new Error("boom");
+      },
+      steps: [{ title: "<i>T</i>", body: "<b>B</b>" }],
+    });
+    expect(tour.isRunning()).toBe(true);
+    expect(document.querySelector(".vt-popover-title")!.textContent).toBe("<i>T</i>");
+    expect(description().textContent).toBe("<b>B</b>");
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("[virtualtour] sanitize threw"), expect.any(Error));
+  });
+
   it("does not sanitize an element body or the label", async () => {
     const sanitize = vi.fn((html: string) => html);
     const el = document.createElement("div");

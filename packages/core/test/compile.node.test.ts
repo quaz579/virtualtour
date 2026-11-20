@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { compileStepForShow, compileTour } from "../src/compile";
 import { normalizeTourConfig, resolveStepConfig } from "../src/config";
 import type { StepConfig, TourConfig, TourStepLike } from "../src/types";
@@ -512,6 +512,53 @@ describe("03-schemas section 1.4 rows (tour fields)", () => {
     expect(out.steps[0]?.popover?.popoverClass).toBe("shared");
     expect(out.steps[1]?.popover?.popoverClass).toBe("own");
     expect(out.steps[1]?.popoverOffset).toBe(2);
+  });
+});
+
+describe("compileTour sanitizer and counter failures", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const boom = (): string => {
+    throw new Error("boom");
+  };
+
+  it("shows a title as escaped text and logs when the sanitizer throws", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const step = compileOne({ title: "<b>Hi</b> & 'bye'" }, { sanitize: boom }).step;
+    expect(step.popover?.title).toBe("&lt;b&gt;Hi&lt;/b&gt; &amp; &#39;bye&#39;");
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("[virtualtour] sanitize threw"), expect.any(Error));
+  });
+
+  it("escapes a body string and each paragraph of a body array when the sanitizer throws", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(compileOne({ body: "<i>x</i>" }, { sanitize: boom }).step.popover?.description).toBe("&lt;i&gt;x&lt;/i&gt;");
+    expect(compileOne({ body: ["<i>a</i>", "b"] }, { sanitize: boom }).step.popover?.description).toBe("<p>&lt;i&gt;a&lt;/i&gt;</p><p>b</p>");
+  });
+
+  it("escapes the text when the sanitizer returns something other than a string", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const step = compileOne({ title: "<u>t</u>" }, { sanitize: (() => 7) as unknown as (html: string) => string }).step;
+    expect(step.popover?.title).toBe("&lt;u&gt;t&lt;/u&gt;");
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("did not return a string"));
+  });
+
+  it("passes a sanitized title through when the sanitizer works", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(compileOne({ title: "<b>ok</b>" }, { sanitize: (html) => html.replace(/b>/g, "i>") }).step.popover?.title).toBe("<i>ok</i>");
+  });
+
+  it("shows the default counter text for each step when the counter throws, and logs", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const n = normalizeTourConfig({
+      counter: () => {
+        throw new Error("nope");
+      },
+    });
+    const steps = [makeStep(resolveStepConfig(n, {})), makeStep(resolveStepConfig(n, {}))];
+    expect(compileTour(n, steps).steps.map((step) => step.popover?.progressText)).toEqual(["1 of 2", "2 of 2"]);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("[virtualtour] counter threw"), expect.any(Error));
   });
 });
 

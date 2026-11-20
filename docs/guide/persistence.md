@@ -44,7 +44,7 @@ Two stores ship with the library.
 
 `localStorageStore` never throws. Blocked storage, a full quota and corrupt or foreign values all behave as "nothing saved": `load` returns `null`, and `save` and `clear` do nothing. A visitor in a private window may simply see the tour every time.
 
-Beware of colons. The key is a plain join, so prefix `app` with tour id `a:b` and prefix `app:a` with tour id `b` both use the key `app:a:b`. A read ignores a record whose stored `tourId` differs, but a save overwrites it. Keep `:` out of tour ids and prefixes, or give each its own prefix.
+A prefix may not contain `:`. `localStorageStore` throws a clear error when it does, because the key is a plain join: prefix `app:a` with tour id `b` and prefix `app` with tour id `a:b` would both use the key `app:a:b`, and a save would overwrite the other tour's record. A colon in a tour id is fine, since the prefix never has one.
 
 <<< @/snippets/guide/persistence-reset.ts
 
