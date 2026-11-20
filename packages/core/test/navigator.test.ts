@@ -653,7 +653,7 @@ describe("review round 2", () => {
     expect(tour.currentStep?.id).toBe("c");
   });
 
-  it("a chosen step dropped while it prepares ends the tour when nothing follows", async () => {
+  it("a chosen step dropped while it prepares exits with reason api when nothing follows", async () => {
     let release: () => void = () => {};
     const gate = new Promise<void>((resolve) => (release = resolve));
     const tour = make([{ id: "a" }, { id: "b", prepare: () => gate }]);
@@ -664,7 +664,8 @@ describe("review round 2", () => {
     tour.dropStep("b");
     release();
     await moving;
-    expect(log).toContain("tour:finished");
+    expect(log).toContain("tour:exited api");
+    expect(log).not.toContain("tour:finished");
   });
 
   it("a step dropped while backward navigation prepares it hands the move to the previous step", async () => {

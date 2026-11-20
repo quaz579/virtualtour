@@ -52,7 +52,7 @@ Payloads are `{ step }`. Subscribe with `step.on(...)`.
 
 ## Order of events
 
-The test suite checks every row except the `exit()`-during-move row. Each row lists the events in the order they fire. The step names `S` and `T` are the old and new steps.
+This table is checked by the test suite. Each row lists the events in the order they fire. The step names `S` and `T` are the old and new steps.
 
 | Situation | Events, in order |
 |---|---|
@@ -60,6 +60,8 @@ The test suite checks every row except the `exit()`-during-move row. Each row li
 | Show a step `S` | S `will-show`, presenter mounts, S `shown`, tour `step-shown` (with `previous`), then the navigation promise resolves |
 | Move from `S` to `T` | S `will-hide`, S `hidden`, T `will-show`, T `shown`, tour `step-shown` |
 | `exit()` while a move from `S` to `T` has not shown `T` | If the move had started, S `will-hide`, S `hidden` and T `will-show` have already fired. `exit()` then fires S `will-hide` and S `hidden` only if S is still on screen, S `exited`, tour `exited` (with `reason`), every step `disposed`, `tours.current` cleared, tour `deactivated` |
+| `dropStep(T)` after the move to `T` began (T `will-show` fired) | T `disposed` with no `shown`, then the first remaining step after `T` shows, whichever way the move went, and no earlier step shows first. With none left, the tour exits with reason `api`: S `exited`, tour `exited`, never `finished` |
+| `dropStep(T)` while the move to `T` is still in `prepare`, `revealWith` or a wait | T `disposed` only, and the move skips it. If no step is left to show, the tour exits with reason `api`, never `finished` |
 | `S` shown again later | S `will-show`, S `shown`. No `disposed` in between |
 | Action step `S` completed | S `completed`, tour `step-completed`. After the step's `advanceDelay`, the move to the next step starts as above |
 | `hideCurrent()` | S `will-hide`, S `hidden`. No `exited`. The tour stays running |
@@ -85,7 +87,7 @@ The registry relay of an event comes right after the tour's own handlers for it.
 | `close` | The user pressed the close button. |
 | `escape` | The user pressed Escape. |
 | `overlay` | The user clicked the dimmed area with `dim.clickOutside: "exit"`. |
-| `api` | Your code called `exit()`, the last visible step was dropped, no earlier step was eligible when going back, or a navigation failed. |
+| `api` | Your code called `exit()`, the last step was dropped (on screen or as the target of a move), every earlier step was skipped when going back, or a navigation failed. |
 | `replaced` | Another tour started. |
 
 `close`, `escape` and `overlay` go through the `exitPrompt` option first. A string prompt uses `window.confirm`. A function may return a boolean or a promise. If the function throws, the error is logged and the tour stays open. `exit()` from code goes through the prompt too, and resolves `false` when the user declines. `replaced` and the automatic exits never prompt.
