@@ -235,7 +235,7 @@ export class Tour {
       state.starting = true;
       let record: ProgressRecord | null;
       try {
-        record = await progress.load();
+        record = await progress.load(state.normalized.waitBudget);
       } finally {
         state.starting = false;
       }
@@ -244,7 +244,13 @@ export class Tour {
         emitTour(this, "bypassed", { tour: this, reason: "completed" });
         return;
       }
-      if (progress.resume && record?.lastStepId !== undefined) resumeAt = state.steps.findIndex((s) => s.id === record.lastStepId);
+      if (progress.resume && record?.lastStepId !== undefined) {
+        const saved = record.lastStepId;
+        resumeAt = state.steps.findIndex((s) => s.id === saved);
+        if (resumeAt < 0 && (typeof __DEV__ === "undefined" || __DEV__)) {
+          console.warn(`[virtualtour] Saved step "${saved}" is not in tour "${state.normalized.id}"; starting at the first step.`);
+        }
+      }
     }
     if (!beginRun(this)) return;
     if (resumeAt <= 0) {

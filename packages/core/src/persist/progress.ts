@@ -38,16 +38,48 @@ export class ProgressTracker {
     return this.config.resume === true;
   }
 
-  /** The stored record, or `null` when there is none or the store failed. Never rejects. */
-  async load(): Promise<ProgressRecord | null> {
+  /**
+   * The stored record, or `null` when there is none, the store failed or `timeoutMs` passed, counting any wait for
+   * pending saves. A late answer is ignored except that its `completedAt` is kept so later saves do not erase it.
+   * Never rejects.
+   */
+  async load(timeoutMs = 0): Promise<ProgressRecord | null> {
     let loaded: unknown = null;
-    if (this.pending) await this.pending;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timedOut = false;
+    const reading = (async (): Promise<unknown> => {
+      if (this.pending) await this.pending;
+      return this.config.store.load(this.tourId);
+    })();
     try {
-      loaded = await this.config.store.load(this.tourId);
+      if (timeoutMs > 0 && timeoutMs !== Infinity) {
+        loaded = await Promise.race([
+          reading,
+          new Promise<null>((resolve) => {
+            timer = setTimeout(() => {
+              timedOut = true;
+              warn(`Progress store load for tour "${this.tourId}" did not settle within ${timeoutMs} ms; starting without saved progress.`);
+              resolve(null);
+            }, Math.min(timeoutMs, 2 ** 31 - 1));
+          }),
+        ]);
+      } else loaded = await reading;
     } catch (error) {
       warn(`Progress store load failed for tour "${this.tourId}"; starting without saved progress.`, error);
     }
+    clearTimeout(timer);
     this.record = cleanRecord(loaded, this.tourId);
+    if (timedOut) {
+      reading.then(
+        (late) => {
+          const completedAt = cleanRecord(late, this.tourId)?.completedAt;
+          if (completedAt === undefined || this.record?.completedAt !== undefined) return;
+          if (this.record) this.write({ ...this.record, completedAt });
+          else this.record = { tourId: this.tourId, updatedAt: new Date().toISOString(), completedAt };
+        },
+        () => undefined
+      );
+    }
     return this.record;
   }
 

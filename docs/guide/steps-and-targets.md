@@ -80,7 +80,7 @@ Two options keep a stuck page from freezing the tour. Both log a `console.warn` 
 | Option | Where | Default | Bounds |
 |---|---|---|---|
 | `hookTimeout` | step (or `stepDefaults`) | `10000` ms | How long `prepare` and `revealWith` may each take to settle. On timeout the step shows anyway, as it does when the hook throws. `0` or `Infinity` waits forever. |
-| `waitBudget` | tour | `10000` ms | The total time one navigation may spend waiting for targets across consecutive steps that have `waitFor`. `0` or `Infinity` removes the cap. |
+| `waitBudget` | tour | `10000` ms | The total time one navigation may spend waiting for targets across consecutive steps that have `waitFor`. It also bounds a progress store `load`. `0` or `Infinity` removes the cap. |
 
 A navigation is one move: a `forward()`, a `goTo()`, or the first show of a run. The first step that has to wait always gets its full `waitFor`. Later steps in the same move share what is left. Once the budget is spent, remaining steps are judged on what is on the page right now and follow their `whenMissing`. This matters when several steps in a row are skipped or have `whenMissing: "skip"`.
 
