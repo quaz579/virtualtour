@@ -12,7 +12,7 @@ export interface TourProviderProps {
   children?: ReactNode;
 }
 
-/** What {@link useTour} returns. `isRunning` and `currentStep` update on the tour events started, step-shown, finished, exited and deactivated, so a step removed while shown is not reflected until the next event. The methods are stable across renders. */
+/** What {@link useTour} returns. `isRunning` and `currentStep` update on the tour events started, step-shown, finished, exited and deactivated, and when the step on screen is dropped. The methods are stable across renders. */
 export interface UseTourResult {
   tour: Tour;
   isRunning: boolean;
@@ -80,8 +80,25 @@ function createStore(config: TourConfig): TourStore {
       return store.snapshot;
     },
     subscribe(listener) {
-      const offs = watched.map((event) => tour.on(event, listener));
-      return () => offs.forEach((off) => off());
+      let tracked: TourStep | null = null;
+      let offStep = (): void => {};
+      const notify = (): void => {
+        track();
+        listener();
+      };
+      const track = (): void => {
+        const current = tour.currentStep;
+        if (current === tracked) return;
+        offStep();
+        tracked = current;
+        offStep = current ? current.on("disposed", notify) : () => {};
+      };
+      track();
+      const offs = watched.map((event) => tour.on(event, notify));
+      return () => {
+        offs.forEach((off) => off());
+        offStep();
+      };
     },
     dispose() {
       store.disposed = true;

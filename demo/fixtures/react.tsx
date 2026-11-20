@@ -39,6 +39,9 @@ function Controls() {
       <button id="hook-exit" type="button" onClick={() => void exit()}>
         Hook exit
       </button>
+      <button id="hook-drop" type="button" onClick={() => currentStep && tour.dropStep(currentStep)}>
+        Hook drop
+      </button>
       <p>
         <button id="first" type="button">First</button>
         <button id="second" type="button">Second</button>

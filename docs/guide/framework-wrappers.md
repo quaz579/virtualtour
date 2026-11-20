@@ -27,7 +27,7 @@ Wrap the part of the tree that needs the tour in `TourProvider` and call `useTou
 | `currentStep` | The `TourStep` on screen, or `null`. |
 | `start()`, `forward()`, `backward()`, `exit()`, `finish()` | The tour's methods. `exit()` resolves to whether the tour exited. |
 
-`isRunning` and `currentStep` update on the tour events `started`, `step-shown`, `finished`, `exited` and `deactivated`. A step you drop while it is on screen is not reflected until the next of those events.
+`isRunning` and `currentStep` update on the tour events `started`, `step-shown`, `finished`, `exited` and `deactivated`, and when the step on screen is dropped with `dropStep()`.
 
 ### Rebuild with a new key
 
@@ -62,7 +62,7 @@ If the config has a string `exitPrompt`, the provider replaces it with an async 
 | `currentStep` | A readonly ref of the `TourStep` on screen, or `null`. |
 | `start()`, `forward()`, `backward()`, `exit()`, `finish()` | The tour's methods. |
 
-The refs update on the same five events as in React. The provider subscribes after mount, so on the server they hold their initial values.
+The refs update on the same events as in React, including when the step on screen is dropped. The provider subscribes after mount, so on the server they hold their initial values.
 
 ### Rebuild with a new key
 
