@@ -119,3 +119,19 @@ test("a page click matching autoAdvance.selector completes the step through the 
   await expect.poll(() => log(page)).toContain("completed:save");
   await expect.poll(() => log(page)).toContain("shown:after");
 });
+
+for (const via of ["Next button", "ArrowRight"] as const) {
+  test(`clearing the instruction with configure() un-gates the shown step: ${via} moves on and does not nudge`, async ({ page }) => {
+    await open(page);
+    await watchNudge(page);
+    await page.evaluate(() => {
+      (window as unknown as { vtTour: { stepById(id: string): { configure(p: object): void } } }).vtTour.stepById("save").configure({ instruction: null });
+    });
+    await expect(page.locator(".vt-popover-next-btn")).not.toHaveAttribute("aria-disabled", "true");
+    if (via === "Next button") await page.locator(".vt-popover-next-btn").click();
+    else await page.keyboard.press("ArrowRight");
+    await expect.poll(() => log(page)).toContain("shown:after");
+    expect(await nudges(page)).toBe(0);
+    expect(await log(page)).toEqual(["shown:save", "shown:after"]);
+  });
+}
