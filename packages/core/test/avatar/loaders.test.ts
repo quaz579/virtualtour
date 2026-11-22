@@ -7,7 +7,9 @@ import { AvatarPackError } from "../../src/avatar/pack";
 
 const fixtures = resolve(dirname(fileURLToPath(import.meta.url)), "../../e2e/fixtures/test-pack");
 const read = (name: string): string => readFileSync(join(fixtures, name), "utf8");
-const thumbtack = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../src/avatar/thumbtack/pack.json"), "utf8");
+const thumbtackDir = resolve(dirname(fileURLToPath(import.meta.url)), "../../src/avatar/thumbtack");
+const thumbtack = readFileSync(join(thumbtackDir, "pack.json"), "utf8");
+const roundThumbtack = readFileSync(join(thumbtackDir, "round/pack.json"), "utf8");
 
 const originalImage = globalThis.Image;
 let imageSize = { w: 128, h: 128 };
@@ -210,22 +212,32 @@ describe("loadClassicAvatarPack", () => {
 });
 
 describe("thumbtackPack", () => {
-  function captured(): { urls: string[]; fetch: typeof fetch } {
+  function captured(body = thumbtack): { urls: string[]; fetch: typeof fetch } {
     const urls: string[] = [];
     const fetchMock = vi.fn(async (url: string) => {
       urls.push(url);
-      return new Response(thumbtack);
+      return new Response(body);
     });
     return { urls, fetch: fetchMock as never };
   }
 
-  it("loads thumbtack/pack.json under a given base", async () => {
+  it("loads the pushpin pack by default under a given base", async () => {
     const spy = captured();
     vi.stubGlobal("fetch", spy.fetch);
     const pack = await thumbtackPack("https://cdn.test/vt/");
     expect(spy.urls).toEqual(["https://cdn.test/vt/thumbtack/pack.json"]);
     expect(pack.name).toBe("Thumbtack");
     expect(pack.sheetUrl).toBe("https://cdn.test/vt/thumbtack/sheet.png");
+    vi.unstubAllGlobals();
+  });
+
+  it("loads the round pack when selected", async () => {
+    const spy = captured(roundThumbtack);
+    vi.stubGlobal("fetch", spy.fetch);
+    const pack = await thumbtackPack("https://cdn.test/vt/", { variant: "round" });
+    expect(spy.urls).toEqual(["https://cdn.test/vt/thumbtack/round/pack.json"]);
+    expect(pack.name).toBe("Thumbtack");
+    expect(pack.sheetUrl).toBe("https://cdn.test/vt/thumbtack/round/sheet.png");
     vi.unstubAllGlobals();
   });
 
@@ -248,5 +260,12 @@ describe("thumbtackPack", () => {
 
   it("rejects instead of throwing for a bad base", async () => {
     await expect(thumbtackPack("http://[bad")).rejects.toMatchObject({ path: "baseUrl" });
+  });
+
+  it("rejects an unknown variant with an options path", async () => {
+    await expect(thumbtackPack(undefined, { variant: "unknown" as never })).rejects.toMatchObject({
+      path: "options.variant",
+      message: 'options.variant: must be "pushpin" or "round"',
+    });
   });
 });

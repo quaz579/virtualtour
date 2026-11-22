@@ -10,7 +10,7 @@ The avatar presenter turns each step into a speech bubble with an animated chara
 
 <<< @/snippets/avatar/with-avatar.ts
 
-The pack is the character: a sprite sheet plus a description of its animations. The package ships one, [Thumbtack](./thumbtack), loaded with `thumbtackPack()`. You can pass `withAvatar` a promise, so the page does not wait on the download before it builds the tour.
+The pack is the character: a sprite sheet plus a description of its animations. The package ships [Thumbtack](./thumbtack) with a push-pin default and a round-top variant, both loaded with `thumbtackPack()`. You can pass `withAvatar` a promise, so the page does not wait on the download before it builds the tour.
 
 ## What the character does
 
