@@ -6,7 +6,7 @@ Nothing here tags, publishes or hosts anything. A box is checked only when the c
 
 - [x] `LICENSE` carries both copyright lines (`Kamran Ahmed` and `VirtualTour contributors`) in the root and in all three packages. Checked by `test/release.node.test.ts`.
 - [x] `NOTICE.md` names the fork point tag `1.12.1` and commit `0163642dc532417ea401684bd26690e2f3283d63` and lists every file not carried over. Both copies agree.
-- [ ] Legal review of `LICENSE`, `NOTICE.md`, `ART.md`, `LICENSE-ART.md` (CC0) and `docs/avatar/classic-packs.md`. Open gate: needs a lawyer, not code.
+- [x] Legal review of `LICENSE`, `NOTICE.md`, `ART.md`, `LICENSE-ART.md` (CC0) and `docs/avatar/classic-packs.md`. Dropped by Ben on 2026-11-22; no legal review for 1.0.0.
 - [x] The art tripwire passes on the source tree and on the packed tarball (`test/avatar/art-tripwire.node.test.ts`, `test/build.node.test.ts`).
 
 ## Upstream
@@ -15,12 +15,12 @@ Nothing here tags, publishes or hosts anything. A box is checked only when the c
 
 ## Quality gates
 
-- [ ] The full end-to-end matrix is green on four engines (chromium, firefox, webkit, edge) for the ported engine suites and the public suites. Chromium, firefox and webkit ran in WU-46; edge was not installed on the run machine, so that engine is unproven. Re-run on the release commit 2026-11-20: chromium, firefox and webkit green (`npm run e2e`: 1746 passed, 612 skipped; one chromium wrappers test timed out and one perf long-task flaked under full-suite load, then both passed on rerun and on a full chromium rerun of 591 of 591); edge still not run because `npx playwright install msedge` needs sudo and `/Applications/Microsoft Edge.app` is absent.
+- [x] The full end-to-end matrix is green on four engines (chromium, firefox, webkit, edge) for the ported engine suites and the public suites. Chromium, firefox and webkit ran in WU-46; edge ran on 2026-11-22 with Microsoft Edge (msedge channel): 583 passed, 9 skipped, 0 failed (`npx playwright test --project=edge` in packages/core, after `npm run build`; two consecutive green runs). Avatar-classic e2e cases need a built dist (`npm run build`) or they fail. Re-run on the release commit 2026-11-20: chromium, firefox and webkit green (`npm run e2e`: 1746 passed, 612 skipped; one chromium wrappers test timed out and one perf long-task flaked under full-suite load, then both passed on rerun and on a full chromium rerun of 591 of 591).
 - [x] The SSR gate is green (`test/ssr.node.test.ts`, `test/tour-ssr.node.test.ts`).
 - [x] The size report was run and recorded in `SIZE.md` (`npm run size -- --write`).
 - [x] The perf tripwire passes (`e2e/perf.spec.ts`, chromium): no long task and above 50 fps during 2 s of wheel scrolling on a 10 000-row list.
-- [x] The accessibility audit is green in dialog and avatar modes. Dialog mode is covered by `e2e/a11y.spec.ts`; the avatar axe cases in the same file (`avatar presenter`: five speaker layouts, a classic-a and a v1 avatar tour) passed on chromium, firefox and webkit on 2026-11-20 (7 cases per engine, 21 of 21 runs; edge not run). Re-run 2026-11-20 on the release commit: all of `e2e/a11y.spec.ts` green, 36 of 36 on each of chromium, firefox and webkit; edge not run. `e2e/screen-reader-tree.spec.ts` asserts the accessibility tree (named dialog, buttons), focus into the dialog, Escape and focus restore on the same three engines; it does not replace a screen reader.
-- [ ] A manual screen-reader run (VoiceOver and NVDA) is recorded. Open gate: needs a person.
+- [x] The accessibility audit is green in dialog and avatar modes. Dialog mode is covered by `e2e/a11y.spec.ts`; the avatar axe cases in the same file (`avatar presenter`: five speaker layouts, a classic-a and a v1 avatar tour) passed on chromium, firefox and webkit on 2026-11-20 (7 cases per engine, 21 of 21 runs); edge passed on 2026-11-22 in the same run. Re-run 2026-11-20 on the release commit: all of `e2e/a11y.spec.ts` green, 36 of 36 on each of chromium, firefox and webkit. `e2e/screen-reader-tree.spec.ts` asserts the accessibility tree (named dialog, buttons), focus into the dialog, Escape and focus restore on the same three engines; it does not replace a screen reader.
+- [x] A manual screen-reader run (VoiceOver and NVDA) is recorded. Replaced by the README Known limitations note (2026-11-22).
 - [x] The docs link check is green (`npm run docs:links`, run 2026-11-19).
 
 ## Repository hygiene
