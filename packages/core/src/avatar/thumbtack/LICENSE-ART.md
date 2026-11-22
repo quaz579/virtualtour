@@ -1,4 +1,4 @@
-The Thumbtack character (the SVG sources, `frames.mjs`, `sheet.png`, and `pack.json` in this directory) is original to this project and is released under CC0 1.0. No rights reserved; no credit required.
+The Thumbtack character artwork, including the push-pin default and round-top variant (the SVG sources, `frames.mjs`, `sheet.png`, and `pack.json` in this directory and its `round/` subdirectory), is original to this project and is released under CC0 1.0. No rights reserved; no credit required.
 
 ---
 

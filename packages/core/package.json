@@ -25,6 +25,8 @@
     "./avatar.css": "./dist/avatar.css",
     "./thumbtack/pack.json": "./dist/thumbtack/pack.json",
     "./thumbtack/sheet.png": "./dist/thumbtack/sheet.png",
+    "./thumbtack/round/pack.json": "./dist/thumbtack/round/pack.json",
+    "./thumbtack/round/sheet.png": "./dist/thumbtack/round/sheet.png",
     "./schemas/*": "./schemas/*"
   },
   "files": [

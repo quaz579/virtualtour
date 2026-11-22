@@ -22,6 +22,8 @@ const builtToday = [
   "dist/thumbtack/pack.json",
   "dist/thumbtack/sheet.png",
   "dist/thumbtack/LICENSE-ART.md",
+  "dist/thumbtack/round/pack.json",
+  "dist/thumbtack/round/sheet.png",
 ];
 
 const notBuiltYet: string[] = [];
@@ -125,6 +127,8 @@ const packContents: Record<string, { exact: string[]; required: string[] }> = {
       "dist/thumbtack/LICENSE-ART.md",
       "dist/thumbtack/pack.json",
       "dist/thumbtack/sheet.png",
+      "dist/thumbtack/round/pack.json",
+      "dist/thumbtack/round/sheet.png",
     ],
     required: ["dist/index.js", "dist/index.d.ts", "dist/avatar.js", "dist/motion.js", "dist/base.css", "dist/theme.css", "dist/avatar.css"],
   },
@@ -153,8 +157,11 @@ describe("package contents", () => {
     expect(unexpected, `${workspace} packs files nobody listed`).toEqual([]);
   }, 120_000);
 
-  it("ships exactly one image, the Thumbtack sheet", () => {
-    expect(packedPaths("virtualtour").filter((path) => /\.(png|jpe?g|gif|webp|svg)$/i.test(path))).toEqual(["dist/thumbtack/sheet.png"]);
+  it("ships one Thumbtack sheet for each variant", () => {
+    expect(packedPaths("virtualtour").filter((path) => /\.(png|jpe?g|gif|webp|svg)$/i.test(path)).sort()).toEqual([
+      "dist/thumbtack/round/sheet.png",
+      "dist/thumbtack/sheet.png",
+    ]);
   });
 });
 
@@ -165,9 +172,11 @@ const tour: Tour = createTour(config);
 const steps: readonly TourStep[] = tour.steps;
 export { steps };
 `,
-  "avatar.ts": `import { withAvatar, SpeakerPresenter, thumbtackPack, type AvatarPack, type NormalizedPack } from "virtualtour/avatar";
+  "avatar.ts": `import { withAvatar, SpeakerPresenter, thumbtackPack, type AvatarPack, type NormalizedPack, type ThumbtackPackOptions, type ThumbtackVariant } from "virtualtour/avatar";
 export const pieces: [typeof withAvatar, typeof SpeakerPresenter, typeof thumbtackPack] = [withAvatar, SpeakerPresenter, thumbtackPack];
+export const roundPack = thumbtackPack(undefined, { variant: "round" });
 export type Packs = [AvatarPack, NormalizedPack];
+export type ThumbtackOptions = [ThumbtackPackOptions, ThumbtackVariant];
 `,
   "motion.ts": `import { glide, progressVars } from "virtualtour/motion";
 export const addons = [glide, progressVars];
