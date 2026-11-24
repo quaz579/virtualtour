@@ -1,7 +1,7 @@
 export { AvatarPackError, normalizePack, preloadSheet, resolveRole, validatePack } from "./pack";
 export { IdleScheduler } from "./idle";
 export { loadAvatarPack, loadClassicAvatarPack, thumbtackPack } from "./loaders";
-export type { LoadAvatarPackOptions } from "./loaders";
+export type { LoadAvatarPackOptions, ThumbtackPackOptions, ThumbtackVariant } from "./loaders";
 export type { ClassicSource } from "./classic";
 export { SpritePlayer } from "./player";
 export { SpeakerPresenter } from "./speaker";

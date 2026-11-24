@@ -1,7 +1,6 @@
 {
   "name": "virtualtour",
-  "version": "0.0.0",
-  "private": true,
+  "version": "1.0.0",
   "description": "Guided tours and onboarding for the web, forked from driver.js.",
   "license": "MIT",
   "repository": {
@@ -31,6 +30,8 @@
     "./avatar.css": "./dist/avatar.css",
     "./thumbtack/pack.json": "./dist/thumbtack/pack.json",
     "./thumbtack/sheet.png": "./dist/thumbtack/sheet.png",
+    "./thumbtack/round/pack.json": "./dist/thumbtack/round/pack.json",
+    "./thumbtack/round/sheet.png": "./dist/thumbtack/round/sheet.png",
     "./schemas/*": "./schemas/*"
   },
   "files": [

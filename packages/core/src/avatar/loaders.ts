@@ -17,6 +17,12 @@ export interface LoadAvatarPackOptions {
   signal?: AbortSignal;
 }
 
+export type ThumbtackVariant = "pushpin" | "round";
+
+export interface ThumbtackPackOptions {
+  variant?: ThumbtackVariant;
+}
+
 let warnedClassicLicense = false;
 
 function sheetOptions(options: LoadAvatarPackOptions): { signal?: AbortSignal } {
@@ -108,8 +114,11 @@ export async function loadClassicAvatarPack(source: ClassicSource): Promise<Norm
  * folder (a missing trailing slash is added); it defaults to the folder of this module so bundlers that copy the package assets
  * keep working. Pass a CDN or self-hosted base to serve the files elsewhere.
  */
-export async function thumbtackPack(baseUrl?: string): Promise<NormalizedPack> {
+export async function thumbtackPack(baseUrl?: string, options: ThumbtackPackOptions = {}): Promise<NormalizedPack> {
+  const variant: string = options.variant ?? "pushpin";
+  if (variant !== "pushpin" && variant !== "round") fail("options.variant", 'must be "pushpin" or "round"');
   const folder = baseUrl === undefined || baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   const base = folder === undefined ? import.meta.url : absolute(folder, "baseUrl");
-  return loadAvatarPack(new URL("thumbtack/pack.json", base).href);
+  const packPath = variant === "round" ? "thumbtack/round/pack.json" : "thumbtack/pack.json";
+  return loadAvatarPack(new URL(packPath, base).href);
 }

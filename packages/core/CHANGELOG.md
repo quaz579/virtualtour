@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (not yet released)
+## 1.0.0 (2026-11-20)
 
 First release. The tour engine is derived from driver.js 1.12.1 (tag `1.12.1`, commit `0163642dc532417ea401684bd26690e2f3283d63`, MIT). See `NOTICE.md` for the license and the files not carried over, and `UPSTREAM.md` in the repository for how later upstream changes are tracked.
 

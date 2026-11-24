@@ -173,7 +173,7 @@ Thumbtack being an independent work.
 
 Rules for the character (checked at A-03 review and in `ART.md`):
 
-- Thumbtack is a push pin: a round head on a short needle. It is **not a paperclip** and
+- Thumbtack is a push pin with a flared top, narrow waist, wide domed base and thin needle. It is **not a paperclip** and
   has no wire loops, bends, or any paperclip silhouette.
 - Eyes and eyebrows are drawn fresh. Do not trace, measure, or reproduce the paperclip's
   eye spacing, eyebrow curve, or signature poses (the "raise one eyebrow" tilt, the

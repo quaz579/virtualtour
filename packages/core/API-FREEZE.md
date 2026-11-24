@@ -84,6 +84,8 @@ Member-level shape (fields of a config type, method signatures) is covered by th
 - `SpeakerPresenter` (class)
 - `SpritePlayerOptions` (interface)
 - `SpritePlayer` (class)
+- `ThumbtackPackOptions` (interface)
+- `ThumbtackVariant` (type)
 - `loadAvatarPack` (function)
 - `loadClassicAvatarPack` (function)
 - `normalizePack` (function)

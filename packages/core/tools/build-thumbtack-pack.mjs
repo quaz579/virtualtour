@@ -2,10 +2,9 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { deflateSync } from "node:zlib";
-import { animations, buildPack, canvas, frameSvg } from "../src/avatar/thumbtack/frames.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const outDir = join(root, "src/avatar/thumbtack");
+const variants = ["pushpin", "round"];
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -141,7 +140,7 @@ export function encodePng(width, height, rgba) {
   ]);
 }
 
-export async function rasterize(svgs) {
+export async function rasterize(svgs, canvas) {
   const { chromium } = await import("@playwright/test");
   const { frameWidth, frameHeight, scale, columns } = canvas;
   const cellW = frameWidth * scale;
@@ -175,7 +174,10 @@ export async function rasterize(svgs) {
   }
 }
 
-export async function buildThumbtack() {
+export async function buildThumbtack(variant = "pushpin") {
+  if (!variants.includes(variant)) throw new Error(`Unknown Thumbtack variant "${variant}"; expected "pushpin" or "round".`);
+  const outDir = join(root, "src/avatar/thumbtack", ...(variant === "round" ? ["round"] : []));
+  const { animations, buildPack, canvas, frameSvg } = await import(pathToFileURL(join(outDir, "frames.mjs")).href);
   const svgRoot = join(outDir, "svg");
   const written = [];
   for (const [name, animation] of Object.entries(animations)) {
@@ -184,7 +186,7 @@ export async function buildThumbtack() {
     }
   }
   const svgs = written.map((entry) => entry.svg);
-  const { width, height, rgba } = await rasterize(svgs);
+  const { width, height, rgba } = await rasterize(svgs, canvas);
   await rm(svgRoot, { recursive: true, force: true });
   for (const { file, svg } of written) {
     await mkdir(dirname(file), { recursive: true });
@@ -196,6 +198,12 @@ export async function buildThumbtack() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const result = await buildThumbtack();
-  process.stdout.write(`thumbtack: ${result.frames} frames, sheet ${result.width}x${result.height}\n`);
+  const selected = process.argv[2];
+  if (process.argv.length > 3 || (selected !== undefined && !variants.includes(selected))) {
+    throw new Error("Usage: node build-thumbtack-pack.mjs [pushpin|round]");
+  }
+  for (const variant of selected === undefined ? variants : [selected]) {
+    const result = await buildThumbtack(variant);
+    process.stdout.write(`thumbtack ${variant}: ${result.frames} frames, sheet ${result.width}x${result.height}\n`);
+  }
 }

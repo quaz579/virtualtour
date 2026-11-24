@@ -17,7 +17,7 @@ The engine in `packages/core/src/engine/` derives from [driver.js](https://githu
 
 ## The Thumbtack character: CC0
 
-The [Thumbtack](./avatar/thumbtack) character is original to this project and is dedicated to the public domain under CC0 1.0. That covers its SVG sources, `frames.mjs`, `sheet.png` and `pack.json`. No rights are reserved and no credit is required. Use it, change it or ship it in your own product without asking.
+The [Thumbtack](./avatar/thumbtack) character and its push-pin and round-top variants are original to this project and are dedicated to the public domain under CC0 1.0. That covers both variants' SVG sources, `frames.mjs`, `sheet.png` and `pack.json`. No rights are reserved and no credit is required. Use it, change it or ship it in your own product without asking.
 
 The text is in `packages/core/src/avatar/thumbtack/LICENSE-ART.md` in the repository, and the published package carries it too. `packages/core/ART.md` records where the character came from. The code that generates it, `packages/core/tools/build-thumbtack-pack.mjs`, stays under MIT like the rest of the code.
 
