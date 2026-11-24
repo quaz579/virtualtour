@@ -41,4 +41,9 @@ describe("release readiness", () => {
     }
     expect(read("packages/core/CHANGELOG.md")).toMatch(/derived from driver\.js 1\.12\.1/);
   });
+
+  it("ships copies of the agent docs identical to the repository root", () => {
+    expect(read("packages/core/llms.txt")).toBe(read("llms.txt"));
+    expect(read("packages/core/skills/integrate-virtualtour/SKILL.md")).toBe(read(".claude/skills/integrate-virtualtour/SKILL.md"));
+  });
 });

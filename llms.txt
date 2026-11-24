@@ -1,0 +1,492 @@
+# VirtualTour
+
+> Guided product tours and onboarding for web pages. Spotlights an element, explains it in a popover and walks the user through steps. Plain JS/TS (`virtual-site-tour`), React (`virtual-site-tour-react`) and Vue (`virtual-site-tour-vue`). MIT, ESM only, no runtime dependencies, fork of driver.js 1.12.1.
+
+Live demo: https://quaz579.github.io/virtualtour/
+Repository: https://github.com/quaz579/virtualtour
+
+Rules an integrating agent must follow:
+
+- Always import `virtual-site-tour/base.css` (required). `virtual-site-tour/theme.css` is optional (colors, dark mode). `virtual-site-tour/avatar.css` only with the avatar presenter, imported after the other two.
+- `dim` defaults to off. Pass `dim: true` for the darkened overlay with a cut-out around the target.
+- A step with `target` and no `placement` highlights the target and centers the popover. Set `placement: { side: "bottom" }` to anchor it to the target.
+- `createTour` is safe during server rendering; `tour.start()` needs a browser (rejects with `TourEnvironmentError` otherwise). Start from a click handler, an effect, or `autoStart` on the framework provider.
+- React and Vue: wrap the UI in `<TourProvider config={...}>` and call `useTour()` in a child component. There is no Vue plugin and no `app.use`.
+- Popover DOM for tests: `.vt-popover`, `.vt-popover-title`, `.vt-popover-description`, `.vt-popover-next-btn`, `.vt-popover-prev-btn`, `.vt-popover-close-btn`; the highlighted element gets class `vt-target`; the overlay is `svg.vt-overlay`. Keyboard: Escape exits, ArrowRight/ArrowLeft move.
+
+## Docs
+
+- [README](https://github.com/quaz579/virtualtour/blob/main/README.md): quickstarts for vanilla, React and Vue, concepts, theming
+- [Getting started](https://github.com/quaz579/virtualtour/blob/main/docs/guide/getting-started.md): first tour step by step
+- [Steps and targets](https://github.com/quaz579/virtualtour/blob/main/docs/guide/steps-and-targets.md): title, body, targets, waiting for elements
+- [Positioning](https://github.com/quaz579/virtualtour/blob/main/docs/guide/positioning.md): placement, offset, flip, shift, arrow
+- [Overlay](https://github.com/quaz579/virtualtour/blob/main/docs/guide/overlay.md): dim, spotlight, click-outside, scroll lock
+- [Action steps](https://github.com/quaz579/virtualtour/blob/main/docs/guide/action-steps.md): gated steps that wait for the user to do something
+- [Events and lifecycle](https://github.com/quaz579/virtualtour/blob/main/docs/guide/events-and-lifecycle.md): every event, order, exit reasons
+- [Persistence](https://github.com/quaz579/virtualtour/blob/main/docs/guide/persistence.md): remember finished tours, resume
+- [JSON tours](https://github.com/quaz579/virtualtour/blob/main/docs/guide/json-tours.md): tours as data
+- [Styling](https://github.com/quaz579/virtualtour/blob/main/docs/guide/styling.md): stylesheets, CSS variables, classes
+- [Framework wrappers](https://github.com/quaz579/virtualtour/blob/main/docs/guide/framework-wrappers.md): React and Vue providers in depth
+- [Accessibility](https://github.com/quaz579/virtualtour/blob/main/docs/guide/accessibility.md), [Keyboard and focus](https://github.com/quaz579/virtualtour/blob/main/docs/guide/keyboard-and-focus.md)
+- [Avatar guide](https://github.com/quaz579/virtualtour/blob/main/docs/avatar/guide.md): animated character presenter
+
+## API reference
+
+- [Tour configuration](https://github.com/quaz579/virtualtour/blob/main/docs/api/config.md)
+- [Step configuration](https://github.com/quaz579/virtualtour/blob/main/docs/api/step.md)
+- [Tour and step objects](https://github.com/quaz579/virtualtour/blob/main/docs/api/tour.md)
+- [Avatar reference](https://github.com/quaz579/virtualtour/blob/main/docs/avatar/index.md)
+- [Class, attribute and CSS variable names](https://github.com/quaz579/virtualtour/blob/main/packages/core/STYLES.md)
+- [Tour JSON Schema](https://github.com/quaz579/virtualtour/blob/main/packages/core/schemas/tour.v1.schema.json)
+
+## Optional
+
+- [Migration from driver.js](https://github.com/quaz579/virtualtour/blob/main/docs/migration/from-driverjs.md)
+- [Cookbook](https://github.com/quaz579/virtualtour/blob/main/docs/cookbook/): custom counter, programmatic advance, scroll lock, sanitizing HTML, multiple tours
+- [Integration skill for coding agents](https://github.com/quaz579/virtualtour/blob/main/.claude/skills/integrate-virtualtour/SKILL.md)
+- [Contributor contract](https://github.com/quaz579/virtualtour/blob/main/AGENTS.md)
+
+## Quickstart: plain JavaScript or TypeScript
+
+```sh
+npm install virtual-site-tour
+```
+
+```html
+<button id="save">Save</button>
+<button id="start-tour">Take the tour</button>
+```
+
+```ts
+import "virtual-site-tour/base.css";
+import "virtual-site-tour/theme.css";
+import { createTour } from "virtual-site-tour";
+
+const tour = createTour({
+  id: "welcome",
+  dim: true,
+  steps: [
+    {
+      id: "save",
+      target: "#save",
+      placement: { side: "bottom", align: "start" },
+      title: "Save your work",
+      body: "Changes stay in this browser until you press Save.",
+    },
+    { id: "done", title: "You're all set", body: "Press Done to close the tour." },
+  ],
+});
+
+document.querySelector("#start-tour")?.addEventListener("click", () => {
+  void tour.start();
+});
+```
+
+## Quickstart: React
+
+```sh
+npm install virtual-site-tour virtual-site-tour-react
+```
+
+```tsx
+import "virtual-site-tour/base.css";
+import "virtual-site-tour/theme.css";
+import type { TourConfig } from "virtual-site-tour";
+import { TourProvider, useTour } from "virtual-site-tour-react";
+
+const config: TourConfig = {
+  id: "welcome",
+  dim: true,
+  steps: [
+    { id: "save", target: "#save", placement: { side: "bottom" }, title: "Save your work", body: "Changes stay in this browser until you press Save." },
+    { id: "done", title: "You're all set" },
+  ],
+};
+
+function StartTourButton() {
+  const { start, isRunning } = useTour();
+  return (
+    <button id="start-tour" disabled={isRunning} onClick={() => void start()}>
+      Take the tour
+    </button>
+  );
+}
+
+export default function App() {
+  return (
+    <TourProvider config={config}>
+      <button id="save">Save</button>
+      <StartTourButton />
+    </TourProvider>
+  );
+}
+```
+
+## Quickstart: Vue
+
+```sh
+npm install virtual-site-tour virtual-site-tour-vue
+```
+
+`src/App.vue`:
+
+```vue
+<script setup lang="ts">
+import "virtual-site-tour/base.css";
+import "virtual-site-tour/theme.css";
+import type { TourConfig } from "virtual-site-tour";
+import { TourProvider } from "virtual-site-tour-vue";
+import StartTourButton from "./StartTourButton.vue";
+
+const config: TourConfig = {
+  id: "welcome",
+  dim: true,
+  steps: [
+    { id: "save", target: "#save", placement: { side: "bottom" }, title: "Save your work", body: "Changes stay in this browser until you press Save." },
+    { id: "done", title: "You're all set" },
+  ],
+};
+</script>
+
+<template>
+  <TourProvider :config="config">
+    <button id="save">Save</button>
+    <StartTourButton />
+  </TourProvider>
+</template>
+```
+
+`src/StartTourButton.vue`:
+
+```vue
+<script setup lang="ts">
+import { useTour } from "virtual-site-tour-vue";
+
+const { start, isRunning } = useTour();
+</script>
+
+<template>
+  <button id="start-tour" :disabled="isRunning" @click="start()">Take the tour</button>
+</template>
+```
+
+## Action (gated) step
+
+```ts
+import "virtual-site-tour/base.css";
+import { createTour } from "virtual-site-tour";
+
+const tour = createTour({
+  dim: true,
+  steps: [
+    {
+      id: "click-save",
+      target: "#save",
+      placement: { side: "bottom" },
+      title: "Try it",
+      instruction: "Click <b>Save</b> to continue.",
+      autoAdvance: { event: "click" },
+    },
+    { id: "saved", title: "Nice, it's saved" },
+  ],
+});
+
+document.querySelector("#start-tour")?.addEventListener("click", () => {
+  void tour.start();
+});
+```
+
+## Avatar presenter
+
+Copy `node_modules/virtual-site-tour/dist/thumbtack` to a static folder served at `/vt/thumbtack/` (Vite: `public/vt/thumbtack`). On load failure the tour falls back to the plain popover.
+
+```ts
+import "virtual-site-tour/base.css";
+import "virtual-site-tour/theme.css";
+import "virtual-site-tour/avatar.css";
+import { createTour } from "virtual-site-tour";
+import { thumbtackPack, withAvatar } from "virtual-site-tour/avatar";
+
+const tour = createTour({
+  presenter: withAvatar(thumbtackPack("/vt/"), {
+    onError: (error) => console.warn(`Avatar unavailable: ${error.message}`),
+  }),
+  steps: [
+    { id: "hello", title: "Hi, I'm Thumbtack", body: "Let me show you around." },
+    { id: "save", target: "#save", placement: { side: "bottom" }, title: "Save", body: "Your work is kept here." },
+  ],
+});
+
+document.querySelector("#start-tour")?.addEventListener("click", () => {
+  void tour.start();
+});
+```
+
+## JSON tour
+
+```json
+{
+  "$schema": "https://unpkg.com/virtual-site-tour/schemas/tour.v1.schema.json",
+  "format": "virtualtour-tour/1",
+  "id": "welcome",
+  "dim": true,
+  "steps": [
+    { "id": "save", "target": "#save", "placement": { "side": "bottom" }, "title": "Save your work" },
+    { "id": "done", "title": "You're all set" }
+  ]
+}
+```
+
+```ts
+import "virtual-site-tour/base.css";
+import { createTour, parseTourJson } from "virtual-site-tour";
+
+async function startWelcomeTour() {
+  const response = await fetch("/tours/welcome.json");
+  const tour = createTour(parseTourJson(await response.json()));
+  await tour.start();
+}
+
+document.querySelector("#start-tour")?.addEventListener("click", () => {
+  void startWelcomeTour();
+});
+```
+
+## Public API: `virtual-site-tour`
+
+Default export: `createTour`. Named exports: `createTour`, `Tour`, `TourStep`, `tours`, `Emitter`, `parseTourJson`, `serializeTour`, `TourJsonError`, `localStorageStore`, `memoryStore`, `TourEnvironmentError`, `TourNavigationError`, plus the types below.
+
+```ts
+function createTour(config?: TourConfig): Tour;
+
+interface TourConfig {
+  id?: string;                       // default `<name-slug>-<random>`
+  name?: string;
+  steps?: StepConfig[];
+  stepDefaults?: Partial<StepConfig>; // merged under every step
+  dim?: boolean | DimConfig;         // default false (no overlay)
+  mountIn?: Element | (() => Element);
+  dimMountIn?: Element | (() => Element);
+  namespace?: string;                // class/attribute prefix, default "vt"
+  keys?: { escape?: boolean; arrows?: boolean };
+  exitPrompt?: false | string | (() => boolean | Promise<boolean>); // string uses window.confirm
+  counter?: boolean | ((index: number, total: number) => string);    // true shows "1 of 3"
+  labels?: { next?: string; back?: string; done?: string; close?: string };
+  progress?: ProgressConfig;
+  presenter?: PresenterFactory;      // e.g. withAvatar(...)
+  sanitize?: (html: string) => string;
+  animate?: boolean;
+  waitBudget?: number;               // ms, default 10000
+}
+
+interface StepConfig {
+  id?: string;                       // default step-1, step-2, ...
+  title?: string | (() => string);   // HTML
+  body?: BodyContent;
+  label?: string | (() => string);   // accessible name when no title
+  closeButton?: boolean | { label?: string | (() => string); attrs?: Record<string, string> };
+  classes?: string | string[];
+  meta?: JsonValue;
+  buttons?: ButtonConfig[];          // replaces Next/Back
+  target?: TargetRef;
+  placement?: PlacementRef;
+  position?: PositionOptions;
+  waitFor?: number;                  // ms to wait for the target to appear
+  whenMissing?: "center" | "skip";   // default "center"
+  shouldShow?: () => boolean;
+  prepare?: () => Promise<unknown> | unknown;
+  hookTimeout?: number;              // default 10000
+  spotlight?: SpotlightOptions;
+  reveal?: boolean | "smooth" | ScrollIntoViewOptions;
+  revealWith?: (target: Element) => void | Promise<void>;
+  autoAdvance?: { event: string | string[]; selector?: string; strict?: boolean };
+  instruction?: string | (() => string); // makes it an action step: Next nudges until completed
+  advanceDelay?: number;             // ms a completed action step stays visible
+  focus?: "dialog" | "first-button";
+  extensions?: Record<string, unknown>; // e.g. { avatar: AvatarStepOptions }
+}
+
+type BodyContent = string | string[] | Element | DocumentFragment | (() => string | string[] | Element | DocumentFragment);
+type TargetRef = string | Element | (() => string | Element | null | undefined);
+type PlacementRef = "auto" | { side: Side | "auto" | "over"; align?: Align };
+type Side = "top" | "bottom" | "left" | "right";
+type Align = "start" | "center" | "end";
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+interface PositionOptions {
+  offset?: number | { main?: number; cross?: number }; // default main 10, cross 0
+  viewportPadding?: number;
+  boundary?: "viewport" | "scrollParents";             // default "scrollParents"
+  flip?: boolean;                                      // default true
+  shift?: boolean;                                     // default true
+  strategy?: "fixed" | "absolute";                     // default "fixed"
+  arrow?: boolean | { minInset?: number };
+}
+
+interface DimConfig {
+  padding?: number;                  // default 10
+  radius?: number | CornerRadius;    // default 5
+  transitionMs?: number;             // default 400
+  color?: string;                    // default "#000"
+  opacity?: number;                  // default 0.7
+  clickOutside?: "none" | "exit" | "forward"; // default "none"
+  pageScroll?: boolean;              // default true
+  lockScrollParent?: boolean;        // default false
+  clipToScrollParents?: boolean;     // default true
+}
+interface CornerRadius { topLeft?: number; topRight?: number; bottomRight?: number; bottomLeft?: number }
+
+interface SpotlightOptions {
+  padding?: number;
+  radius?: number | CornerRadius;
+  extra?: string[];                  // more selectors to cut out
+  class?: string;
+  targetInteractive?: boolean | "hover-only"; // default true
+}
+
+interface ButtonConfig {
+  text: string | (() => string);
+  label?: string | (() => string);
+  action: "forward" | "backward" | "exit" | "finish" | ((ctx: ButtonContext) => void);
+  disabled?: boolean | (() => boolean);
+  kind?: "primary" | "secondary";
+  classes?: string | string[];
+  attrs?: Record<string, string>;
+}
+interface ButtonContext { tour: Tour; step: TourStep }
+
+interface ProgressConfig { store: ProgressStore; skipCompleted?: boolean /* default true */; resume?: boolean /* default false */ }
+interface ProgressStore {
+  load(tourId: string): Promise<ProgressRecord | null> | ProgressRecord | null;
+  save(record: ProgressRecord): Promise<void> | void;
+  clear(tourId: string): Promise<void> | void;
+}
+interface ProgressRecord { tourId: string; lastStepId?: string; completedAt?: string; exitedAt?: string; updatedAt: string }
+function localStorageStore(prefix?: string): ProgressStore;
+function memoryStore(): ProgressStore;
+
+class Tour {
+  readonly id: string;
+  readonly name?: string;
+  get steps(): readonly TourStep[];
+  get currentStep(): TourStep | null;
+  isRunning(): boolean;
+  progressInfo(): { index: number; total: number }; // index 1-based, 0 when nothing shown
+  stepById(id: string): TourStep | undefined;
+  appendStep(def: StepConfig, at?: number | string): TourStep;
+  dropStep(ref: string | TourStep): void;
+  refresh(): void;                   // reposition
+  start(): Promise<void>;
+  forward(): Promise<void>;          // nudges instead on an unmet action step
+  backward(): Promise<void>;
+  goTo(ref?: string | number | TourStep): Promise<void>;
+  advance(): void;                   // complete the current action step
+  nudge(message?: string): void;
+  exit(): Promise<boolean>;          // cancel (reason "api"), after exitPrompt
+  finish(): void;                    // complete
+  hideCurrent(): void;
+  on<E extends keyof TourEvents>(e: E, fn: (payload: TourEvents[E]) => void, ctx?: object): () => void;
+  once<E extends keyof TourEvents>(e: E, fn: (payload: TourEvents[E]) => void, ctx?: object): () => void;
+  off<E extends keyof TourEvents>(e?: E, fn?: (payload: TourEvents[E]) => void): void;
+}
+
+type ExitReason = "close" | "escape" | "overlay" | "api" | "replaced";
+interface TourEvents {
+  started: { tour: Tour };
+  activated: { tour: Tour };
+  deactivated: { tour: Tour };
+  "step-shown": { tour: Tour; step: TourStep; previous: TourStep | null };
+  "step-completed": { tour: Tour; step: TourStep };
+  "steps-changed": { tour: Tour };
+  finished: { tour: Tour };
+  exited: { tour: Tour; reason: ExitReason };
+  bypassed: { tour: Tour; reason: "completed" }; // progress store says already finished
+}
+
+class TourStep {
+  readonly id: string;
+  readonly tour: Tour;
+  get config(): Readonly<StepConfig>;
+  get element(): HTMLElement | undefined | null; // the popover element while shown
+  get resolvedTarget(): Element | null;
+  configure(patch: StepConfigPatch): void;        // null clears a field
+  show(): Promise<void>;
+  hide(): void;
+  exit(): Promise<boolean>;
+  finish(): void;
+  dispose(): void;
+  isShown(): boolean;
+  on<E extends keyof StepEvents>(e: E, fn: (payload: StepEvents[E]) => void, ctx?: object): () => void;
+  once<E extends keyof StepEvents>(e: E, fn: (payload: StepEvents[E]) => void, ctx?: object): () => void;
+  off<E extends keyof StepEvents>(e?: E, fn?: (payload: StepEvents[E]) => void): void;
+}
+// StepEvents keys: "will-show" | "shown" | "will-hide" | "hidden" | "completed" | "finished" | "exited" | "disposed", payload { step: TourStep }
+
+const tours: {                        // global registry
+  readonly current: Tour | null;
+  on: Tour["on"]; once: Tour["once"]; off: Tour["off"]; // events from every tour
+};
+
+function parseTourJson(json: unknown, options?: { handlers?: Readonly<Record<string, (...args: never[]) => unknown>> }): TourConfig;
+function serializeTour(config: TourConfig, options?: { handlerNames?: ReadonlyMap<Function, string>; elementSelectors?: ReadonlyMap<Element, string> }): TourJsonV1;
+class TourJsonError extends Error { readonly path: string }
+class TourEnvironmentError extends Error {} // no browser document
+class TourNavigationError extends Error {}  // bad step reference
+```
+
+JSON tours use `"format": "virtualtour-tour/1"` and the same keys as `TourConfig`/`StepConfig`, except that functions become `{ "handler": "name" }`, `target`/`mountIn` are selectors, and `body` is a string or string array. Schema: `virtual-site-tour/schemas/tour.v1.schema.json`. JSON types exported: `TourJsonV1`, `StepJsonV1`, `ButtonJsonV1`, `DimJsonV1`, `CornerRadiusJson`, `HandlerRefJson`, `TextJson`, `TourJsonHandler`, `ParseTourJsonOptions`, `SerializeTourOptions`.
+
+Also exported for custom presenters: `Presenter`, `PresenterFactory`, `PresenterContext`, `StepParts`, `RepositionInfo`, `ProgressInfo`, `StepConfigPatch`, `TourLike`, `TourStepLike`. See [presenters](https://github.com/quaz579/virtualtour/blob/main/docs/guide/presenters.md).
+
+## Public API: `virtual-site-tour/avatar`
+
+```ts
+function withAvatar(pack: AvatarPack | NormalizedPack | Promise<AvatarPack | NormalizedPack>, options?: AvatarOptions): PresenterFactory;
+function thumbtackPack(baseUrl?: string, options?: { variant?: "pushpin" | "round" }): Promise<NormalizedPack>; // baseUrl = directory holding thumbtack/
+function loadAvatarPack(url: string, options?: { fetch?: typeof fetch; signal?: AbortSignal }): Promise<NormalizedPack>;
+function loadClassicAvatarPack(source: ClassicSource): Promise<NormalizedPack>;
+function preloadSheet(url: string, options?: { signal?: AbortSignal; timeoutMs?: number }): Promise<void>;
+
+interface AvatarOptions {
+  dock?: "start" | "end" | "auto";
+  scale?: number;                    // default 1
+  defaultAnimation?: string;
+  idle?: boolean;                    // default true
+  idleQuietMs?: number;              // default 6000
+  loadTimeoutMs?: number;            // default 3000, max 9000
+  onError?: (error: AvatarPackError) => void;
+}
+// Per step: extensions: { avatar: { animation?: string; dock?: "start" | "end" | "auto"; idle?: boolean; hidden?: boolean } }
+```
+
+Also exported: `SpeakerPresenter`, `SpritePlayer`, `IdleScheduler`, `validatePack`, `normalizePack`, `resolveRole`, `AvatarPackError` and the types `AvatarOptions`, `AvatarStepOptions`, `AvatarDock`, `AvatarPack`, `NormalizedPack`, `RoleMap`, `AvatarRole`, `AvatarDirection`, `PointRoles`, `AnimationDef`, `FrameDef`, `SheetInfo`, `BubbleHints`, `LicenseInfo`, `ClassicSource`, `LoadAvatarPackOptions`, `ThumbtackPackOptions`, `ThumbtackVariant`, `SpeakerPresenterOptions`, `SpritePlayerOptions`, `IdleSchedulerOptions`. Pack format: [make a pack](https://github.com/quaz579/virtualtour/blob/main/docs/avatar/make-a-pack.md).
+
+## Public API: `virtual-site-tour/motion`
+
+```ts
+function glide(tour: Tour, options?: GlideOptions): () => void; // GlideOptions { durationMs?: number; easing?: string }; // animates the popover between steps; returns an undo function
+function progressVars(tour: Tour): () => void; // keeps --vt-progress-index/--vt-progress-total on the popover
+```
+
+## Public API: `virtual-site-tour-react` and `virtual-site-tour-vue`
+
+```ts
+// React (react >= 18)
+function TourProvider(props: { config: TourConfig; autoStart?: boolean; children?: ReactNode }): ReactElement;
+function useTour(): {
+  tour: Tour; isRunning: boolean; currentStep: TourStep | null;
+  start(): Promise<void>; forward(): Promise<void>; backward(): Promise<void>; exit(): Promise<boolean>; finish(): void;
+};
+
+// Vue (vue >= 3.3): <TourProvider :config="config" :auto-start="true"> renders its default slot
+function useTour(): {
+  tour: Tour; isRunning: Readonly<Ref<boolean>>; currentStep: Readonly<Ref<TourStep | null>>;
+  start(): Promise<void>; forward(): Promise<void>; backward(): Promise<void>; exit(): Promise<boolean>; finish(): void;
+};
+```
+
+`config` is read once; give the provider a new `key` to rebuild the tour. Unmounting ends a running tour (reason `api`) without the exit prompt. `useTour()` throws outside a provider.
+
+## Theming
+
+`theme.css` reads CSS variables from `:root`: `--vt-accent`, `--vt-bg`, `--vt-fg`, `--vt-muted`, `--vt-radius`, `--vt-space`, `--vt-shadow`, `--vt-font`, `--vt-enter-duration`. Dark mode follows `prefers-color-scheme`; `data-vt-theme="dark"|"light"` on `<html>` forces one.
