@@ -42,12 +42,8 @@ describe("release readiness", () => {
     expect(read("packages/core/CHANGELOG.md")).toMatch(/derived from driver\.js 1\.12\.1/);
   });
 
-  it("lists every checklist item from the release task", () => {
-    const checklist = read("RELEASE-CHECKLIST.md");
-    const boxes = checklist.split("\n").filter((line) => /^- \[[ x]\] /.test(line));
-    expect(boxes.length).toBeGreaterThanOrEqual(15);
-    for (const phrase of ["LICENSE", "NOTICE.md", "UPSTREAM.md", "legal review", "four engines", "SSR", "size report", "accessibility", "screen-reader", "link check", "driver-"]) {
-      expect(checklist.toLowerCase(), phrase).toContain(phrase.toLowerCase());
-    }
+  it("ships copies of the agent docs identical to the repository root", () => {
+    expect(read("packages/core/llms.txt")).toBe(read("llms.txt"));
+    expect(read("packages/core/skills/integrate-virtualtour/SKILL.md")).toBe(read(".claude/skills/integrate-virtualtour/SKILL.md"));
   });
 });

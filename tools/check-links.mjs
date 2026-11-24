@@ -3,13 +3,13 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const toolsDir = dirname(fileURLToPath(import.meta.url));
-const skipDirs = new Set(["node_modules", "dist", ".git", ".vitepress", "plan"]);
+const skipDirs = new Set(["node_modules", "dist", ".git", ".vitepress"]);
 const external = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
 
-function* markdownFiles(dir, top) {
+function* markdownFiles(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      if (!(skipDirs.has(entry.name) && (entry.name !== "plan" || dir === top))) yield* markdownFiles(join(dir, entry.name), top);
+      if (!skipDirs.has(entry.name)) yield* markdownFiles(join(dir, entry.name));
     } else if (entry.name.endsWith(".md")) {
       yield join(dir, entry.name);
     }
@@ -71,7 +71,7 @@ function resolveTarget(base, pages) {
 }
 
 /**
- * Checks every relative link in `docs/**` Markdown (the `plan` folder excluded) and in the root README.
+ * Checks every relative link in `docs/**` Markdown and in the root README.
  * Anchors and query strings are ignored; only the target file must exist.
  * @param {{ root: string }} options
  * @returns {{ file: string, line: number, target: string, reason: string }[]}
@@ -79,7 +79,7 @@ function resolveTarget(base, pages) {
 export function checkLinks({ root }) {
   const docsDir = join(root, "docs");
   const files = [];
-  if (existsSync(docsDir)) for (const file of markdownFiles(docsDir, docsDir)) files.push({ file, pages: true, base: docsDir });
+  if (existsSync(docsDir)) for (const file of markdownFiles(docsDir)) files.push({ file, pages: true, base: docsDir });
   const readme = join(root, "README.md");
   if (isFile(readme)) files.push({ file: readme, pages: false, base: root });
 

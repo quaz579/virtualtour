@@ -42,7 +42,9 @@
     "README.md",
     "CHANGELOG.md",
     "STYLES.md",
-    "ART.md"
+    "ART.md",
+    "llms.txt",
+    "skills"
   ],
   "scripts": {
     "build": "vite build && vite build --mode dev && node tools/build-dts.mjs",

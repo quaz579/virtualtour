@@ -52,7 +52,7 @@ The 2026-11-18 rows are the first review. The 2026-11-19 rows are the WU-46 re-c
 
 ## Per-file table
 
-Which fork work units changed each engine file (unit IDs from `docs/plan/15-work-units.md`; task IDs from `docs/plan/01-architecture.md` section 3), built from `git log` per file through WU-46. A reviewer reads this to know where an upstream hunk will conflict. "Kept" means the logic is upstream's with at most a class-name rename.
+Which fork work units changed each engine file (unit IDs are the `WU-*` numbers in the commit history), built from `git log` per file through WU-46. A reviewer reads this to know where an upstream hunk will conflict. "Kept" means the logic is upstream's with at most a class-name rename.
 
 | File under `packages/core/src/engine/` | Fate | Work units |
 |---|---|---|

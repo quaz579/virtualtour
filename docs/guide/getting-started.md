@@ -8,8 +8,6 @@ This page installs VirtualTour and builds a two-step tour: one step that points 
 npm install virtual-site-tour
 ```
 
-The package is not published to npm yet. Until it is, build it from the repository (`npm ci && npm run build`) and depend on `packages/core`. The command above is the intended install.
-
 The package has no runtime dependencies. It is ESM only and ships these entry points:
 
 | Import | What it is |
