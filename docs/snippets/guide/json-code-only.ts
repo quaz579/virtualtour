@@ -1,4 +1,4 @@
-import { createTour, memoryStore, parseTourJson } from "virtualtour";
+import { createTour, memoryStore, parseTourJson } from "virtual-site-tour";
 
 export function withCodeOnlyKeys(documentText: string) {
   const config = parseTourJson(documentText);

@@ -1,4 +1,4 @@
-import { createTour } from "virtualtour";
+import { createTour } from "virtual-site-tour";
 
 export const tour = createTour({
   counter: (index, total) => `Step ${index} of ${total}`,

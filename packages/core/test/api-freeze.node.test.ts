@@ -8,9 +8,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const freezeFile = join(root, "API-FREEZE.md");
 
 const entries: Record<string, string> = {
-  virtualtour: "src/index.ts",
-  "virtualtour/avatar": "src/avatar/index.ts",
-  "virtualtour/motion": "src/motion/index.ts",
+  "virtual-site-tour": "src/index.ts",
+  "virtual-site-tour/avatar": "src/avatar/index.ts",
+  "virtual-site-tour/motion": "src/motion/index.ts",
 };
 
 const HEADER = `# API freeze for 1.0
@@ -84,7 +84,7 @@ describe("API freeze", () => {
   });
 
   it("includes type-only exports re-exported with export type *", () => {
-    expect(current["virtualtour"]).toContain("- `TourConfig` (interface)");
+    expect(current["virtual-site-tour"]).toContain("- `TourConfig` (interface)");
   });
 
   it("API-FREEZE.md lists exactly the exports of each entry point", () => {
@@ -97,8 +97,8 @@ describe("API freeze", () => {
 
   it("detects an added and a removed export", () => {
     const listed = parse(render(current));
-    const added = { ...current, virtualtour: [...current["virtualtour"]!, "- `extra` (const)"] };
-    const removed = { ...current, virtualtour: current["virtualtour"]!.slice(1) };
+    const added = { ...current, "virtual-site-tour": [...current["virtual-site-tour"]!, "- `extra` (const)"] };
+    const removed = { ...current, "virtual-site-tour": current["virtual-site-tour"]!.slice(1) };
     expect(listed).not.toEqual(added);
     expect(listed).not.toEqual(removed);
   });

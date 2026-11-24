@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import type { ExitReason } from "virtualtour";
+import { createTour } from "virtual-site-tour";
+import type { ExitReason } from "virtual-site-tour";
 
 export const tour = createTour({
   id: "exit-reasons",

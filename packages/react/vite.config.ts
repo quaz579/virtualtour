@@ -12,7 +12,7 @@ export default defineConfig({
       fileName: () => "index.js",
     },
     rollupOptions: {
-      external: ["react", "react/jsx-runtime", "virtualtour"],
+      external: ["react", "react/jsx-runtime", "virtual-site-tour"],
     },
   },
   plugins: [

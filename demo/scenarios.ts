@@ -108,7 +108,7 @@ export const scenarios: Scenario[] = [
   { id: "spotlight", title: "Spotlight", description: "Dimmed page with per-step padding, radius, extra cut-outs and a locked target.", build: () => createTour(spotlight()) },
   { id: "action", title: "Action steps", description: "Steps that wait for you to focus a field and click Save.", build: () => createTour(action()) },
   { id: "json", title: "JSON tour", description: "The same engine driven by demo/tours/showcase.tour.json.", build: () => createTour(json()) },
-  { id: "motion", title: "Motion", description: "glide() and progressVars() from virtualtour/motion.", build: motion },
+  { id: "motion", title: "Motion", description: "glide() and progressVars() from virtual-site-tour/motion.", build: motion },
   {
     id: "avatar",
     title: "Avatar (Thumbtack)",

@@ -1,4 +1,4 @@
-import { createTour } from "virtualtour";
+import { createTour } from "virtual-site-tour";
 
 export function showBadge(badge: HTMLElement) {
   const tour = createTour({ steps: [{ title: "One" }, { title: "Two" }] });

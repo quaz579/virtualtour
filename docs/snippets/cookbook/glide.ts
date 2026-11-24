@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import { glide } from "virtualtour/motion";
+import { createTour } from "virtual-site-tour";
+import { glide } from "virtual-site-tour/motion";
 
 export function withGlide() {
   const tour = createTour({ steps: [{ target: "#a", title: "A" }, { target: "#b", title: "B" }] });

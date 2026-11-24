@@ -521,7 +521,7 @@ function warnIfStylesMissing(tour: Tour, wrapper: HTMLElement): void {
   if (state.warnedStyles || (typeof __DEV__ !== "undefined" && !__DEV__)) return;
   state.warnedStyles = true;
   if (getComputedStyle(wrapper).getPropertyValue("--vt-base").trim() !== "") return;
-  console.warn("[virtualtour] base.css is not loaded, so the popover is unstyled. Import `virtualtour/base.css`.");
+  console.warn("[virtualtour] base.css is not loaded, so the popover is unstyled. Import `virtual-site-tour/base.css`.");
 }
 
 function evaluatedStep(tour: Tour, index: number): EngineStep {

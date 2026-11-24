@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import { loadAvatarPack, withAvatar } from "virtualtour/avatar";
+import { createTour } from "virtual-site-tour";
+import { loadAvatarPack, withAvatar } from "virtual-site-tour/avatar";
 
 const pack = loadAvatarPack("https://assets.your-company.example/avatars/robot/pack.json");
 

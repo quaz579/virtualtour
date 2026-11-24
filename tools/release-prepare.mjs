@@ -20,7 +20,7 @@ for (const packagePath of packagePaths) {
   delete manifest.private;
 
   if (packagePath !== packagePaths[0]) {
-    manifest.peerDependencies.virtualtour = `^${version}`;
+    manifest.peerDependencies["virtual-site-tour"] = `^${version}`;
   }
 
   await writeFile(fullPath, `${JSON.stringify(manifest, null, 2)}\n`);

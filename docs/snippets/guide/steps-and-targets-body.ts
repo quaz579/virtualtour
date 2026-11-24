@@ -1,4 +1,4 @@
-import { createTour } from "virtualtour";
+import { createTour } from "virtual-site-tour";
 
 const template = document.createElement("template");
 template.innerHTML = "<p>Rendered from a template.</p>";

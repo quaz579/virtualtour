@@ -1,6 +1,6 @@
 # Presenters
 
-The engine draws the popover frame: title, plain-text description, close button, arrow and the Next and Back buttons. A presenter draws everything else a step needs: rich bodies, custom footer buttons and any decoration. The default presenter draws the dialog. You can replace it per tour with `presenter`, or use the speech-bubble layout from `virtualtour/avatar` (see [Avatar](../avatar/)).
+The engine draws the popover frame: title, plain-text description, close button, arrow and the Next and Back buttons. A presenter draws everything else a step needs: rich bodies, custom footer buttons and any decoration. The default presenter draws the dialog. You can replace it per tour with `presenter`, or use the speech-bubble layout from `virtual-site-tour/avatar` (see [Avatar](../avatar/)).
 
 A presenter is created once per run, when the first step of the run needs it, and released when the run ends. The tour's `presenter` option is a factory, so each run gets a fresh instance.
 
@@ -21,7 +21,7 @@ A presenter is created once per run, when the first step of the run needs it, an
 
 An error thrown from any hook is caught and logged with `console.error`. The tour keeps running.
 
-`popover` is the engine's `PopoverDOM`: `wrapper`, `arrow`, `title`, `description`, `footer`, `closeButton`, `previousButton`, `nextButton` and a few more, plus `body`, `instruction` and `feedback` when they exist. `virtualtour` does not export the type by name. Take it from the interface: `Parameters<Presenter['mount']>[0]`.
+`popover` is the engine's `PopoverDOM`: `wrapper`, `arrow`, `title`, `description`, `footer`, `closeButton`, `previousButton`, `nextButton` and a few more, plus `body`, `instruction` and `feedback` when they exist. `virtual-site-tour` does not export the type by name. Take it from the interface: `Parameters<Presenter['mount']>[0]`.
 
 `parts` is a `StepParts` object that lives for as long as the step is mounted:
 
@@ -85,7 +85,7 @@ The factory receives the tour and a `PresenterContext`.
 
 Set `layout = 'speaker'` on a presenter and the engine builds a different frame. The wrapper gets the classes `vt-popover` and `vt-speaker`. Inside it are the arrow (class `vt-bubble-tail`), a `vt-bubble` holding the close button, title, description and footer, and an empty `vt-avatar-slot` after it. The wrapper starts with `data-vt-dock="end"`.
 
-The layout only creates the elements. Styling lives in `virtualtour/avatar.css`, and moving something into the slot is up to the presenter. `SpeakerPresenter` and `withAvatar` from `virtualtour/avatar` do both; see the [avatar reference](../avatar/). With `bubbleRect` and `wrapperRect` in `RepositionInfo`, a presenter can tell where the bubble sits inside the wrapper.
+The layout only creates the elements. Styling lives in `virtual-site-tour/avatar.css`, and moving something into the slot is up to the presenter. `SpeakerPresenter` and `withAvatar` from `virtual-site-tour/avatar` do both; see the [avatar reference](../avatar/). With `bubbleRect` and `wrapperRect` in `RepositionInfo`, a presenter can tell where the bubble sits inside the wrapper.
 
 ## Related
 

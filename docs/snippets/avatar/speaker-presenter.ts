@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import { SpeakerPresenter, thumbtackPack } from "virtualtour/avatar";
+import { createTour } from "virtual-site-tour";
+import { SpeakerPresenter, thumbtackPack } from "virtual-site-tour/avatar";
 
 export async function tourWithSpeaker() {
   const pack = await thumbtackPack();

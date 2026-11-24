@@ -20,7 +20,7 @@ Limits:
 - Only the target's direct parent is locked, not every scrolling ancestor.
 - Scrollers inside a shadow root or an iframe are not followed.
 - `dim: false` draws no overlay, and its scroll options keep their defaults. Use the next section when you want a lock without an overlay.
-- The lock needs the stylesheet from `virtualtour/base.css`. The attribute name is `data-vt-lock-scroll` whatever the namespace.
+- The lock needs the stylesheet from `virtual-site-tour/base.css`. The attribute name is `data-vt-lock-scroll` whatever the namespace.
 
 ## Lock the body yourself
 

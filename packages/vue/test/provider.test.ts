@@ -1,8 +1,8 @@
 import { createApp, defineComponent, h, nextTick, onMounted, shallowReactive } from "vue";
 import type { App, Component } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { tours } from "virtualtour";
-import type { Tour, TourConfig } from "virtualtour";
+import { tours } from "virtual-site-tour";
+import type { Tour, TourConfig } from "virtual-site-tour";
 import { TourProvider, useTour } from "../src/index";
 import type { UseTourResult } from "../src/index";
 
@@ -10,8 +10,8 @@ const live = new Map<Tour, number>();
 const failures = { start: false, exit: false };
 const startCalls = new Map<Tour, number>();
 
-vi.mock("virtualtour", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("virtualtour")>();
+vi.mock("virtual-site-tour", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("virtual-site-tour")>();
   return {
     ...actual,
     createTour(config: TourConfig) {

@@ -1,7 +1,7 @@
 {
-  "name": "virtualtour-react",
+  "name": "virtual-site-tour-react",
   "version": "1.0.0",
-  "description": "React provider and hook for virtualtour.",
+  "description": "React provider and hook for virtual-site-tour.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "virtualtour": "^1.0.0"
+    "virtual-site-tour": "^1.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

@@ -1,4 +1,4 @@
-import { createTour, localStorageStore } from "virtualtour";
+import { createTour, localStorageStore } from "virtual-site-tour";
 
 export const tour = createTour({
   id: "onboarding-v2",

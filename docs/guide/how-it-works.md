@@ -49,9 +49,9 @@ These parts are driver.js code, kept as they are or with small changes:
 - The eligibility loop: `shouldShow`, `waitFor`, `whenMissing` and `prepare`. See [Steps and targets](./steps-and-targets).
 - A versioned JSON tour format. See [JSON tours](./json-tours).
 - Progress persistence with local-storage and in-memory stores. See [Persistence](./persistence).
-- A theme stylesheet with dark mode, and the `virtualtour/motion` add-on. See [Motion](./motion).
+- A theme stylesheet with dark mode, and the `virtual-site-tour/motion` add-on. See [Motion](./motion).
 - React and Vue wrappers. See [Framework wrappers](./framework-wrappers).
-- The optional avatar with a speech bubble, in `virtualtour/avatar`. See [Avatar](../avatar/).
+- The optional avatar with a speech bubble, in `virtual-site-tour/avatar`. See [Avatar](../avatar/).
 
 driver.js hints and checklists are not part of VirtualTour. Those files were removed from the fork.
 

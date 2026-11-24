@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import type { StepConfig } from "virtualtour";
+import { createTour } from "virtual-site-tour";
+import type { StepConfig } from "virtual-site-tour";
 
 export const step: StepConfig = {
   id: "save",

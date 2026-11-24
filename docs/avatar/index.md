@@ -1,6 +1,6 @@
 # Avatar
 
-`virtualtour/avatar` replaces the dialog with a speech bubble and an animated character beside it. It is a presenter: you pass it as `presenter` in the tour config, and the rest of the tour behaves the same. This page is a reference for the options and their edge cases. For a walkthrough, read the [avatar guide](./guide). To draw your own character, see [make a pack](./make-a-pack); for the character that ships, see [Thumbtack](./thumbtack).
+`virtual-site-tour/avatar` replaces the dialog with a speech bubble and an animated character beside it. It is a presenter: you pass it as `presenter` in the tour config, and the rest of the tour behaves the same. This page is a reference for the options and their edge cases. For a walkthrough, read the [avatar guide](./guide). To draw your own character, see [make a pack](./make-a-pack); for the character that ships, see [Thumbtack](./thumbtack).
 
 ## Use it
 

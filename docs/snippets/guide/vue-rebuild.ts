@@ -1,6 +1,6 @@
 import { defineComponent, h } from "vue";
-import { TourProvider } from "virtualtour-vue";
-import type { TourConfig } from "virtualtour";
+import { TourProvider } from "virtual-site-tour-vue";
+import type { TourConfig } from "virtual-site-tour";
 
 function configFor(locale: string): TourConfig {
   return {

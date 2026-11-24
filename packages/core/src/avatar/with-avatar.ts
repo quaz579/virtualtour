@@ -171,7 +171,7 @@ class AvatarPresenter implements Presenter {
 
 /**
  * Builds a presenter factory that shows each step as a speech bubble with an animated character beside it. Pass it
- * as `presenter` in the tour config and load `virtualtour/avatar.css`. The pack may be a promise; each run waits for
+ * as `presenter` in the tour config and load `virtual-site-tour/avatar.css`. The pack may be a promise; each run waits for
  * it up to `loadTimeoutMs` (at most 9000, below the engine's 10 s presenter bound), and falls back to the dialog presenter when it fails or arrives too late, calling
  * `onError` once. A later run uses the pack once it has loaded. Steps choose their animation with
  * `extensions.avatar.animation`; otherwise the first step a run shows greets when it has no target and a step with a target points.

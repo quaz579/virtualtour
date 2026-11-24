@@ -1,2 +1,2 @@
-import "virtualtour/base.css";
-import "virtualtour/theme.css";
+import "virtual-site-tour/base.css";
+import "virtual-site-tour/theme.css";
