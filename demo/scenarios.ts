@@ -2,6 +2,8 @@ import { createTour, parseTourJson } from "../packages/core/src/index";
 import type { Tour, TourConfig } from "../packages/core/src/index";
 import { loadClassicAvatarPack, thumbtackPack, withAvatar } from "../packages/core/src/avatar/index";
 import { glide, progressVars } from "../packages/core/src/motion";
+import classicAvatarMapUrl from "../packages/core/e2e/fixtures/test-pack/classic-a.json?url";
+import classicAvatarSheetUrl from "../packages/core/e2e/fixtures/test-pack/sheet.png?url";
 import showcaseJson from "./tours/showcase.tour.json?raw";
 
 export interface Scenario {
@@ -11,7 +13,7 @@ export interface Scenario {
   build(): Tour;
 }
 
-const testPack = (name: string): string => new URL(`../packages/core/e2e/fixtures/test-pack/${name}`, import.meta.url).href;
+const testPack = (name: "classic-a.json" | "sheet.png"): string => (name === "sheet.png" ? classicAvatarSheetUrl : classicAvatarMapUrl);
 
 function core(): TourConfig {
   return {

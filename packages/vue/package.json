@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "Vue provider and composable for virtualtour.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quaz579/virtualtour.git",
+    "directory": "packages/vue"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {

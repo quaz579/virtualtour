@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "React provider and hook for virtualtour.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quaz579/virtualtour.git",
+    "directory": "packages/react"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
