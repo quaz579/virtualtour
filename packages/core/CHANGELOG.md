@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.3](https://github.com/quaz579/virtualtour/compare/v1.0.2...v1.0.3) (2026-11-24)
+
+### Bug Fixes
+
+* **demo:** add an inline favicon so the Pages site logs no 404 ([#78](https://github.com/quaz579/virtualtour/issues/78)) ([26feea3](https://github.com/quaz579/virtualtour/commit/26feea3cc6366e1d0bd569f12dedc79c800f7b01))
+
 ## [1.0.2](https://github.com/quaz579/virtualtour/compare/v1.0.1...v1.0.2) (2026-11-24)
 
 ### Bug Fixes
