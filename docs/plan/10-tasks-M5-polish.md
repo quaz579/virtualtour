@@ -24,7 +24,7 @@ package as peer dependencies, `src/index.tsx`, `vite.config.ts`, `test/*.test.ts
 `src/index.ts`, `vite.config.ts`, `test/*.test.ts`), `packages/core/e2e/wrappers.spec.ts`,
 `demo/fixtures/react.html` and `react.tsx`, `demo/fixtures/vue.html` and `vue.tsx`.
 
-**Public API added.** The packages are `virtual-site-tour-react` and `virtual-site-tour-vue`.
+**Public API added.** The packages are `virtualtour-react` and `virtualtour-vue`.
 ```tsx
 // react: packages/react/src/index.tsx
 <TourProvider config={TourConfig} autoStart?: boolean>{children}</TourProvider>

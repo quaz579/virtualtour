@@ -292,10 +292,10 @@ interface AvatarOptions {
 Usage:
 
 ```ts
-import { createTour } from 'virtual-site-tour';
-import { withAvatar, thumbtackPack } from 'virtual-site-tour/avatar';
-import 'virtual-site-tour/base.css';
-import 'virtual-site-tour/avatar.css';
+import { createTour } from 'virtualtour';
+import { withAvatar, thumbtackPack } from 'virtualtour/avatar';
+import 'virtualtour/base.css';
+import 'virtualtour/avatar.css';
 
 const tour = createTour({
   presenter: withAvatar(thumbtackPack()),

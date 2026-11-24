@@ -151,8 +151,8 @@ member.
 ### 2.1 Creating a tour
 
 ```ts
-import { createTour, tours } from 'virtual-site-tour';
-import 'virtual-site-tour/base.css';
+import { createTour, tours } from 'virtualtour';
+import 'virtualtour/base.css';
 
 const tour = createTour(config: TourConfig): Tour;
 ```
@@ -385,9 +385,9 @@ JSON (`03-schemas.md` §1): `parseTourJson`, `serializeTour`, `TourJsonError`. A
 `{ "format": "virtualtour-tour/1", "$schema"?: string, ... }`; `$schema` is accepted and dropped on
 parse, and `serializeTour` writes only `format`.
 
-Motion (`virtual-site-tour/motion`): `glide`, `progressVars`.
+Motion (`virtualtour/motion`): `glide`, `progressVars`.
 
-Avatar (`virtual-site-tour/avatar`, `02-avatar.md`): `withAvatar`, `loadAvatarPack`, `loadClassicAvatarPack`,
+Avatar (`virtualtour/avatar`, `02-avatar.md`): `withAvatar`, `loadAvatarPack`, `loadClassicAvatarPack`,
 `thumbtackPack`, `normalizePack`, `validatePack`, `resolveRole`, `preloadSheet`, `SpritePlayer`,
 `SpeakerPresenter`, `IdleScheduler`, `AvatarPackError`.
 
