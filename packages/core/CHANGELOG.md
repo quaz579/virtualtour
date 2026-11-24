@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2](https://github.com/quaz579/virtualtour/compare/v1.0.1...v1.0.2) (2026-11-24)
+
+### Bug Fixes
+
+* **demo:** ship the Thumbtack avatar pack with the Pages build ([#73](https://github.com/quaz579/virtualtour/issues/73)) ([9c0f845](https://github.com/quaz579/virtualtour/commit/9c0f845728b30621d83c664c52330fc85a3e107d))
+
 ## [1.0.1](https://github.com/quaz579/virtualtour/compare/v1.0.0...v1.0.1) (2026-11-24)
 
 ### Bug Fixes
