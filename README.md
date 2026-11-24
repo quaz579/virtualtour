@@ -344,7 +344,7 @@ mkdir -p .claude/skills/integrate-virtualtour
 curl -fsSL https://raw.githubusercontent.com/quaz579/virtualtour/main/.claude/skills/integrate-virtualtour/SKILL.md -o .claude/skills/integrate-virtualtour/SKILL.md
 ```
 
-Then ask your assistant to "add a product tour with virtualtour". Package versions after 1.0.2 also ship `llms.txt` and the skill inside `node_modules/virtual-site-tour/`.
+Then ask your assistant to "add a product tour with virtualtour". The next `fix:` or `feat:` release after 1.0.3 also ships `llms.txt` and the skill inside `node_modules/virtual-site-tour/`.
 
 ## Coming from driver.js
 

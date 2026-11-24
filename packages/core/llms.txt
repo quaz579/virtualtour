@@ -11,7 +11,7 @@ Rules an integrating agent must follow:
 - `dim` defaults to off. Pass `dim: true` for the darkened overlay with a cut-out around the target.
 - A step with `target` and no `placement` highlights the target and centers the popover. Set `placement: { side: "bottom" }` to anchor it to the target.
 - `createTour` is safe during server rendering; `tour.start()` needs a browser (rejects with `TourEnvironmentError` otherwise). Start from a click handler, an effect, or `autoStart` on the framework provider.
-- React and Vue: wrap the UI in `<TourProvider config={...}>` and call `useTour()` in a child component. There is no Vue plugin and no `app.use`.
+- React and Vue: wrap the UI in `<TourProvider config={...}>` and call `useTour()` in a child component. There is no Vue plugin and no `app.use`. Exported types: `TourProviderProps` and `UseTourResult` from both packages.
 - Popover DOM for tests: `.vt-popover`, `.vt-popover-title`, `.vt-popover-description`, `.vt-popover-next-btn`, `.vt-popover-prev-btn`, `.vt-popover-close-btn`; the highlighted element gets class `vt-target`; the overlay is `svg.vt-overlay`. Keyboard: Escape exits, ArrowRight/ArrowLeft move.
 
 ## Docs
