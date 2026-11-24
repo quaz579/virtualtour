@@ -4,6 +4,11 @@
   "private": true,
   "description": "Guided tours and onboarding for the web, forked from driver.js.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quaz579/virtualtour.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "sideEffects": [
     "**/*.css"
