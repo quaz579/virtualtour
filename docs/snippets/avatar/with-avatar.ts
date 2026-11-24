@@ -1,7 +1,7 @@
-import "virtualtour/base.css";
-import "virtualtour/avatar.css";
-import { createTour } from "virtualtour";
-import { thumbtackPack, withAvatar } from "virtualtour/avatar";
+import "virtual-site-tour/base.css";
+import "virtual-site-tour/avatar.css";
+import { createTour } from "virtual-site-tour";
+import { thumbtackPack, withAvatar } from "virtual-site-tour/avatar";
 
 export const tour = createTour({
   presenter: withAvatar(thumbtackPack(), {

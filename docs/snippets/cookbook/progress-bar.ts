@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import { progressVars } from "virtualtour/motion";
+import { createTour } from "virtual-site-tour";
+import { progressVars } from "virtual-site-tour/motion";
 
 export function withProgressBar() {
   const tour = createTour({ steps: [{ title: "One" }, { title: "Two" }, { title: "Three" }] });

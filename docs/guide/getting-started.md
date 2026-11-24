@@ -5,7 +5,7 @@ This page installs VirtualTour and builds a two-step tour: one step that points 
 ## Install
 
 ```sh
-npm install virtualtour
+npm install virtual-site-tour
 ```
 
 The package is not published to npm yet. Until it is, build it from the repository (`npm ci && npm run build`) and depend on `packages/core`. The command above is the intended install.
@@ -14,13 +14,13 @@ The package has no runtime dependencies. It is ESM only and ships these entry po
 
 | Import | What it is |
 |---|---|
-| `virtualtour` | `createTour`, `tours`, the `Tour` and `TourStep` classes, the JSON helpers and the progress stores |
-| `virtualtour/base.css` | The functional stylesheet. Required. |
-| `virtualtour/theme.css` | Optional colors, spacing and dark mode |
-| `virtualtour/avatar` | The optional avatar and speech bubble. See [Avatar](../avatar/). |
-| `virtualtour/motion` | `glide` and `progressVars`. See [Motion](./motion). |
+| `virtual-site-tour` | `createTour`, `tours`, the `Tour` and `TourStep` classes, the JSON helpers and the progress stores |
+| `virtual-site-tour/base.css` | The functional stylesheet. Required. |
+| `virtual-site-tour/theme.css` | Optional colors, spacing and dark mode |
+| `virtual-site-tour/avatar` | The optional avatar and speech bubble. See [Avatar](../avatar/). |
+| `virtual-site-tour/motion` | `glide` and `progressVars`. See [Motion](./motion). |
 
-Without `base.css` the popover is unstyled. Import `virtualtour/theme.css` as well if you want the default look:
+Without `base.css` the popover is unstyled. Import `virtual-site-tour/theme.css` as well if you want the default look:
 
 <<< @/snippets/guide/first-tour-theme.ts
 

@@ -1,5 +1,5 @@
-import { TourProvider } from "virtualtour-react";
-import type { TourConfig } from "virtualtour";
+import { TourProvider } from "virtual-site-tour-react";
+import type { TourConfig } from "virtual-site-tour";
 
 function configFor(locale: string): TourConfig {
   return {

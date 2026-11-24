@@ -28,12 +28,12 @@ Nothing here tags, publishes or hosts anything. A box is checked only when the c
 - [x] No company or product names other than driver.js appear in the repository: `npm run lint:prose` with a maintainer-supplied word list (`REQUIRE_BANNED_WORDS=1`).
 - [x] `grep -r "driver-" packages/core/src` is empty. Checked by `test/release.node.test.ts`.
 - [x] Version numbers are consistent across the three packages (all `1.0.0` on the release commit). Checked by `test/release.node.test.ts`.
-- [x] `API-FREEZE.md` matches the exports of `virtualtour`, `virtualtour/avatar` and `virtualtour/motion` (`test/api-freeze.node.test.ts`).
+- [x] `API-FREEZE.md` matches the exports of `virtual-site-tour`, `virtual-site-tour/avatar` and `virtual-site-tour/motion` (`test/api-freeze.node.test.ts`).
 - [x] `npm pack --dry-run` lists exactly the intended files for each package (`test/build.node.test.ts`).
 - [x] `packages/core/CHANGELOG.md` has a 1.0.0 entry with the "derived from driver.js 1.12.1" line.
 
 ## At release time
 
-- [x] Set the version to `1.0.0` in all three packages, remove `"private": true`, choose the npm name and import path, and update the peer ranges of the wrappers. Done 2026-11-20: names stay `virtualtour`, `virtualtour-react`, `virtualtour-vue` (`npm view` returned E404 for all three that day); wrapper peer range `virtualtour` is `^1.0.0`.
+- [x] Set the version to `1.0.0` in all three packages, remove `"private": true`, choose the npm name and import path, and update the peer ranges of the wrappers. Done 2026-11-20: names were `virtualtour`, `virtualtour-react`, `virtualtour-vue`. Renamed 2026-11-24 to `virtual-site-tour`, `virtual-site-tour-react`, `virtual-site-tour-vue` after npm rejected `virtualtour` as too similar to `virtual_tour` (E403); wrapper peer range `virtual-site-tour` is `^1.0.0`.
 - [ ] Re-run the full matrix on the release commit.
 - [ ] Tag, publish and host the docs (not done by any work unit).

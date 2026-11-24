@@ -1,7 +1,7 @@
 import { createContext, createElement, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { ReactElement, ReactNode } from "react";
-import { createTour } from "virtualtour";
-import type { Tour, TourConfig, TourStep } from "virtualtour";
+import { createTour } from "virtual-site-tour";
+import type { Tour, TourConfig, TourStep } from "virtual-site-tour";
 
 /** Props of {@link TourProvider}. */
 export interface TourProviderProps {

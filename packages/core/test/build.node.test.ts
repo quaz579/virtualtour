@@ -113,7 +113,7 @@ const repoRoot = resolve(root, "../..");
 const builtPatterns = [/^dist\/[^/]+\.js$/, /^dist\/[^/]+\.js\.map$/, /^dist\/[^/]+\.d\.ts$/, /^dist\/[^/]+\.css$/];
 
 const packContents: Record<string, { exact: string[]; required: string[] }> = {
-  virtualtour: {
+  "virtual-site-tour": {
     exact: [
       "ART.md",
       "CHANGELOG.md",
@@ -132,8 +132,8 @@ const packContents: Record<string, { exact: string[]; required: string[] }> = {
     ],
     required: ["dist/index.js", "dist/index.d.ts", "dist/avatar.js", "dist/motion.js", "dist/base.css", "dist/theme.css", "dist/avatar.css"],
   },
-  "virtualtour-react": { exact: ["LICENSE", "README.md", "package.json"], required: ["dist/index.js", "dist/index.d.ts"] },
-  "virtualtour-vue": { exact: ["LICENSE", "README.md", "package.json"], required: ["dist/index.js", "dist/index.d.ts"] },
+  "virtual-site-tour-react": { exact: ["LICENSE", "README.md", "package.json"], required: ["dist/index.js", "dist/index.d.ts"] },
+  "virtual-site-tour-vue": { exact: ["LICENSE", "README.md", "package.json"], required: ["dist/index.js", "dist/index.d.ts"] },
 };
 
 function packedPaths(workspace: string): string[] {
@@ -158,7 +158,7 @@ describe("package contents", () => {
   }, 120_000);
 
   it("ships one Thumbtack sheet for each variant", () => {
-    expect(packedPaths("virtualtour").filter((path) => /\.(png|jpe?g|gif|webp|svg)$/i.test(path)).sort()).toEqual([
+    expect(packedPaths("virtual-site-tour").filter((path) => /\.(png|jpe?g|gif|webp|svg)$/i.test(path)).sort()).toEqual([
       "dist/thumbtack/round/sheet.png",
       "dist/thumbtack/sheet.png",
     ]);
@@ -166,26 +166,26 @@ describe("package contents", () => {
 });
 
 const consumerFiles: Record<string, string> = {
-  "core.ts": `import { createTour, type Tour, type TourConfig, type TourStep } from "virtualtour";
+  "core.ts": `import { createTour, type Tour, type TourConfig, type TourStep } from "virtual-site-tour";
 const config: TourConfig = { steps: [] };
 const tour: Tour = createTour(config);
 const steps: readonly TourStep[] = tour.steps;
 export { steps };
 `,
-  "avatar.ts": `import { withAvatar, SpeakerPresenter, thumbtackPack, type AvatarPack, type NormalizedPack, type ThumbtackPackOptions, type ThumbtackVariant } from "virtualtour/avatar";
+  "avatar.ts": `import { withAvatar, SpeakerPresenter, thumbtackPack, type AvatarPack, type NormalizedPack, type ThumbtackPackOptions, type ThumbtackVariant } from "virtual-site-tour/avatar";
 export const pieces: [typeof withAvatar, typeof SpeakerPresenter, typeof thumbtackPack] = [withAvatar, SpeakerPresenter, thumbtackPack];
 export const roundPack = thumbtackPack(undefined, { variant: "round" });
 export type Packs = [AvatarPack, NormalizedPack];
 export type ThumbtackOptions = [ThumbtackPackOptions, ThumbtackVariant];
 `,
-  "motion.ts": `import { glide, progressVars } from "virtualtour/motion";
+  "motion.ts": `import { glide, progressVars } from "virtual-site-tour/motion";
 export const addons = [glide, progressVars];
 `,
-  "react.ts": `import { TourProvider, useTour, type TourProviderProps, type UseTourResult } from "virtualtour-react";
+  "react.ts": `import { TourProvider, useTour, type TourProviderProps, type UseTourResult } from "virtual-site-tour-react";
 export const pieces: [typeof TourProvider, typeof useTour] = [TourProvider, useTour];
 export type Types = [TourProviderProps, UseTourResult];
 `,
-  "vue.ts": `import * as vue from "virtualtour-vue";
+  "vue.ts": `import * as vue from "virtual-site-tour-vue";
 export const names = Object.keys(vue);
 export const provider: typeof vue.TourProvider = vue.TourProvider;
 export const hook: () => vue.UseTourResult = vue.useTour;
@@ -208,12 +208,12 @@ describe("published declarations", () => {
     mkdirSync(modules, { recursive: true });
     const hostModules = join(repoRoot, "node_modules");
     for (const name of readdirSync(hostModules)) {
-      if (name.startsWith(".") || name.startsWith("virtualtour")) continue;
+      if (name.startsWith(".") || name.startsWith("virtual-site-tour")) continue;
       symlinkSync(join(hostModules, name), join(modules, name));
     }
     const tarballs = join(scratch, "tarballs");
     mkdirSync(tarballs);
-    for (const workspace of ["virtualtour", "virtualtour-react", "virtualtour-vue"]) {
+    for (const workspace of ["virtual-site-tour", "virtual-site-tour-react", "virtual-site-tour-vue"]) {
       const out = execFileSync("npm", ["pack", "--workspace", workspace, "--pack-destination", tarballs, "--json"], { cwd: repoRoot, encoding: "utf8" });
       const [info] = JSON.parse(out) as Array<{ filename: string }>;
       const target = join(modules, workspace);
@@ -238,7 +238,7 @@ describe("published declarations", () => {
   });
 
   it("packs declarations whose relative imports all resolve inside the tarball", () => {
-    const dir = join(consumer, "node_modules/virtualtour/dist");
+    const dir = join(consumer, "node_modules/virtual-site-tour/dist");
     const relative = /\bfrom\s*["'](\.[^"']*)["']/g;
     for (const file of readdirSync(dir).filter((name) => name.endsWith(".d.ts"))) {
       for (const match of readFileSync(join(dir, file), "utf8").matchAll(relative)) {

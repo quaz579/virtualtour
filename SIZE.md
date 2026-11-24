@@ -17,6 +17,6 @@ Targets are soft: `npm run size` warns above them and never fails.
 
 - **core** (37 KB): the whole public surface in one entry, which holds the engine (about 19 KB), the tour model, JSON parsing, persistence and the default presenter. The original 21 KB target was the engine alone.
 - **engine** (20 KB): the forked driver bundled on its own, the figure to compare against upstream.
-- **avatar** (13 KB): the speaker presenter, sprite player, pack validation and loaders, plus the presenter chunk it shares with core. Counted with that chunk because a page importing `virtualtour/avatar` loads both.
+- **avatar** (13 KB): the speaker presenter, sprite player, pack validation and loaders, plus the presenter chunk it shares with core. Counted with that chunk because a page importing `virtual-site-tour/avatar` loads both.
 - **motion** (2 KB): a small optional entry.
 - Bundlers tree-shake unused exports, so an app that imports only `createTour` ships less than the core figure.

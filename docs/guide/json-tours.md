@@ -4,7 +4,7 @@ A tour can live in a database or a CMS as a `virtualtour-tour/1` document. `pars
 
 <<< @/snippets/guide/json-parse.ts
 
-The two schemas ship with the package for editor support and validation: `virtualtour/schemas/tour.v1.schema.json` and `virtualtour/schemas/avatar-pack.v1.schema.json`. Add `"$schema"` to a document to get completion in most editors; the parser ignores it. Worked documents live in `docs/examples/tours/`.
+The two schemas ship with the package for editor support and validation: `virtual-site-tour/schemas/tour.v1.schema.json` and `virtual-site-tour/schemas/avatar-pack.v1.schema.json`. Add `"$schema"` to a document to get completion in most editors; the parser ignores it. Worked documents live in `docs/examples/tours/`.
 
 The smallest valid document has a `format` and a `steps` array:
 

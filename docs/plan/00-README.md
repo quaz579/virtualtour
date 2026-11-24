@@ -17,7 +17,7 @@ library. It is a plan only: it holds no library code and assumes no repository, 
 CI, or package registry (those are out of scope on purpose).
 
 "VirtualTour" is a working name used in the text. The final product name, npm name, and
-import path are not decided. Where this plan shows `import ... from 'virtualtour'`, read it
+import path are not decided. Where this plan shows `import ... from 'virtual-site-tour'`, read it
 as "the core package, whatever it ends up being called".
 
 **Revision 3 (2026-11-12).** Revision 1 planned an in-house engine (52 tasks). Revision 2
@@ -113,7 +113,7 @@ Every task has the same shape:
 - Unit tests listed for the task pass under Vitest; the ported engine suites stay green.
 - Browser tests listed for the task pass in Chromium, Firefox, and WebKit (Edge is covered by
   the Chromium channel run; see `11-testing.md`).
-- `import 'virtualtour'` in a Node process with no `window` or `document` does not throw
+- `import 'virtual-site-tour'` in a Node process with no `window` or `document` does not throw
   (SSR gate).
 - The size report runs and its output is in the PR description (soft targets, warn-only:
   core ≈ 21 KB, avatar ≈ 6 KB, motion ≈ 2 KB min+gzip).

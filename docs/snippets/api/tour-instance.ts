@@ -1,4 +1,4 @@
-import { createTour } from "virtualtour";
+import { createTour } from "virtual-site-tour";
 
 export async function drive() {
   const tour = createTour({ steps: [{ id: "a", title: "A" }, { id: "b", title: "B" }] });

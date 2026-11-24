@@ -1,6 +1,6 @@
 # Motion
 
-`virtualtour/motion` holds two small helpers that add motion and progress styling to a tour without touching its config: `glide` slides the popover from one step to the next, and `progressVars` publishes the step position as CSS variables. Both take a tour, attach listeners and return a function that undoes everything. They live in a separate entry so tours that do not use them do not pay for them.
+`virtual-site-tour/motion` holds two small helpers that add motion and progress styling to a tour without touching its config: `glide` slides the popover from one step to the next, and `progressVars` publishes the step position as CSS variables. Both take a tour, attach listeners and return a function that undoes everything. They live in a separate entry so tours that do not use them do not pay for them.
 
 ## glide
 
@@ -54,7 +54,7 @@ Set it on every `step-shown`, so it is present whether or not the engine reuses 
 
 - **Follows step list changes.** The tour's `steps-changed` event rewrites both variables when you add or remove steps while a step is on screen, so the index and total stay current.
 - **The total counts all steps.** Steps skipped by `shouldShow` or `whenMissing: 'skip'` still count, so the bar can jump over a slice.
-- **Load the stylesheet.** Without `virtualtour/theme.css` the attribute does nothing. The variables themselves work without it.
+- **Load the stylesheet.** Without `virtual-site-tour/theme.css` the attribute does nothing. The variables themselves work without it.
 
 ## Reduced motion
 

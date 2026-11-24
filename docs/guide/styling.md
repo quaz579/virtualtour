@@ -6,9 +6,9 @@ VirtualTour ships plain CSS and one naming contract. You import a stylesheet or 
 
 | Import | Needed | Purpose |
 |---|---|---|
-| `virtualtour/base.css` | Always | The engine's functional rules (overlay, pointer blocking, scroll lock) and a plain light popover. |
-| `virtualtour/theme.css` | Optional | Variable-driven colors, dark mode, focus ring and an entrance animation. Import it after `base.css`. |
-| `virtualtour/avatar.css` | With the avatar presenter | Lays out the speech bubble and avatar. Import it after the other two. |
+| `virtual-site-tour/base.css` | Always | The engine's functional rules (overlay, pointer blocking, scroll lock) and a plain light popover. |
+| `virtual-site-tour/theme.css` | Optional | Variable-driven colors, dark mode, focus ring and an entrance animation. Import it after `base.css`. |
+| `virtual-site-tour/avatar.css` | With the avatar presenter | Lays out the speech bubble and avatar. Import it after the other two. |
 
 Without `base.css` the popover is unstyled and the overlay does not block clicks. In a development build, `start()` logs one warning per tour when `base.css` is missing. The check reads the `--vt-base` custom property, which `base.css` sets on the popover. Do not override `--vt-base`. If you ship your own CSS in place of `base.css`, define `--vt-base: 1` on `.vt-popover` to silence the warning. Production builds never warn.
 

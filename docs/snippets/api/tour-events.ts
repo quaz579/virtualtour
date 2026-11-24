@@ -1,4 +1,4 @@
-import { createTour, tours } from "virtualtour";
+import { createTour, tours } from "virtual-site-tour";
 
 export function listen() {
   const tour = createTour({ steps: [{ id: "a", title: "A" }, { id: "b", title: "B" }] });

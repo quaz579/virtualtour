@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import { thumbtackPack, withAvatar } from "virtualtour/avatar";
+import { createTour } from "virtual-site-tour";
+import { thumbtackPack, withAvatar } from "virtual-site-tour/avatar";
 
 export const tour = createTour({
   presenter: withAvatar(thumbtackPack(), { idle: true }),

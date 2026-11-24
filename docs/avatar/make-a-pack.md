@@ -35,7 +35,7 @@ The top level, `sheet`, each animation and `roles` take only the fields listed h
 | `bubble` | Hints: `dock` (`start`, `end` or `auto`) is this character's default dock, and `gap` is the pixels between the bubble and the avatar. |
 | `license` | `name`, `url` and `attribution`, all optional strings. Fill it in; it is how people learn what they may do with your art. |
 
-The JSON Schema for editors ships with the package as `virtualtour/schemas/avatar-pack.v1.schema.json`.
+The JSON Schema for editors ships with the package as `virtual-site-tour/schemas/avatar-pack.v1.schema.json`.
 
 ## Animations
 

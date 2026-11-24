@@ -1,5 +1,5 @@
-import { Emitter, localStorageStore, memoryStore, parseTourJson, serializeTour, TourJsonError, createTour } from "virtualtour";
-import type { TourEvents } from "virtualtour";
+import { Emitter, localStorageStore, memoryStore, parseTourJson, serializeTour, TourJsonError, createTour } from "virtual-site-tour";
+import type { TourEvents } from "virtual-site-tour";
 
 export function helpers(json: string) {
   try {

@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   define: { __DEV__: "true" },
-  resolve: { alias: { virtualtour: resolve(__dirname, "../core/src/index.ts") } },
+  resolve: { alias: { "virtual-site-tour": resolve(__dirname, "../core/src/index.ts") } },
   test: {
     projects: [
       {

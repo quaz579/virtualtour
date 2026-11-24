@@ -79,7 +79,7 @@ The two options are independent. `pageScroll: false` does not freeze the target'
 Limits:
 
 - Only the target's direct parent is locked, not every scrolling ancestor.
-- The lock comes from `virtualtour/base.css`. Without it the attributes are set but nothing is frozen.
+- The lock comes from `virtual-site-tour/base.css`. Without it the attributes are set but nothing is frozen.
 - The lock only exists while the overlay is drawn, because the options live under `dim`. For a lock with `dim: false`, set `overflow` yourself. See [Scroll lock](../cookbook/scroll-lock).
 - A scroller inside a shadow root or an iframe is not followed. The cut-out is not clipped to it, the popover boundary ignores it, and the tour is not told when it scrolls. Call `tour.refresh()` after you scroll it from code.
 

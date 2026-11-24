@@ -12,7 +12,7 @@ wins and the unit is corrected in the same PR (`00-README.md`, rule 8).
 
 | Item | Value |
 |---|---|
-| Proposed repository name | **`virtualtour`** (from the working name in `00-README.md`; npm name and import path stay undecided, so the core package is `virtualtour` with `"private": true` until a name is chosen) |
+| Proposed repository name | **`virtual-site-tour`** (from the working name in `00-README.md`; npm name and import path stay undecided, so the core package is `virtual-site-tour` with `"private": true` until a name is chosen) |
 | Tech stack | TypeScript 5.x (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), Vite library mode (ESM only, `.d.ts`), Vitest (`unit-node` + `unit-dom`/jsdom projects), Playwright (chromium, firefox, webkit, optional `msedge`), Node 20 LTS+, npm workspaces (`packages/*`, `docs`, `demo`), VitePress docs, React + Vue wrapper packages. Zero runtime dependencies. |
 | License | **MIT** for the code, `LICENSE` with two copyright lines (`Copyright (c) Kamran Ahmed` and `Copyright (c) <year> VirtualTour contributors`), `NOTICE.md` recording the driver.js fork point (tag `1.12.1`, commit `0163642dc532417ea401684bd26690e2f3283d63`). Thumbtack art is **CC0 1.0** in its own `LICENSE-ART.md` (`13-licensing.md` §1, §7). No third-party character art is ever committed. |
 | Fork source | `github.com/nilbuild/driver.js` at tag `1.12.1`, cloned read-only next to the repo (`../driver.js-1.12.1`). |
@@ -25,8 +25,8 @@ otherwise stop and ask about; each is **assumed** until the owner says otherwise
 
 | # | Question | Assumed answer |
 |---|---|---|
-| A1 | Repository name / hosting (§2 says out of scope) | Repo `virtualtour`; host and CI are not configured by any unit. Gates run locally with the commands below. |
-| A2 | npm package name (undecided) | Core package named `virtualtour`, wrappers `virtualtour-react` / `virtualtour-vue`, all `"private": true`. Renaming later is a find-and-replace in `package.json` files and docs. |
+| A1 | Repository name / hosting (§2 says out of scope) | Repo `virtual-site-tour`; host and CI are not configured by any unit. Gates run locally with the commands below. |
+| A2 | npm package name (undecided) | Core package named `virtual-site-tour`, wrappers `virtual-site-tour-react` / `virtual-site-tour-vue`, all `"private": true`. Renaming later is a find-and-replace in `package.json` files and docs. |
 | A3 | Package manager | npm (the plan's examples use it). Lockfile `package-lock.json` committed. |
 | A4 | Q6 docs tool | VitePress (plan default). |
 | A5 | Q7 React `<TourStep>` component | No; provider plus hook only (plan default). |

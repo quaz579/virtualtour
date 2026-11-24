@@ -398,7 +398,7 @@ Fields `sound`, `branching`, `exitBranch`, `useExitBranching` are ignored (AV-7)
 ## 3. Progress record (persistence)
 
 Stored by `localStorageStore(prefix)` under key `<prefix>:<tourId>` (default prefix
-`virtualtour`), JSON:
+`virtual-site-tour`), JSON:
 
 ```jsonc
 { "tourId": "billing-intro", "lastStepId": "save", "completedAt": "2026-01-01T00:00:00.000Z", "updatedAt": "..." }

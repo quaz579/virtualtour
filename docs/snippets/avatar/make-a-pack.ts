@@ -1,6 +1,6 @@
-import { createTour } from "virtualtour";
-import { normalizePack, resolveRole, validatePack, withAvatar } from "virtualtour/avatar";
-import type { AvatarPack } from "virtualtour/avatar";
+import { createTour } from "virtual-site-tour";
+import { normalizePack, resolveRole, validatePack, withAvatar } from "virtual-site-tour/avatar";
+import type { AvatarPack } from "virtual-site-tour/avatar";
 
 const json: unknown = {
   format: "virtualtour-avatar/1",

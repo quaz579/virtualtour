@@ -5,7 +5,7 @@ export default defineConfig({
   root: __dirname,
   define: { __DEV__: "true", __VT_CORE_DIST__: JSON.stringify(resolve(__dirname, "../packages/core/dist")) },
   esbuild: { jsx: "automatic" },
-  resolve: { alias: { virtualtour: resolve(__dirname, "../packages/core/src/index.ts") } },
+  resolve: { alias: { "virtual-site-tour": resolve(__dirname, "../packages/core/src/index.ts") } },
   server: { port: Number(process.env["VT_E2E_PORT"] || 4173), strictPort: true, fs: { allow: [resolve(__dirname, "..")] } },
   build: {
     rollupOptions: {

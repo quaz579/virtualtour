@@ -1,6 +1,6 @@
 import { defineComponent, h } from "vue";
-import { TourProvider, useTour } from "virtualtour-vue";
-import type { TourConfig } from "virtualtour";
+import { TourProvider, useTour } from "virtual-site-tour-vue";
+import type { TourConfig } from "virtual-site-tour";
 
 const config: TourConfig = {
   id: "welcome",

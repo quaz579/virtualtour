@@ -16,11 +16,11 @@
     "types": [],
     "baseUrl": ".",
     "paths": {
-      "virtualtour": ["../packages/core/src/index.ts"],
-      "virtualtour/avatar": ["../packages/core/src/avatar/index.ts"],
-      "virtualtour/motion": ["../packages/core/src/motion/index.ts"],
-      "virtualtour-react": ["../packages/react/src/index.tsx"],
-      "virtualtour-vue": ["../packages/vue/src/index.ts"]
+      "virtual-site-tour": ["../packages/core/src/index.ts"],
+      "virtual-site-tour/avatar": ["../packages/core/src/avatar/index.ts"],
+      "virtual-site-tour/motion": ["../packages/core/src/motion/index.ts"],
+      "virtual-site-tour-react": ["../packages/react/src/index.tsx"],
+      "virtual-site-tour-vue": ["../packages/vue/src/index.ts"]
     }
   },
   "include": ["snippets"]

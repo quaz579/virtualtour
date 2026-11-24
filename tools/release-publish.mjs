@@ -2,7 +2,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 const version = process.argv[2];
-const packages = ["virtualtour", "virtualtour-react", "virtualtour-vue"];
+const packages = ["virtual-site-tour", "virtual-site-tour-react", "virtual-site-tour-vue"];
 const buildOutputs = ["packages/core/dist/index.js", "packages/react/dist/index.js", "packages/vue/dist/index.js"];
 
 if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version ?? "")) {

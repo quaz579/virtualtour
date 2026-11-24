@@ -16,7 +16,7 @@ Set `counter` to `true` for "2 of 5", or to a function that returns the text. Th
 
 ## Progress bar from CSS variables
 
-`progressVars(tour)` from `virtualtour/motion` sets `--vt-progress-index` and `--vt-progress-total` on the popover each time a step is shown, and right away when a step is already on screen. It returns a function that stops updating and removes the variables.
+`progressVars(tour)` from `virtual-site-tour/motion` sets `--vt-progress-index` and `--vt-progress-total` on the popover each time a step is shown, and right away when a step is already on screen. It returns a function that stops updating and removes the variables.
 
 The theme stylesheet draws a bar from the two variables, but only on a popover that has the `data-vt-progress-bar` attribute. `progressVars` does not set that attribute. You set it, for example from `step-shown`:
 

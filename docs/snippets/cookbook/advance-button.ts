@@ -1,4 +1,4 @@
-import { tours } from "virtualtour";
+import { tours } from "virtual-site-tour";
 
 export function wireSaveButton(saveButton: HTMLElement) {
   saveButton.addEventListener("click", () => {

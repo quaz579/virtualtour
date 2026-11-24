@@ -227,7 +227,7 @@ licensed.
    public npm package. Do not import them through this library's package.
 7. **Loader call** with placeholder URLs:
    ```ts
-   import { withAvatar, loadClassicAvatarPack } from 'virtualtour/avatar';
+   import { withAvatar, loadClassicAvatarPack } from 'virtual-site-tour/avatar';
    const pack = loadClassicAvatarPack({
      sheetUrl: 'https://assets.your-company.example/avatars/paperclip/map.png',
      mapUrl:   'https://assets.your-company.example/avatars/paperclip/animations.json',

@@ -1,4 +1,4 @@
-import { createTour } from "virtualtour";
+import { createTour } from "virtual-site-tour";
 
 const sidebar = document.querySelector("#sidebar");
 
