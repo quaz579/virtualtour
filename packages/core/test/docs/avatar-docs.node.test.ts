@@ -15,7 +15,7 @@ function markdownFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!["node_modules", ".vitepress", "plan"].includes(entry.name)) markdownFiles(full, out);
+      if (!["node_modules", ".vitepress"].includes(entry.name)) markdownFiles(full, out);
     } else if (entry.name.endsWith(".md")) out.push(full);
   }
   return out;

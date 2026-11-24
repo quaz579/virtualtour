@@ -83,7 +83,6 @@ describe("art tripwire", () => {
     const paths = entries.map((entry) => entry.path);
     expect(paths).toContain("e2e/fixtures/test-pack/pack.json");
     expect(paths).toContain("src/avatar/thumbtack/pack.json");
-    expect(paths.some((path) => path.startsWith("docs/plan/"))).toBe(true);
     expect(violations(entries)).toEqual([]);
   });
 

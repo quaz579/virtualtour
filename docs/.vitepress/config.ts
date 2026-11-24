@@ -5,7 +5,7 @@ export default defineConfig({
   description: "Guided tours and onboarding for the web, forked from driver.js.",
   lang: "en-US",
   cleanUrls: true,
-  srcExclude: ["plan/**", "README.md"],
+  srcExclude: ["README.md"],
   cacheDir: "./node_modules/.vitepress-cache",
   outDir: "./.vitepress/dist",
   ignoreDeadLinks: false,

@@ -66,9 +66,8 @@ describe("checkLinks", () => {
     ]);
   });
 
-  it("skips docs/plan and node_modules", () => {
+  it("skips node_modules", () => {
     const root = project({
-      "docs/plan/x.md": "[gone](./gone)",
       "docs/node_modules/p/readme.md": "[gone](./gone)",
       "docs/index.md": "ok",
     });
