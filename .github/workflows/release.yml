@@ -5,6 +5,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      republish_tag:
+        description: Existing release tag (for example v1.0.1) whose missing npm packages should be published
+        required: false
+        type: string
 
 permissions: {}
 
@@ -33,6 +38,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ inputs.republish_tag || github.ref }}
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -45,4 +51,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run semantic-release
+        if: ${{ !inputs.republish_tag }}
         run: npx semantic-release
+      - name: Republish missing packages for an existing tag
+        if: ${{ inputs.republish_tag }}
+        env:
+          REPUBLISH_TAG: ${{ inputs.republish_tag }}
+        run: |
+          [[ "$REPUBLISH_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?)$ ]] || { echo "republish_tag must look like v1.2.3"; exit 1; }
+          git merge-base --is-ancestor HEAD origin/main || { echo "$REPUBLISH_TAG is not on main"; exit 1; }
+          npm run build
+          node tools/release-publish.mjs "${BASH_REMATCH[1]}"
