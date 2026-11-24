@@ -1,5 +1,5 @@
-import "virtualtour/base.css";
-import { createTour } from "virtualtour";
+import "virtual-site-tour/base.css";
+import { createTour } from "virtual-site-tour";
 
 export const tour = createTour({
   dim: true,

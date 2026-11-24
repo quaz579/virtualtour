@@ -1,4 +1,4 @@
-import { createTour } from "virtualtour";
+import { createTour } from "virtual-site-tour";
 
 export function lockedTour() {
   const tour = createTour({ steps: [{ target: "#menu", title: "Menu" }] });

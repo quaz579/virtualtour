@@ -1,7 +1,7 @@
 import { computed, defineComponent, inject, onBeforeUnmount, onMounted, provide, shallowRef } from "vue";
 import type { InjectionKey, PropType, Ref, VNode } from "vue";
-import { createTour } from "virtualtour";
-import type { Tour, TourConfig, TourStep } from "virtualtour";
+import { createTour } from "virtual-site-tour";
+import type { Tour, TourConfig, TourStep } from "virtual-site-tour";
 
 /** What {@link useTour} returns. `isRunning` and `currentStep` are readonly refs; the methods are stable. `currentStep` is the last step the tour reported with `step-shown` (use `tour.currentStep` for the live value during a move): it keeps the previous step while a move is under way and changes only when the new step is shown, or to `null` when the run ends or that step is dropped. `hideCurrent()` leaves it unchanged. */
 export interface UseTourResult {
@@ -15,7 +15,7 @@ export interface UseTourResult {
   finish(): void;
 }
 
-const key: InjectionKey<UseTourResult> = Symbol("virtualtour-vue");
+const key: InjectionKey<UseTourResult> = Symbol("virtual-site-tour-vue");
 
 interface Gate {
   disposed: boolean;

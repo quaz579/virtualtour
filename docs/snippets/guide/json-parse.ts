@@ -1,4 +1,4 @@
-import { createTour, parseTourJson } from "virtualtour";
+import { createTour, parseTourJson } from "virtual-site-tour";
 
 export async function startFromDocument(documentText: string, openSettingsPanel: () => void) {
   const tour = createTour(

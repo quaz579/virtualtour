@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import { loadClassicAvatarPack, withAvatar } from "virtualtour/avatar";
+import { createTour } from "virtual-site-tour";
+import { loadClassicAvatarPack, withAvatar } from "virtual-site-tour/avatar";
 
 const pack = loadClassicAvatarPack({
   sheetUrl: "https://assets.your-company.example/avatars/classic/map.png",

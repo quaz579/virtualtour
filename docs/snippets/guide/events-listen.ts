@@ -1,4 +1,4 @@
-import { createTour, tours } from "virtualtour";
+import { createTour, tours } from "virtual-site-tour";
 
 export const tour = createTour({
   id: "events",

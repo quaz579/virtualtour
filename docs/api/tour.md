@@ -1,6 +1,6 @@
 # Tour reference
 
-`createTour(config)` returns a `Tour`. This page lists its members, its events with payloads, the `tours` registry and the other helpers `virtualtour` exports. `createTour` is also the default export. It is safe to call on the server; `start()` needs a browser and rejects with `TourEnvironmentError` without a document.
+`createTour(config)` returns a `Tour`. This page lists its members, its events with payloads, the `tours` registry and the other helpers `virtual-site-tour` exports. `createTour` is also the default export. It is safe to call on the server; `start()` needs a browser and rejects with `TourEnvironmentError` without a document.
 
 <<< @/snippets/api/tour-instance.ts
 
@@ -86,4 +86,4 @@ Types exported from the package include `TourConfig`, `StepConfig`, `DimConfig`,
 
 <<< @/snippets/api/helpers.ts
 
-Two more entry points ship separately: `virtualtour/motion` (`glide`, `progressVars`; see [Custom counter](../cookbook/custom-counter)) and `virtualtour/avatar`.
+Two more entry points ship separately: `virtual-site-tour/motion` (`glide`, `progressVars`; see [Custom counter](../cookbook/custom-counter)) and `virtual-site-tour/avatar`.

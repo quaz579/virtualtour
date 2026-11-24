@@ -94,7 +94,7 @@ function requestedSide(step: TourStep): Placement {
 /**
  * A presenter that draws each step as a speech bubble with an avatar beside it. It keeps the dialog presenter's
  * body, buttons, focus and dialog semantics, moves one decorative avatar element into each step's popover, and
- * docks the avatar on the side of the bubble that faces away from the target. Load `virtualtour/avatar.css` after
+ * docks the avatar on the side of the bubble that faces away from the target. Load `virtual-site-tour/avatar.css` after
  * `base.css`.
  */
 export class SpeakerPresenter implements Presenter {
@@ -353,7 +353,7 @@ export class SpeakerPresenter implements Presenter {
     if (this.warnedStyles || (typeof __DEV__ !== "undefined" && !__DEV__)) return;
     this.warnedStyles = true;
     if (getComputedStyle(popover.wrapper).getPropertyValue("--vt-avatar-base").trim() !== "") return;
-    console.warn("[virtualtour] avatar.css is not loaded, so the speech bubble and avatar are unstyled. Import `virtualtour/avatar.css`.");
+    console.warn("[virtualtour] avatar.css is not loaded, so the speech bubble and avatar are unstyled. Import `virtual-site-tour/avatar.css`.");
   }
 
   private armIdle(): void {

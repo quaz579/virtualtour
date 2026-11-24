@@ -1,0 +1,7 @@
+# Releasing
+
+Merging a Conventional Commit to `main` is the release. A `fix` commit releases a patch version, a `feat` commit releases a minor version, and `BREAKING CHANGE` or `!` releases a major version. Commits such as `chore` and `docs` do not release. The first release is `1.0.0`.
+
+Read the Release workflow run to see the analyzed commits, version, changelog, package publishing, tag, and GitHub release. Rerun failures that happen before a release tag is pushed. The publish script skips a package version already on npm. Semantic-release pushes the tag before publishing packages, so a failure during or after publishing can leave a tag without a completed GitHub release; a normal rerun may then report no new release. Check which package versions are on npm, then run `npm ci` and `node tools/release-publish.mjs X.Y.Z` from the tagged release commit to publish any missing versions. The script builds packages when build output is missing. If the GitHub release is missing, create it with `gh release create vX.Y.Z --verify-tag --generate-notes --title vX.Y.Z`.
+
+Releases publish through npm trusted publishing (GitHub Actions OIDC): each of the three packages trusts `quaz579/virtualtour` with workflow `release.yml`, the release job has `id-token: write`, and it installs npm 11.6.2 because trusted publishing needs npm 11.5.1 or later. No npm token secret is used. The release job commits version and changelog updates to `main`; branch protection must allow the workflow's `GITHUB_TOKEN` to push that commit.

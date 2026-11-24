@@ -1,6 +1,6 @@
-# virtualtour
+# virtual-site-tour
 
-Guided tours and onboarding for the web, derived from driver.js (MIT). Entry points: `virtualtour`, `virtualtour/avatar`, `virtualtour/motion`; stylesheets `virtualtour/base.css` (required), `theme.css` and `avatar.css`. The exported names are listed in `API-FREEZE.md`, the class and variable names in `STYLES.md`, and the release history in `CHANGELOG.md`.
+Guided tours and onboarding for the web, derived from driver.js (MIT). Entry points: `virtual-site-tour`, `virtual-site-tour/avatar`, `virtual-site-tour/motion`; stylesheets `virtual-site-tour/base.css` (required), `theme.css` and `avatar.css`. The exported names are listed in `API-FREEZE.md`, the class and variable names in `STYLES.md`, and the release history in `CHANGELOG.md`.
 
 ## Developing
 

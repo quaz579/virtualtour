@@ -46,7 +46,7 @@ function fromList(list) {
 const tau = Math.PI * 2;
 const hump = (t) => Math.sin(Math.PI * t);
 const lean = 20;
-const bodyScale = 1.1;
+const bodyScale = 1;
 
 function pointSequence(shape) {
   return sequence(6, (t) => shape(hump(t)));
@@ -228,11 +228,14 @@ export function frameSvg(partial) {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.frameWidth}" height="${canvas.frameHeight}" viewBox="0 0 ${canvas.frameWidth} ${canvas.frameHeight}">` +
     `<g transform="${transform}">` +
-    `<polygon points="46.5,70 49.5,70 48,90" fill="${c.pin}"/>` +
-    `<polygon points="48,70 49.5,70 48,90" fill="${c.pinShade}"/>` +
-    `<circle cx="48" cy="44" r="24" fill="${c.head}" stroke="${c.rim}" stroke-width="1.5"/>` +
-    `<ellipse cx="37" cy="29" rx="6" ry="3.4" transform="rotate(-35 37 29)" fill="${c.highlight}" opacity="0.7"/>` +
-    `<rect x="22" y="64" width="52" height="8" rx="4" fill="${c.rim}"/>` +
+    `<polygon points="47.1,70 48.9,70 48,90" fill="${c.pin}"/>` +
+    `<polygon points="48,70 48.9,70 48,90" fill="${c.pinShade}"/>` +
+    `<path d="M30 14 H66 Q68 14 68 16 V18 Q68 20 65 21 L65 21.5 V45.5 C65 47.2 66.2 48.8 68.5 50 C76 54.5 79.5 63 80 71 Q48 74 16 71 C16.5 63 20 54.5 27.5 50 C29.8 48.8 31 47.2 31 45.5 V21.5 L31 21 Q28 20 28 18 V16 Q28 14 30 14 Z" fill="${c.head}" stroke="${c.rim}" stroke-width="1.5" stroke-linejoin="round"/>` +
+    `<path d="M28.5 18 Q48 21.2 67.5 18" fill="none" stroke="${c.rim}" stroke-width="1.2" opacity="0.75"/>` +
+    `<path d="M16.5 70.5 Q48 73.2 79.5 70.5" fill="none" stroke="${c.rim}" stroke-width="1.1" opacity="0.85"/>` +
+    `<ellipse cx="39" cy="16.5" rx="5.2" ry="1.5" transform="rotate(-12 39 16.5)" fill="${c.highlight}" opacity="0.7"/>` +
+    `<ellipse cx="35.5" cy="34" rx="1.8" ry="8.5" transform="rotate(-5 35.5 34)" fill="${c.highlight}" opacity="0.58"/>` +
+    `<ellipse cx="31.5" cy="62" rx="2.5" ry="5.5" transform="rotate(-24 31.5 62)" fill="${c.highlight}" opacity="0.56"/>` +
     eyes.join("") +
     brows +
     mouth +

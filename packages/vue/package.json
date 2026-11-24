@@ -1,9 +1,13 @@
 {
-  "name": "virtualtour-vue",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Vue provider and composable for virtualtour.",
+  "name": "virtual-site-tour-vue",
+  "version": "1.0.1",
+  "description": "Vue provider and composable for virtual-site-tour.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quaz579/virtualtour.git",
+    "directory": "packages/vue"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -23,7 +27,7 @@
     "test": "vitest run"
   },
   "peerDependencies": {
-    "virtualtour": "*",
+    "virtual-site-tour": "^1.0.1",
     "vue": ">=3.3"
   },
   "devDependencies": {

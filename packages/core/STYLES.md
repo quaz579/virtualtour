@@ -4,9 +4,9 @@ VirtualTour ships three stylesheets and one stable naming contract.
 
 | File | Import | Purpose |
 |---|---|---|
-| `base.css` | `virtualtour/base.css` | Required. The engine's functional rules plus a plain, usable popover. |
-| `theme.css` | `virtualtour/theme.css` | Optional. Variable-driven colors, dark mode, focus ring and entrance animation. Import it after `base.css`. |
-| `avatar.css` | `virtualtour/avatar.css` | Only with `SpeakerPresenter`. Lays out the speech bubble and avatar. Import it after `base.css` and `theme.css`. |
+| `base.css` | `virtual-site-tour/base.css` | Required. The engine's functional rules plus a plain, usable popover. |
+| `theme.css` | `virtual-site-tour/theme.css` | Optional. Variable-driven colors, dark mode, focus ring and entrance animation. Import it after `base.css`. |
+| `avatar.css` | `virtual-site-tour/avatar.css` | Only with `SpeakerPresenter`. Lays out the speech bubble and avatar. Import it after `base.css` and `theme.css`. |
 
 Without `theme.css` the popover stays a plain light box. In a development build, `start()` logs a warning once per tour when `base.css` is missing.
 

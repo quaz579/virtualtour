@@ -1,5 +1,5 @@
-import { TourProvider, useTour } from "virtualtour-react";
-import type { TourConfig } from "virtualtour";
+import { TourProvider, useTour } from "virtual-site-tour-react";
+import type { TourConfig } from "virtual-site-tour";
 
 const config: TourConfig = {
   id: "welcome",

@@ -1,6 +1,6 @@
 # Avatar
 
-`virtualtour/avatar` replaces the dialog with a speech bubble and an animated character beside it. It is a presenter: you pass it as `presenter` in the tour config, and the rest of the tour behaves the same. This page is a reference for the options and their edge cases. For a walkthrough, read the [avatar guide](./guide). To draw your own character, see [make a pack](./make-a-pack); for the character that ships, see [Thumbtack](./thumbtack).
+`virtual-site-tour/avatar` replaces the dialog with a speech bubble and an animated character beside it. It is a presenter: you pass it as `presenter` in the tour config, and the rest of the tour behaves the same. This page is a reference for the options and their edge cases. For a walkthrough, read the [avatar guide](./guide). To draw your own character, see [make a pack](./make-a-pack); for the character that ships, see [Thumbtack](./thumbtack).
 
 ## Use it
 
@@ -8,7 +8,7 @@ Load `base.css`, then `avatar.css`, and give the tour `withAvatar(pack, options)
 
 <<< @/snippets/avatar/with-avatar.ts
 
-The package ships one pack, [Thumbtack](./thumbtack), loaded with `thumbtackPack()`. Anything else goes through `loadAvatarPack(url)`. A classic character map goes through `loadClassicAvatarPack`; see [classic packs](./classic-packs) before you use it. The [licensing](../licensing) page covers the code and the art.
+The package ships [Thumbtack](./thumbtack) in a push-pin default and a round-top variant, both loaded with `thumbtackPack()`. Anything else goes through `loadAvatarPack(url)`. A classic character map goes through `loadClassicAvatarPack`; see [classic packs](./classic-packs) before you use it. The [licensing](../licensing) page covers the code and the art.
 
 ## withAvatar options
 
@@ -113,7 +113,7 @@ It exposes `avatar`, the decorative element, and `player`, the sprite player tha
 
 | Export | What it does |
 |---|---|
-| `thumbtackPack(baseUrl?)` | Loads the pack that ships with the package. `baseUrl` is the directory that holds `thumbtack/`; set it to serve the files from a CDN or your own host. |
+| `thumbtackPack(baseUrl?, options?)` | Loads the shipped Thumbtack pack. `options.variant` is `"pushpin"` by default or `"round"` for the round-top look. `baseUrl` is the directory that holds `thumbtack/`; set it to serve the files from a CDN or your own host. |
 | `loadAvatarPack(url, { fetch, signal })` | Fetches, validates and normalizes a pack, resolves its sheet image against the pack URL and preloads the sheet. Throws `AvatarPackError` on failure. |
 | `loadClassicAvatarPack(source)` | Converts a classic character map and sheet. The result's license is `unknown`. |
 | `preloadSheet(url, { signal, timeoutMs })` | Loads and decodes a sheet image so the first frame paints without a flash. Rejects with `AvatarPackError` when the image fails, the signal aborts or `timeoutMs` passes. No time limit when `timeoutMs` is left out. |

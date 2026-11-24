@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import type { ProgressRecord, ProgressStore } from "virtualtour";
+import { createTour } from "virtual-site-tour";
+import type { ProgressRecord, ProgressStore } from "virtual-site-tour";
 
 export function serverStore(baseUrl: string): ProgressStore {
   return {

@@ -1,6 +1,6 @@
 # Framework wrappers
 
-`virtualtour-react` and `virtualtour-vue` are thin wrappers. Each gives you a `TourProvider` that owns one tour and a `useTour()` function that reads it. Neither wraps the tour in a new API: `tour` is the same `Tour` object you get from `createTour`, and you configure it with the same `TourConfig`. Both packages list `virtualtour` as a peer dependency, so install it next to them. React needs 18 or later; Vue needs 3.3 or later.
+`virtual-site-tour-react` and `virtual-site-tour-vue` are thin wrappers. Each gives you a `TourProvider` that owns one tour and a `useTour()` function that reads it. Neither wraps the tour in a new API: `tour` is the same `Tour` object you get from `createTour`, and you configure it with the same `TourConfig`. Both packages list `virtual-site-tour` as a peer dependency, so install it next to them. React needs 18 or later; Vue needs 3.3 or later.
 
 What the two share:
 
@@ -49,7 +49,7 @@ If the config has a string `exitPrompt`, the provider replaces it with an async 
 
 ## Vue
 
-`virtualtour-vue` exports `TourProvider` and `useTour`. There is no plugin to install: do not call `app.use` and do not look for `provideTour`. Render `TourProvider` where you want the tour and call `useTour()` in the `setup` of a component below it.
+`virtual-site-tour-vue` exports `TourProvider` and `useTour`. There is no plugin to install: do not call `app.use` and do not look for `provideTour`. Render `TourProvider` where you want the tour and call `useTour()` in the `setup` of a component below it.
 
 <<< @/snippets/guide/vue-provider.ts
 

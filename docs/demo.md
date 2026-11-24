@@ -21,7 +21,7 @@ Then open the printed address. Set the port with `VT_E2E_PORT` if the default is
 | Spotlight | Per-step padding and radius, extra cut-outs, a locked target |
 | Action steps | Steps that wait for a focus and a click |
 | JSON tour | `demo/tours/showcase.tour.json` parsed with `parseTourJson` |
-| Motion | `glide()` and `progressVars()` from `virtualtour/motion` |
+| Motion | `glide()` and `progressVars()` from `virtual-site-tour/motion` |
 | Avatar (Thumbtack) | `withAvatar` with the bundled pack and the idle loop |
 | Avatar (classic format) | `loadClassicAvatarPack` with the generated test sheet |
 

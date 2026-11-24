@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import type { ButtonConfig, Presenter, PresenterFactory, RepositionInfo, StepParts, Tour, TourStep } from "virtualtour";
+import { createTour } from "virtual-site-tour";
+import type { ButtonConfig, Presenter, PresenterFactory, RepositionInfo, StepParts, Tour, TourStep } from "virtual-site-tour";
 
 type Popover = Parameters<Presenter["mount"]>[0];
 

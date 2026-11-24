@@ -63,8 +63,12 @@ export default defineConfig(({ mode }) => {
             closeBundle() {
               const from = resolve(__dirname, "src/avatar/thumbtack");
               const to = resolve(__dirname, "dist/thumbtack");
+              const roundFrom = resolve(from, "round");
+              const roundTo = resolve(to, "round");
               mkdirSync(to, { recursive: true });
+              mkdirSync(roundTo, { recursive: true });
               for (const file of ["pack.json", "sheet.png", "LICENSE-ART.md"]) copyFileSync(resolve(from, file), resolve(to, file));
+              for (const file of ["pack.json", "sheet.png"]) copyFileSync(resolve(roundFrom, file), resolve(roundTo, file));
             },
           },
         ],

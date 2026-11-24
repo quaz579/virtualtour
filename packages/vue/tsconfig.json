@@ -24,7 +24,7 @@
     "types": [],
     "baseUrl": ".",
     "paths": {
-      "virtualtour": [
+      "virtual-site-tour": [
         "../core/src/index.ts"
       ]
     }

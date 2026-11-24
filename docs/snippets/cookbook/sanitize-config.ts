@@ -1,4 +1,4 @@
-import { createTour } from "virtualtour";
+import { createTour } from "virtual-site-tour";
 
 const ALLOWED = new Set(["B", "I", "EM", "STRONG", "CODE", "A", "BR", "P", "UL", "OL", "LI"]);
 

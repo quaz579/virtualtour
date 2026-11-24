@@ -11,13 +11,23 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "build": "npm run build --workspace virtualtour && npm run build --workspace virtualtour-react && npm run build --workspace virtualtour-vue",
-    "typecheck": "npm run typecheck --workspace virtualtour --workspace virtualtour-react --workspace virtualtour-vue && npm run typecheck --workspace virtualtour-docs",
-    "test": "npm test --workspace virtualtour --workspace virtualtour-react --workspace virtualtour-vue",
-    "e2e": "npm run e2e --workspace virtualtour",
+    "build": "npm run build --workspace virtual-site-tour && npm run build --workspace virtual-site-tour-react && npm run build --workspace virtual-site-tour-vue",
+    "typecheck": "npm run typecheck --workspace virtual-site-tour --workspace virtual-site-tour-react --workspace virtual-site-tour-vue && npm run typecheck --workspace virtualtour-docs",
+    "test": "npm test --workspace virtual-site-tour --workspace virtual-site-tour-react --workspace virtual-site-tour-vue",
+    "e2e": "npm run e2e --workspace virtual-site-tour",
     "size": "node packages/core/tools/size-report.mjs",
     "lint:prose": "node tools/lint-prose.mjs",
     "docs:build": "npm run build --workspace virtualtour-docs",
     "docs:links": "node tools/check-links.mjs"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "7.0.0",
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/exec": "7.1.0",
+    "@semantic-release/git": "11.0.1",
+    "@semantic-release/github": "12.0.11",
+    "@semantic-release/release-notes-generator": "14.1.1",
+    "conventional-changelog-conventionalcommits": "9.3.1",
+    "semantic-release": "25.0.2"
   }
 }

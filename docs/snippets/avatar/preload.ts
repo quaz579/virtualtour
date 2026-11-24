@@ -1,4 +1,4 @@
-import { loadAvatarPack, preloadSheet } from "virtualtour/avatar";
+import { loadAvatarPack, preloadSheet } from "virtual-site-tour/avatar";
 
 export async function warmUp(packUrl: string, sheetUrl: string): Promise<void> {
   const controller = new AbortController();

@@ -1,5 +1,5 @@
-import { createTour } from "virtualtour";
-import type { PresenterFactory } from "virtualtour";
+import { createTour } from "virtual-site-tour";
+import type { PresenterFactory } from "virtual-site-tour";
 
 const factory: PresenterFactory = () => ({
   mount() {},

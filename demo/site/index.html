@@ -98,8 +98,8 @@
           <p class="section-intro">Use the core tour directly, or let a small provider expose it to your React or Vue tree.</p>
         </div>
         <div class="framework-grid">
-          <article class="code-card"><div class="code-card-top"><span>REACT</span><span>virtualtour-react</span></div><pre><code><span class="code-purple">import</span> { TourProvider, useTour } <span class="code-purple">from</span> <span class="code-green">"virtualtour-react"</span>;
-<span class="code-purple">import type</span> { TourConfig } <span class="code-purple">from</span> <span class="code-green">"virtualtour"</span>;
+          <article class="code-card"><div class="code-card-top"><span>REACT</span><span>virtual-site-tour-react</span></div><pre><code><span class="code-purple">import</span> { TourProvider, useTour } <span class="code-purple">from</span> <span class="code-green">"virtual-site-tour-react"</span>;
+<span class="code-purple">import type</span> { TourConfig } <span class="code-purple">from</span> <span class="code-green">"virtual-site-tour"</span>;
 <span class="code-purple">import</span> SettingsPage <span class="code-purple">from</span> <span class="code-green">"./SettingsPage"</span>;
 
 <span class="code-purple">const</span> tour = {
@@ -131,9 +131,9 @@ export <span class="code-purple">function</span> App() {
     &lt;/TourProvider&gt;
   );
 }</code></pre><p class="code-note">The page target and hook component live inside the provider.</p></article>
-          <article class="code-card"><div class="code-card-top"><span>VUE</span><span>virtualtour-vue</span></div><div class="code-file"><span>App.vue</span><pre><code><span class="code-purple">&lt;script setup lang="ts"&gt;</span>
-<span class="code-purple">import</span> { TourProvider } <span class="code-purple">from</span> <span class="code-green">"virtualtour-vue"</span>;
-<span class="code-purple">import type</span> { TourConfig } <span class="code-purple">from</span> <span class="code-green">"virtualtour"</span>;
+          <article class="code-card"><div class="code-card-top"><span>VUE</span><span>virtual-site-tour-vue</span></div><div class="code-file"><span>App.vue</span><pre><code><span class="code-purple">&lt;script setup lang="ts"&gt;</span>
+<span class="code-purple">import</span> { TourProvider } <span class="code-purple">from</span> <span class="code-green">"virtual-site-tour-vue"</span>;
+<span class="code-purple">import type</span> { TourConfig } <span class="code-purple">from</span> <span class="code-green">"virtual-site-tour"</span>;
 <span class="code-purple">import</span> SettingsPage <span class="code-purple">from</span> <span class="code-green">"./SettingsPage.vue"</span>;
 <span class="code-purple">import</span> TourButton <span class="code-purple">from</span> <span class="code-green">"./TourButton.vue"</span>;
 
@@ -156,7 +156,7 @@ export <span class="code-purple">function</span> App() {
     &lt;TourButton /&gt;
   &lt;/TourProvider&gt;
 <span class="code-orange">&lt;/template&gt;</span></code></pre></div><div class="code-file"><span>TourButton.vue</span><pre><code><span class="code-purple">&lt;script setup lang="ts"&gt;</span>
-<span class="code-purple">import</span> { useTour } <span class="code-purple">from</span> <span class="code-green">"virtualtour-vue"</span>;
+<span class="code-purple">import</span> { useTour } <span class="code-purple">from</span> <span class="code-green">"virtual-site-tour-vue"</span>;
 <span class="code-purple">const</span> { start, isRunning, currentStep } = useTour();
 <span class="code-purple">&lt;/script&gt;</span>
 

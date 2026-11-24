@@ -4,7 +4,7 @@ Every name exported from each public entry point, with its kind. Adding, removin
 
 Member-level shape (fields of a config type, method signatures) is covered by the type tests and the published declaration check, not by this list.
 
-## virtualtour
+## virtual-site-tour
 
 - `Align` (type)
 - `BodyContent` (type)
@@ -59,7 +59,7 @@ Member-level shape (fields of a config type, method signatures) is covered by th
 - `serializeTour` (function)
 - `tours` (const)
 
-## virtualtour/avatar
+## virtual-site-tour/avatar
 
 - `AnimationDef` (interface)
 - `AvatarDirection` (type)
@@ -84,6 +84,8 @@ Member-level shape (fields of a config type, method signatures) is covered by th
 - `SpeakerPresenter` (class)
 - `SpritePlayerOptions` (interface)
 - `SpritePlayer` (class)
+- `ThumbtackPackOptions` (interface)
+- `ThumbtackVariant` (type)
 - `loadAvatarPack` (function)
 - `loadClassicAvatarPack` (function)
 - `normalizePack` (function)
@@ -93,7 +95,7 @@ Member-level shape (fields of a config type, method signatures) is covered by th
 - `validatePack` (function)
 - `withAvatar` (function)
 
-## virtualtour/motion
+## virtual-site-tour/motion
 
 - `GlideOptions` (interface)
 - `glide` (function)
