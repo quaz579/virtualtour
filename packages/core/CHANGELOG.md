@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.1](https://github.com/quaz579/virtualtour/compare/v1.0.0...v1.0.1) (2026-11-24)
+
+### Bug Fixes
+
+* publish via npm trusted publishing ([#76](https://github.com/quaz579/virtualtour/issues/76)) ([8fb1660](https://github.com/quaz579/virtualtour/commit/8fb16603612f03f2b9022e4802482116ce8c7db2))
+
 ## 1.0.0 (2026-11-24)
 
 ### Features

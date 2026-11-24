@@ -1,6 +1,6 @@
 {
   "name": "virtual-site-tour-vue",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Vue provider and composable for virtual-site-tour.",
   "license": "MIT",
   "repository": {
@@ -27,7 +27,7 @@
     "test": "vitest run"
   },
   "peerDependencies": {
-    "virtual-site-tour": "^1.0.0",
+    "virtual-site-tour": "^1.0.1",
     "vue": ">=3.3"
   },
   "devDependencies": {
