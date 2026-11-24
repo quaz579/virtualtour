@@ -1,6 +1,6 @@
 {
   "name": "virtual-site-tour",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Guided tours and onboarding for the web, forked from driver.js.",
   "license": "MIT",
   "repository": {

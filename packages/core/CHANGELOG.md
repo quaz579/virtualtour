@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.4](https://github.com/quaz579/virtualtour/compare/v1.0.3...v1.0.4) (2026-11-24)
+
+### Bug Fixes
+
+* ship AI-friendly docs (README, llms.txt, integrate skill) ([#79](https://github.com/quaz579/virtualtour/issues/79)) ([8d3ea71](https://github.com/quaz579/virtualtour/commit/8d3ea713b268d37f44de0f8c6c45990a716c6a1d))
+
 ## [1.0.3](https://github.com/quaz579/virtualtour/compare/v1.0.2...v1.0.3) (2026-11-24)
 
 ### Bug Fixes
