@@ -11,7 +11,9 @@ Work through the steps in order. Do not skip step 6.
 
 ## 1. Detect the framework
 
-Read the app's `package.json` (in a monorepo, the package that renders the page):
+**No `package.json` (plain static HTML site): use the CDN path.** Skip step 2 and use the "No build step (CDN)" example in step 4; nothing is installed.
+
+Otherwise read the app's `package.json` (in a monorepo, the package that renders the page):
 
 | Found in dependencies | Use | Install |
 |---|---|---|
@@ -19,7 +21,7 @@ Read the app's `package.json` (in a monorepo, the package that renders the page)
 | `vue`, `nuxt` | Vue wrapper | `virtual-site-tour virtual-site-tour-vue` |
 | anything else (plain HTML, Svelte, Angular, Astro, server-rendered pages) | core library | `virtual-site-tour` |
 
-Pick the package manager from the lockfile: `package-lock.json` npm, `pnpm-lock.yaml` pnpm, `yarn.lock` yarn, `bun.lockb` or `bun.lock` bun. A site with no build step can load the ESM build from a CDN (`https://cdn.jsdelivr.net/npm/virtual-site-tour/dist/index.js` and `dist/base.css`).
+Pick the package manager from the lockfile: `package-lock.json` npm, `pnpm-lock.yaml` pnpm, `yarn.lock` yarn, `bun.lockb` or `bun.lock` bun.
 
 ## 2. Install
 
@@ -42,6 +44,44 @@ Rules that matter:
 - A step with a `target` and no `placement` highlights the target but centers the popover. Set `placement: { side: "bottom" }` (or `top`, `left`, `right`, `auto`) to anchor it.
 - `title` and `body` are HTML strings. Pass `sanitize` if any text comes from users.
 - Give the tour an `id` and each step an `id`.
+
+### No build step (CDN)
+
+No `package.json` or bundler? Load the ESM build and stylesheets from a CDN. Save this as `index.html` and serve the folder with any static server (for example `python3 -m http.server 8000`); `type="module"` scripts do not run from `file://`. Pin the version.
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/virtual-site-tour@1.0.3/dist/base.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/virtual-site-tour@1.0.3/dist/theme.css" />
+  </head>
+  <body>
+    <button id="save">Save</button>
+    <button id="start-tour">Take the tour</button>
+
+    <script type="module">
+      import { createTour } from "https://cdn.jsdelivr.net/npm/virtual-site-tour@1.0.3/dist/index.js";
+
+      const tour = createTour({
+        id: "welcome",
+        dim: true,
+        steps: [
+          { id: "save", target: "#save", placement: { side: "bottom" }, title: "Save your work", body: "Changes stay in this browser until you press Save." },
+          { id: "done", title: "You're all set" },
+        ],
+      });
+
+      document.querySelector("#start-tour").addEventListener("click", () => {
+        tour.start();
+      });
+    </script>
+  </body>
+</html>
+```
+
+Check the latest version with `npm view virtual-site-tour version` and use it in all three URLs.
 
 ### Plain JavaScript or TypeScript
 
@@ -167,7 +207,7 @@ const { start, isRunning } = useTour();
 
 ## 6. Verify in a real browser
 
-Run the app (`npm run dev` or the project's equivalent), then drive it with Playwright. Adapt the selectors and titles to the tour you wrote:
+Run the app: `npm run dev` (or the project's equivalent) for a bundled app, or `python3 -m http.server 8000` from the site folder for a static site. Then drive it with Playwright. Adapt the selectors and titles to the tour you wrote:
 
 ```ts
 import { expect, test } from "@playwright/test";
@@ -196,7 +236,7 @@ test("product tour starts, advances and closes", async ({ page }) => {
 });
 ```
 
-If the project has no Playwright yet: `npm install -D @playwright/test && npx playwright install chromium`, then run `npx playwright test` with `use: { baseURL: "http://localhost:<port>" }` in `playwright.config.ts`. Report the result. A tour that is not seen working in a browser is not done.
+If the project has no Playwright yet: `npm install -D @playwright/test && npx playwright install chromium`, then run `npx playwright test` with `use: { baseURL: "http://localhost:<port>" }` in `playwright.config.ts`. A static site without a favicon logs a 404 console error; add one (or `<link rel="icon" href="data:,">`) rather than loosening the check. Report the result. A tour that is not seen working in a browser is not done.
 
 Popover DOM: `.vt-popover`, `.vt-popover-title`, `.vt-popover-description`, `.vt-popover-next-btn`, `.vt-popover-prev-btn`, `.vt-popover-close-btn`. The target gets the class `vt-target`; the overlay is `svg.vt-overlay`. Escape exits; the arrow keys move.
 

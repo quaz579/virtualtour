@@ -21,6 +21,42 @@ The packages are ESM only and run in the browser. They are safe to import during
 
 Each example builds the same two-step tour: one step that spotlights a Save button, then a centered closing step.
 
+### No build step (CDN)
+
+No `package.json` or bundler? Load the ESM build and stylesheets from a CDN. Save this as `index.html` and serve the folder with any static server (for example `python3 -m http.server 8000`); `type="module"` scripts do not run from `file://`. Pin the version.
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/virtual-site-tour@1.0.3/dist/base.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/virtual-site-tour@1.0.3/dist/theme.css" />
+  </head>
+  <body>
+    <button id="save">Save</button>
+    <button id="start-tour">Take the tour</button>
+
+    <script type="module">
+      import { createTour } from "https://cdn.jsdelivr.net/npm/virtual-site-tour@1.0.3/dist/index.js";
+
+      const tour = createTour({
+        id: "welcome",
+        dim: true,
+        steps: [
+          { id: "save", target: "#save", placement: { side: "bottom" }, title: "Save your work", body: "Changes stay in this browser until you press Save." },
+          { id: "done", title: "You're all set" },
+        ],
+      });
+
+      document.querySelector("#start-tour").addEventListener("click", () => {
+        tour.start();
+      });
+    </script>
+  </body>
+</html>
+```
+
 ### Plain JavaScript or TypeScript
 
 ```sh
