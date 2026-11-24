@@ -162,7 +162,7 @@ export <span class="code-purple">function</span> App() {
 
 <span class="code-orange">&lt;template&gt;</span>
   &lt;button :disabled="isRunning" @click="start"&gt;
-    {{ currentStep?.title ?? "Show me around" }}
+    {{ currentStep ? `Step: ${currentStep.id}` : "Show me around" }}
   &lt;/button&gt;
 <span class="code-orange">&lt;/template&gt;</span></code></pre></div><p class="code-note">Call <code>useTour()</code> inside a provider descendant.</p></article>
         </div>
